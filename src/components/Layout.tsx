@@ -162,7 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={clsx(
-                "flex flex-col items-center justify-center p-1 rounded-lg transition-all duration-200 relative w-full max-w-[4rem]",
+                "flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0 sm:p-1 rounded-lg transition-all duration-200 relative",
                 isActive 
                   ? "text-neon-blue" 
                   : "text-gray-400 hover:text-gray-200"
