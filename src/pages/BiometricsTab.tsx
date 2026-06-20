@@ -43,7 +43,7 @@ export const BiometricsTab: React.FC = () => {
               </h3>
               <p className="text-sm text-gray-400 mb-6">Tracking daily ensures our adaptive TDEE algorithm works accurately to adjust your macros over time.</p>
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input 
                 type="number" 
                 placeholder="Lbs"
@@ -53,7 +53,7 @@ export const BiometricsTab: React.FC = () => {
               />
               <button 
                 onClick={handleLogWeight}
-                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap"
+                className="bg-neon-blue text-tactical-900 py-3 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap w-full sm:w-auto"
               >
                 Log
               </button>
@@ -86,7 +86,7 @@ export const BiometricsTab: React.FC = () => {
               </h3>
               <p className="text-sm text-gray-400 mb-6">Web apps cannot directly sync with Apple Health. Enter your daily steps manually here.</p>
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input 
                 type="number" 
                 placeholder="Steps"
@@ -96,7 +96,7 @@ export const BiometricsTab: React.FC = () => {
               />
               <button 
                 onClick={handleLogSteps}
-                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap"
+                className="bg-neon-blue text-tactical-900 py-3 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap w-full sm:w-auto"
               >
                 Log
               </button>
