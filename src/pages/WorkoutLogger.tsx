@@ -579,7 +579,7 @@ export const WorkoutLogger: React.FC = () => {
               transition={{ type: "spring", bounce: 0.5 }}
               className="bg-tactical-800 border-2 border-neon-gold p-8 rounded-xl shadow-[0_0_50px_rgba(255,215,0,0.3)] max-w-md w-full text-center relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iI2ZmZCIvPjwvc3ZnPg==')] opacity-20 animate-pulse" />
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iI2ZmZCIvPjwvc3ZnPg==')] opacity-20 animate-pulse pointer-events-none" />
               
               <motion.div
                 initial={{ rotate: -180, scale: 0 }}
