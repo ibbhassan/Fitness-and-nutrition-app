@@ -86,7 +86,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutLog[]>(initialState.workoutHistory || []);
   const [manualQuestCompletions, setManualQuestCompletions] = useState<Record<string, boolean>>(initialState.manualQuestCompletions || {});
   const [healthSyncEnabled, setHealthSyncEnabled] = useState(initialState.healthSyncEnabled || false);
-  const [dailySteps, setDailySteps] = useState(initialState.dailySteps || 4230); // Default to something
+  const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
   const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string} | null>(initialState.activeWorkout || null);
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);

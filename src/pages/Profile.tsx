@@ -111,13 +111,11 @@ export const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-8 shrink-0 bg-tactical-900/50 rounded-xl border border-tactical-700 p-4 md:p-6 relative group ml-auto">
+          <div className="flex items-center gap-4 md:gap-8 shrink-0 bg-tactical-900/50 rounded-xl border border-tactical-700 p-4 md:p-6 relative group mx-auto md:mx-0 md:ml-auto">
             <div className="absolute inset-0 bg-neon-blue/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
             
-
-
-            <div className="w-40 h-40 md:w-56 md:h-56 flex items-center justify-center relative z-10">
-              <StatHexagon stats={profile?.stats} size={224} hidePanel={true} />
+            <div className="w-48 h-48 md:w-56 md:h-56 flex items-center justify-center relative z-10">
+              <StatHexagon stats={profile?.stats} hidePanel={true} />
             </div>
           </div>
 
