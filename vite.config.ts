@@ -11,7 +11,7 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['apple-touch-icon-v2.png'],
+      includeAssets: ['apple-touch-icon-v3.png'],
       manifest: {
         name: 'Evoke Fitness & Nutrition',
         short_name: 'Evoke',
@@ -21,12 +21,12 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'apple-touch-icon-v2.png',
+            src: 'apple-touch-icon-v3.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'apple-touch-icon-v2.png',
+            src: 'apple-touch-icon-v3.png',
             sizes: '512x512',
             type: 'image/png',
           }
