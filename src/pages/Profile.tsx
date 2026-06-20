@@ -11,6 +11,7 @@ export const Profile: React.FC = () => {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<'Cut' | 'Bulk' | 'Maintenance'>(profile?.currentMode || 'Maintenance');
+  const [localSplit, setLocalSplit] = useState<Record<number, string>>(workoutSplit || {});
 
   const avatarUrl = '/images/avatar_3d.png';
 
@@ -230,6 +231,36 @@ export const Profile: React.FC = () => {
                 <h4 className="font-rajdhani font-bold text-gray-500 uppercase tracking-wider text-sm">Marksman</h4>
                 <p className="text-xs text-gray-600 mt-1">Locked</p>
               </div>
+            </div>
+          </div>
+
+          <div className="esports-panel p-6">
+            <div className="flex justify-between items-center mb-6 border-b border-tactical-700 pb-4">
+              <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Target className="w-5 h-5 text-neon-blue" /> Workout Schedule
+              </h2>
+            </div>
+            
+            <div className="space-y-3">
+              {scheduledWorkoutDays.map((dayIdx) => (
+                <div key={dayIdx} className="bg-tactical-900 border border-tactical-700 p-3 rounded-lg flex items-center gap-4">
+                  <span className="text-neon-blue font-rajdhani uppercase font-bold tracking-wider w-12 shrink-0 text-sm">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayIdx]}
+                  </span>
+                  <input 
+                    type="text"
+                    placeholder="e.g. Heavy Chest"
+                    value={localSplit[dayIdx] || ''}
+                    onChange={(e) => setLocalSplit(prev => ({ ...prev, [dayIdx]: e.target.value }))}
+                    onBlur={() => {
+                      if (localSplit[dayIdx] !== workoutSplit[dayIdx]) {
+                        completeOnboarding(profile?.currentMode || 'Maintenance', targetWorkoutsPerWeek, scheduledWorkoutDays, localSplit, nutrition, biometrics!);
+                      }
+                    }}
+                    className="flex-1 bg-tactical-800 border-none rounded p-2 text-white font-bold outline-none focus:ring-1 focus:ring-neon-blue transition-all placeholder:text-tactical-600 placeholder:font-normal text-sm"
+                  />
+                </div>
+              ))}
             </div>
           </div>
 

@@ -211,7 +211,7 @@ export const Onboarding: React.FC = () => {
             </p>
 
             <button 
-              onClick={handleNext}
+              onClick={() => setStep(5)}
               disabled={scheduledDays.length !== workoutsPerWeek}
               className={clsx(
                 "w-full mt-4 py-3 rounded font-rajdhani font-bold text-lg transition-colors flex justify-center items-center gap-2",
@@ -223,36 +223,7 @@ export const Onboarding: React.FC = () => {
           </div>
         )}
 
-        {step === 4 && (
-          <div className="space-y-6 fade-in">
-            <h2 className="esports-heading text-2xl text-center mb-2">Define Your Split</h2>
-            <p className="text-gray-400 text-center text-sm mb-6">Name the workouts you plan to do on your scheduled days (e.g. "Push", "Legs", "Cardio").</p>
-            
-            <div className="space-y-3">
-              {scheduledDays.map((dayIdx) => (
-                <div key={dayIdx} className="bg-tactical-900 border border-tactical-700 p-4 rounded-lg flex items-center gap-4">
-                  <span className="text-neon-blue font-rajdhani uppercase font-bold tracking-wider w-24 shrink-0">
-                    {getDayName(dayIdx)}
-                  </span>
-                  <input 
-                    type="text"
-                    placeholder="e.g. Heavy Chest"
-                    value={workoutSplit[dayIdx] || ''}
-                    onChange={(e) => setWorkoutSplit(prev => ({ ...prev, [dayIdx]: e.target.value }))}
-                    className="flex-1 bg-tactical-800 border-none rounded p-2 text-white font-bold outline-none focus:ring-1 focus:ring-neon-blue transition-all placeholder:text-tactical-600 placeholder:font-normal"
-                  />
-                </div>
-              ))}
-            </div>
 
-            <button 
-              onClick={handleNext}
-              className="w-full mt-8 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
-            >
-              Continue <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        )}
 
         {step === 5 && (
           <div className="space-y-6 fade-in">
