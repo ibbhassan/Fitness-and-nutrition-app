@@ -83,8 +83,8 @@ export const Profile: React.FC = () => {
           
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-20 h-20 rounded-xl bg-tactical-800 border-2 border-neon-blue flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)]">
-                <User className="w-10 h-10 text-neon-blue" />
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neon-blue flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)] shrink-0 bg-tactical-800">
+                <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110" />
               </div>
               <div>
                 <h1 className="esports-heading text-3xl text-white tracking-widest">{user?.username || 'AGENT'}</h1>
@@ -114,11 +114,7 @@ export const Profile: React.FC = () => {
           <div className="flex items-center gap-4 md:gap-8 shrink-0 bg-tactical-900/50 rounded-xl border border-tactical-700 p-4 md:p-6 relative group ml-auto">
             <div className="absolute inset-0 bg-neon-blue/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
             
-            <div className="flex flex-col items-center relative z-10 gap-3">
-              <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-neon-blue/50 relative shadow-[0_0_20px_rgba(0,240,255,0.15)] bg-tactical-800 shrink-0">
-                <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110" />
-              </div>
-            </div>
+
 
             <div className="w-40 h-40 md:w-56 md:h-56 flex items-center justify-center relative z-10">
               <StatHexagon stats={profile?.stats} size={224} hidePanel={true} />
