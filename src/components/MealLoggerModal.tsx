@@ -127,8 +127,8 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] px-4 fade-in">
-      <div className="bg-tactical-800 border border-tactical-600 rounded-xl w-full max-w-lg relative overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[60] bg-tactical-800 flex flex-col animate-in slide-in-from-bottom-full duration-200 sm:items-center sm:bg-black/80 sm:p-4">
+      <div className="w-full h-full sm:max-w-md sm:h-[85vh] sm:rounded-2xl flex flex-col bg-tactical-800 overflow-hidden relative pb-safe sm:pb-0 shadow-2xl">
         
         {/* Header */}
         <div className="bg-tactical-900 p-4 flex items-center justify-between border-b border-tactical-700 shrink-0">
