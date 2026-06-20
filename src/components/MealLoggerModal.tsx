@@ -13,11 +13,12 @@ interface MealLoggerModalProps {
 }
 
 export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onClose }) => {
-  const { addFoodLog, recentFoods, favoriteFoods, savedMeals, foodLogs } = useUser();
+  const { addFoodLog, updateFoodLog, removeFoodLog, recentFoods, favoriteFoods, savedMeals, foodLogs } = useUser();
   const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'saved'>('recent');
   const [showScanner, setShowScanner] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [scannedFood, setScannedFood] = useState<Partial<FoodItem> | undefined>(undefined);
+  const [editingLog, setEditingLog] = useState<FoodLogEntry | undefined>(undefined);
 
   // AI Logger state
   const [mealText, setMealText] = useState('');
@@ -34,17 +35,19 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
     return foodLogs.filter(log => log.date === yesterdayStr && log.mealType === mealType);
   }, [foodLogs, mealType]);
 
-  const mealMacros = useMemo(() => {
+  const todaysMealLogs = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return foodLogs
-      .filter(log => log.date === today && log.mealType === mealType)
-      .reduce((acc, log) => ({
-        calories: acc.calories + (log.food.macrosPerUnit.calories * log.food.amount),
-        protein: acc.protein + (log.food.macrosPerUnit.protein * log.food.amount),
-        carbs: acc.carbs + (log.food.macrosPerUnit.carbs * log.food.amount),
-        fat: acc.fat + (log.food.macrosPerUnit.fat * log.food.amount),
-      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    return foodLogs.filter(log => log.date === today && log.mealType === mealType);
   }, [foodLogs, mealType]);
+
+  const mealMacros = useMemo(() => {
+    return todaysMealLogs.reduce((acc, log) => ({
+      calories: acc.calories + (log.food.macrosPerUnit.calories * log.food.amount),
+      protein: acc.protein + (log.food.macrosPerUnit.protein * log.food.amount),
+      carbs: acc.carbs + (log.food.macrosPerUnit.carbs * log.food.amount),
+      fat: acc.fat + (log.food.macrosPerUnit.fat * log.food.amount),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  }, [todaysMealLogs]);
 
   const handleSaveFood = (food: FoodItem) => {
     const log: FoodLogEntry = {
@@ -56,8 +59,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
     addFoodLog(log);
     setShowManual(false);
     setShowScanner(false);
-    setLogSuccess(`Logged ${food.name}!`);
-    setTimeout(() => setLogSuccess(''), 3000);
+    setScannedFood(undefined);
   };
 
   const handleAiLog = async () => {
@@ -65,7 +67,6 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
     setIsLogging(true);
     setLogError('');
     setLogSuccess('');
-    
     try {
       const macros = await parseMealText(mealText);
       const foodItem: FoodItem = {
@@ -75,33 +76,20 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
         unit: 'meal',
         macrosPerUnit: macros
       };
-      
-      const log: FoodLogEntry = {
-        id: `log-${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
-        mealType,
-        food: foodItem
-      };
-      
-      addFoodLog(log);
-      setLogSuccess(`AI Logged: ${macros.calories}kcal (${macros.protein}g P, ${macros.carbs}g C, ${macros.fat}g F)`);
+      handleSaveFood(foodItem);
+      setLogSuccess(`Successfully logged: ${foodItem.name}`);
       setMealText('');
-      setTimeout(() => setLogSuccess(''), 4000);
-    } catch (err) {
-      setLogError('Failed to parse meal. Try being more specific.');
+      setTimeout(() => setLogSuccess(''), 3000);
+    } catch (err: any) {
+      setLogError(err.message || 'Failed to log meal. Please try again.');
     } finally {
       setIsLogging(false);
     }
   };
 
   const handleSameAsYesterday = () => {
-    const today = new Date().toISOString().split('T')[0];
-    yesterdayLogs.forEach(oldLog => {
-      addFoodLog({
-        ...oldLog,
-        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        date: today
-      });
+    yesterdayLogs.forEach(log => {
+      handleSaveFood(log.food);
     });
     setLogSuccess(`Added ${yesterdayLogs.length} items from yesterday.`);
     setTimeout(() => setLogSuccess(''), 3000);
@@ -123,7 +111,25 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
   }
 
   if (showManual) {
-    return <FoodEntryModal onClose={() => setShowManual(false)} onSave={handleSaveFood} initialFood={scannedFood} />;
+    return <FoodEntryModal onClose={() => { setShowManual(false); setScannedFood(undefined); }} onSave={handleSaveFood} initialFood={scannedFood} />;
+  }
+
+  if (editingLog) {
+    return (
+      <FoodEntryModal 
+        onClose={() => setEditingLog(undefined)} 
+        initialFood={editingLog.food}
+        isEditing={true}
+        onSave={(updatedFood) => {
+          updateFoodLog(editingLog.id, updatedFood);
+          setEditingLog(undefined);
+        }}
+        onDelete={() => {
+          removeFoodLog(editingLog.id);
+          setEditingLog(undefined);
+        }}
+      />
+    );
   }
 
   return (
@@ -131,7 +137,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
       <div className="w-full h-full sm:max-w-md sm:h-[85vh] sm:rounded-2xl flex flex-col bg-tactical-800 overflow-hidden relative pb-safe sm:pb-0 shadow-2xl">
         
         {/* Header */}
-        <div className="bg-tactical-900 p-4 flex items-center justify-between border-b border-tactical-700 shrink-0">
+        <div className="bg-tactical-900 p-4 flex items-center justify-between border-b border-tactical-700 shrink-0 shadow-sm z-10">
           <div>
             <h3 className="esports-heading text-xl text-white">Log {mealType}</h3>
             <div className="flex items-center gap-2 text-[10px] sm:text-xs mt-1">
@@ -149,7 +155,39 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto custom-scrollbar">
+        <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
+          {/* Already Logged Section */}
+          {todaysMealLogs.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-rajdhani font-bold text-gray-400 uppercase tracking-wider text-xs mb-3 flex items-center justify-between">
+                <span>Already Logged</span>
+                <span>{todaysMealLogs.length} item{todaysMealLogs.length !== 1 ? 's' : ''}</span>
+              </h4>
+              <div className="space-y-2">
+                {todaysMealLogs.map(log => (
+                  <div 
+                    key={log.id} 
+                    onClick={() => setEditingLog(log)}
+                    className="bg-tactical-900 border border-tactical-700 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:border-neon-blue transition-colors group"
+                  >
+                    <div>
+                      <h4 className="font-bold text-white text-sm group-hover:text-neon-blue transition-colors">{log.food.name}</h4>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {log.food.amount} {log.food.unit} • <span className="text-neon-red font-bold">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-neon-blue font-bold">{Math.round(log.food.macrosPerUnit.protein * log.food.amount)}g P</span>
+                      <span className="text-tactical-600">|</span>
+                      <span className="text-neon-gold font-bold">{Math.round(log.food.macrosPerUnit.carbs * log.food.amount)}g C</span>
+                      <span className="text-tactical-600">|</span>
+                      <span className="text-neon-purple font-bold">{Math.round(log.food.macrosPerUnit.fat * log.food.amount)}g F</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* AI Logger Box */}
           <div className="bg-tactical-900 border border-neon-purple/30 rounded-xl p-4 mb-6 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-neon-purple/5 rounded-bl-full -mr-12 -mt-12 group-hover:bg-neon-purple/10 transition-colors pointer-events-none" />
