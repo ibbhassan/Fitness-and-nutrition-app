@@ -8,9 +8,11 @@ interface FoodEntryModalProps {
   onClose: () => void;
   initialFood?: Partial<FoodItem>;
   onSave?: (food: FoodItem) => void;
+  onDelete?: () => void;
+  isEditing?: boolean;
 }
 
-export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood, onSave }) => {
+export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood, onSave, onDelete, isEditing }) => {
   const { toggleFavoriteFood } = useUser();
   const [name, setName] = useState(initialFood?.name || '');
   const [amount, setAmount] = useState<string>(initialFood?.amount?.toString() || '1');
@@ -145,12 +147,23 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
             Save to Favorites
           </button>
 
-          <button
-            type="submit"
-            className="w-full mt-6 bg-neon-blue text-tactical-900 font-bold font-rajdhani text-lg py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[#00d0ff] transition-colors"
-          >
-            <Save className="w-5 h-5" /> Log Food
-          </button>
+          <div className="flex gap-3 mt-6">
+            {isEditing && onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="bg-tactical-900 border border-neon-red text-neon-red font-bold font-rajdhani text-lg py-3 px-6 rounded-lg hover:bg-neon-red/10 transition-colors"
+              >
+                Delete
+              </button>
+            )}
+            <button
+              type="submit"
+              className="flex-1 bg-neon-blue text-tactical-900 font-bold font-rajdhani text-lg py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[#00d0ff] transition-colors"
+            >
+              <Save className="w-5 h-5" /> {isEditing ? 'Save Changes' : 'Log Food'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

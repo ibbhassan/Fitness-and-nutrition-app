@@ -42,6 +42,7 @@ interface UserContextType {
   savedMeals: Meal[];
   addFoodLog: (log: FoodLogEntry) => void;
   removeFoodLog: (id: string) => void;
+  updateFoodLog: (id: string, updatedFood: FoodItem) => void;
   saveMeal: (meal: Meal) => void;
   logFood: (food: FoodItem) => void;
   toggleFavoriteFood: (food: FoodItem) => void;
@@ -166,6 +167,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const filtered = prev.filter(f => f.name !== log.food.name);
       return [log.food, ...filtered].slice(0, 50);
     });
+  };
+
+  const updateFoodLog = (id: string, updatedFood: FoodItem) => {
+    setFoodLogs(prev => prev.map(log => 
+      log.id === id ? { ...log, food: updatedFood } : log
+    ));
+  };
+
+  const deleteFoodLog = (id: string) => {
+    setFoodLogs(prev => prev.filter(log => log.id !== id));
   };
 
   const removeFoodLog = (id: string) => {
@@ -351,6 +362,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       foodLogs,
       savedMeals,
       addFoodLog,
+      updateFoodLog,
       removeFoodLog,
       saveMeal,
       logFood,

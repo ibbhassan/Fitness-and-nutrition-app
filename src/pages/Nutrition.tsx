@@ -3,13 +3,15 @@ import { useUser } from '../context/UserContext';
 import { Flame, Plus, Coffee, Sun, Moon, Apple } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MealLoggerModal } from '../components/MealLoggerModal';
-import type { MealType } from '../types';
+import { FoodEntryModal } from '../components/FoodEntryModal';
+import type { MealType, FoodLogEntry } from '../types';
 
 export const Nutrition: React.FC = () => {
-  const { nutrition, foodLogs } = useUser();
+  const { nutrition, foodLogs, updateFoodLog, removeFoodLog } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
   
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
+  const [editingLog, setEditingLog] = useState<FoodLogEntry | null>(null);
 
   // Get today's logs
   const today = new Date().toISOString().split('T')[0];
@@ -64,8 +66,14 @@ export const Nutrition: React.FC = () => {
         {logs.length > 0 && (
           <div className="space-y-2 mt-2 border-t border-tactical-800 pt-3">
             {logs.map((log) => (
-              <div key={log.id} className="flex justify-between items-center text-sm">
-                <div className="text-gray-300 truncate pr-4">{log.food.name}</div>
+              <div 
+                key={log.id} 
+                onClick={() => setEditingLog(log)}
+                className="flex justify-between items-center text-sm p-2 rounded hover:bg-tactical-800 cursor-pointer transition-colors group"
+              >
+                <div className="text-gray-300 truncate pr-4 group-hover:text-neon-blue transition-colors">
+                  {log.food.name} <span className="text-gray-500 text-xs ml-1">({log.food.amount} {log.food.unit})</span>
+                </div>
                 <div className="text-gray-500 shrink-0">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</div>
               </div>
             ))}
@@ -133,6 +141,22 @@ export const Nutrition: React.FC = () => {
       {/* Modals */}
       {activeMeal && (
         <MealLoggerModal mealType={activeMeal} onClose={() => setActiveMeal(null)} />
+      )}
+      
+      {editingLog && (
+        <FoodEntryModal
+          isEditing
+          initialFood={editingLog.food}
+          onSave={(updatedFood) => {
+            updateFoodLog(editingLog.id, updatedFood);
+            setEditingLog(null);
+          }}
+          onDelete={() => {
+            removeFoodLog(editingLog.id);
+            setEditingLog(null);
+          }}
+          onClose={() => setEditingLog(null)}
+        />
       )}
 
     </div>
