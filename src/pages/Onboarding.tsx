@@ -8,10 +8,10 @@ export const Onboarding: React.FC = () => {
   const { completeOnboarding } = useUser();
   const [step, setStep] = useState(1);
 
-  const [goal, setGoal] = useState<'Cut' | 'Bulk'>('Cut');
-  const [workoutsPerWeek, setWorkoutsPerWeek] = useState(4);
-  const [scheduledDays, setScheduledDays] = useState<number[]>([1, 2, 4, 5]);
-  const [workoutSplit, setWorkoutSplit] = useState<Record<number, string>>({});
+  const [goal, setGoal] = useState<'Cut' | 'Bulk' | 'Maintenance' | null>(null);
+  const [workoutsPerWeek, setWorkoutsPerWeek] = useState<number>(3);
+  const [scheduledDays, setScheduledDays] = useState<number[]>([]);
+  const [workoutSplit] = useState<Record<number, string>>({});
   const [macroPreference, setMacroPreference] = useState<'HighCarb' | 'HighFat'>('HighCarb');
   
   const [bio, setBio] = useState<Biometrics>({
@@ -88,10 +88,10 @@ export const Onboarding: React.FC = () => {
     scheduledDays.forEach(day => {
       if (!finalSplit[day]) finalSplit[day] = 'Workout';
     });
-    completeOnboarding(goal, workoutsPerWeek, scheduledDays, finalSplit, macros, bio);
+    completeOnboarding(goal as 'Cut' | 'Bulk' | 'Maintenance', workoutsPerWeek, scheduledDays, finalSplit, macros, bio);
   };
 
-  const getDayName = (idx: number) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][idx];
+
 
   return (
     <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-6 text-white font-inter">
