@@ -27,6 +27,9 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
   const [labelCarbs, setLabelCarbs] = useState<string>(initialFood?.macrosPerUnit?.carbs?.toString() || '');
   const [labelFat, setLabelFat] = useState<string>(initialFood?.macrosPerUnit?.fat?.toString() || '');
 
+  // Toggle for showing the base nutrition edit form
+  const [showBaseNutrition, setShowBaseNutrition] = useState(!initialFood?.macrosPerUnit);
+
   // What the user actually ate
   const [amountEaten, setAmountEaten] = useState<string>(initialFood?.amount?.toString() || '1');
 
@@ -87,39 +90,59 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
               />
             </div>
 
-            {/* Nutrition Label Section */}
+            {/* What you ate section */}
+            <div className="bg-tactical-900 border border-tactical-700 rounded-xl p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
+              <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-3">
+                {initialFood?.macrosPerUnit ? 'How much did you eat?' : '2. How much did you eat?'}
+              </h3>
+              
+              <div className="flex items-center gap-0">
+                <div className="flex-1 flex items-stretch">
+                  <input 
+                    type="number" min="0" step="0.1" required
+                    value={amountEaten} onChange={e => setAmountEaten(e.target.value)}
+                    className="w-1/2 bg-tactical-800 border border-tactical-600 rounded-l-lg px-4 py-3 text-white text-lg font-bold outline-none focus:border-neon-blue focus:z-10"
+                    placeholder="Amount"
+                  />
+                  <select 
+                    value={labelServingUnit} onChange={e => setLabelServingUnit(e.target.value)}
+                    className="w-1/2 bg-tactical-700 border-y border-r border-tactical-600 rounded-r-lg px-3 py-3 text-gray-200 font-rajdhani font-bold outline-none appearance-none focus:border-neon-blue focus:z-10"
+                  >
+                    <option value="serving">serving</option>
+                    <option value="g">grams (g)</option>
+                    <option value="ml">milliliters (ml)</option>
+                    <option value="oz">ounces (oz)</option>
+                    <option value="cup">cup</option>
+                    <option value="tbsp">tablespoon (tbsp)</option>
+                    <option value="tsp">teaspoon (tsp)</option>
+                    <option value="piece">piece</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Nutrition Label Section (Editable/Hidden) */}
             <div className="bg-tactical-900 border border-tactical-700 rounded-xl p-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-neon-gold" />
               
-              {initialFood?.macrosPerUnit ? (
-                <>
-                  <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-2">Base Nutrition Info</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-gray-300 text-sm font-bold">1 {labelServingUnit}</span>
-                    <span className="text-gray-500 text-sm">contains:</span>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-neon-red font-bold uppercase">Cal</span>
-                      <span className="text-white font-bold">{Math.round(parseFloat(labelCalories) || 0)}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-neon-blue font-bold uppercase">Pro</span>
-                      <span className="text-white font-bold">{Math.round(parseFloat(labelProtein) || 0)}g</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-neon-gold font-bold uppercase">Carb</span>
-                      <span className="text-white font-bold">{Math.round(parseFloat(labelCarbs) || 0)}g</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-neon-purple font-bold uppercase">Fat</span>
-                      <span className="text-white font-bold">{Math.round(parseFloat(labelFat) || 0)}g</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-3">1. Nutrition Label</h3>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider">
+                  {initialFood?.macrosPerUnit ? 'Base Nutrition Info' : '1. Nutrition Label'}
+                </h3>
+                {initialFood?.macrosPerUnit && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowBaseNutrition(!showBaseNutrition)}
+                    className="text-xs text-neon-gold hover:text-white transition-colors"
+                  >
+                    {showBaseNutrition ? 'Hide' : 'Edit'}
+                  </button>
+                )}
+              </div>
+              
+              {showBaseNutrition ? (
+                <div className="animate-in fade-in duration-200">
                   <p className="text-xs text-gray-400 mb-4 font-inter leading-relaxed">
                     Enter the nutrition facts exactly as they appear on the package.
                   </p>
@@ -136,19 +159,9 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
                     </div>
                     <div>
                       <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Unit</label>
-                      <select 
-                        value={labelServingUnit} onChange={e => setLabelServingUnit(e.target.value)}
-                        className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none appearance-none"
-                      >
-                        <option value="serving">serving</option>
-                        <option value="g">grams (g)</option>
-                        <option value="ml">milliliters (ml)</option>
-                        <option value="oz">ounces (oz)</option>
-                        <option value="cup">cup</option>
-                        <option value="tbsp">tablespoon (tbsp)</option>
-                        <option value="tsp">teaspoon (tsp)</option>
-                        <option value="piece">piece</option>
-                      </select>
+                      <div className="bg-tactical-800 border border-tactical-600 rounded-lg px-3 py-2 text-gray-400 font-rajdhani">
+                        {labelServingUnit}
+                      </div>
                     </div>
                   </div>
 
@@ -170,32 +183,27 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
                       <input type="number" value={labelFat} onChange={e => setLabelFat(e.target.value)} className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-2 py-2 text-white text-sm outline-none" />
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* What you ate section */}
-            <div className="bg-tactical-900 border border-tactical-700 rounded-xl p-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
-              <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-3">
-                {initialFood?.macrosPerUnit ? 'How much did you eat?' : '2. How much did you eat?'}
-              </h3>
-              
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Amount Eaten</label>
-                  <div className="flex items-center">
-                    <input 
-                      type="number" min="0" step="0.1" required
-                      value={amountEaten} onChange={e => setAmountEaten(e.target.value)}
-                      className="w-full bg-tactical-800 border border-tactical-600 rounded-l-lg px-4 py-3 text-white text-lg font-bold outline-none focus:border-neon-blue"
-                    />
-                    <div className="bg-tactical-700 border border-tactical-600 border-l-0 rounded-r-lg px-4 py-3 text-gray-300 font-rajdhani font-bold">
-                      {labelServingUnit}
-                    </div>
+                </div>
+              ) : (
+                <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neon-red font-bold uppercase">Cal</span>
+                    <span className="text-white font-bold">{Math.round(parseFloat(labelCalories) || 0)}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neon-blue font-bold uppercase">Pro</span>
+                    <span className="text-white font-bold">{Math.round(parseFloat(labelProtein) || 0)}g</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neon-gold font-bold uppercase">Carb</span>
+                    <span className="text-white font-bold">{Math.round(parseFloat(labelCarbs) || 0)}g</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-neon-purple font-bold uppercase">Fat</span>
+                    <span className="text-white font-bold">{Math.round(parseFloat(labelFat) || 0)}g</span>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Live Calculation Result */}
