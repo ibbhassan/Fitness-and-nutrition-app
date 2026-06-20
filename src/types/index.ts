@@ -82,6 +82,15 @@ export interface FoodItem {
   };
 }
 
+export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+
+export interface FoodLogEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  mealType: MealType;
+  food: FoodItem;
+}
+
 export interface Meal {
   id: string;
   name: string;

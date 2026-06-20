@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem } from '../types';
+import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem, FoodLogEntry, Meal } from '../types';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 
 interface UserContextType {
@@ -38,6 +38,11 @@ interface UserContextType {
   setActiveExercises: React.Dispatch<React.SetStateAction<ActiveExercise[]>>;
   recentFoods: FoodItem[];
   favoriteFoods: FoodItem[];
+  foodLogs: FoodLogEntry[];
+  savedMeals: Meal[];
+  addFoodLog: (log: FoodLogEntry) => void;
+  removeFoodLog: (id: string) => void;
+  saveMeal: (meal: Meal) => void;
   logFood: (food: FoodItem) => void;
   toggleFavoriteFood: (food: FoodItem) => void;
 }
@@ -67,7 +72,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       workoutHistory: [] as WorkoutLog[],
       manualQuestCompletions: {} as Record<string, boolean>,
       recentFoods: [] as FoodItem[],
-      favoriteFoods: [] as FoodItem[]
+      favoriteFoods: [] as FoodItem[],
+      foodLogs: [] as FoodLogEntry[],
+      savedMeals: [] as Meal[]
     };
   };
 
@@ -91,8 +98,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
-
-
+  const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>(initialState.foodLogs || []);
+  const [savedMeals, setSavedMeals] = useState<Meal[]>(initialState.savedMeals || []);
 
   // Sync to local storage whenever state changes
   useEffect(() => {
@@ -114,10 +121,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       activeWorkout,
       activeExercises,
       recentFoods,
-      favoriteFoods
+      favoriteFoods,
+      foodLogs,
+      savedMeals
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, healthSyncEnabled, dailySteps, activeWorkout, activeExercises, recentFoods, favoriteFoods]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, healthSyncEnabled, dailySteps, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
   const login = (username: string) => {
     setUser({ username });
@@ -150,22 +159,47 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
-  const addNutritionMacros = (macros: { calories: number; protein: number; carbs: number; fat: number; }) => {
-    setNutrition(prev => ({
-      calories: { ...prev.calories, current: prev.calories.current + macros.calories },
-      protein: { ...prev.protein, current: prev.protein.current + macros.protein },
-      carbs: { ...prev.carbs, current: prev.carbs.current + macros.carbs },
-      fat: { ...prev.fat, current: prev.fat.current + macros.fat },
-    }));
+  const addFoodLog = (log: FoodLogEntry) => {
+    setFoodLogs(prev => [...prev, log]);
+    // Also add to recent foods
+    setRecentFoods(prev => {
+      const filtered = prev.filter(f => f.name !== log.food.name);
+      return [log.food, ...filtered].slice(0, 50);
+    });
   };
 
-  const logFood = (food: FoodItem) => {
-    addNutritionMacros({
-      calories: food.macrosPerUnit.calories * food.amount,
-      protein: food.macrosPerUnit.protein * food.amount,
-      carbs: food.macrosPerUnit.carbs * food.amount,
-      fat: food.macrosPerUnit.fat * food.amount
+  const removeFoodLog = (id: string) => {
+    setFoodLogs(prev => prev.filter(log => log.id !== id));
+  };
+
+  const saveMeal = (meal: Meal) => {
+    setSavedMeals(prev => [...prev, meal]);
+  };
+
+  // Dynamically calculate today's macros
+  const getTodayMacros = (): DailyNutrition => {
+    const today = new Date().toISOString().split('T')[0];
+    const todaysLogs = foodLogs.filter(log => log.date === today);
+    
+    let c = 0, p = 0, ca = 0, f = 0;
+    todaysLogs.forEach(log => {
+      c += log.food.macrosPerUnit.calories * log.food.amount;
+      p += log.food.macrosPerUnit.protein * log.food.amount;
+      ca += log.food.macrosPerUnit.carbs * log.food.amount;
+      f += log.food.macrosPerUnit.fat * log.food.amount;
     });
+
+    return {
+      calories: { current: Math.round(c), target: nutrition.calories.target },
+      protein: { current: Math.round(p), target: nutrition.protein.target },
+      carbs: { current: Math.round(ca), target: nutrition.carbs.target },
+      fat: { current: Math.round(f), target: nutrition.fat.target },
+    };
+  };
+
+  const computedNutrition = getTodayMacros();
+
+  const logFood = (food: FoodItem) => {
     setRecentFoods(prev => {
       const filtered = prev.filter(f => f.id !== food.id && f.name !== food.name);
       return [{ ...food, timestamp: Date.now() }, ...filtered].slice(0, 30); // keep last 30
@@ -286,14 +320,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       hasCompletedOnboarding,
       completeOnboarding,
       profile,
-      nutrition,
+      nutrition: computedNutrition,
       targetWorkoutsPerWeek,
       scheduledWorkoutDays,
       workoutSplit,
       biometrics,
       weightHistory,
       logWeight,
-      addNutritionMacros,
+      addNutritionMacros: () => {},
       customPresets,
       saveCustomPreset,
       updateAvatar,
@@ -314,6 +348,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setActiveExercises,
       recentFoods,
       favoriteFoods,
+      foodLogs,
+      savedMeals,
+      addFoodLog,
+      removeFoodLog,
+      saveMeal,
       logFood,
       toggleFavoriteFood
     }}>

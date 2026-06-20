@@ -605,8 +605,9 @@ export const WorkoutLogger: React.FC = () => {
               </div>
 
               <button 
+                type="button"
                 onClick={closeCelebration}
-                className="w-full bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors"
+                className="relative z-10 w-full bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Continue Grind
               </button>

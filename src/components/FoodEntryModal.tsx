@@ -7,10 +7,11 @@ import { clsx } from 'clsx';
 interface FoodEntryModalProps {
   onClose: () => void;
   initialFood?: Partial<FoodItem>;
+  onSave?: (food: FoodItem) => void;
 }
 
-export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood }) => {
-  const { logFood, toggleFavoriteFood } = useUser();
+export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood, onSave }) => {
+  const { toggleFavoriteFood } = useUser();
   const [name, setName] = useState(initialFood?.name || '');
   const [amount, setAmount] = useState<string>(initialFood?.amount?.toString() || '1');
   const [unit, setUnit] = useState(initialFood?.unit || 'serving');
@@ -40,7 +41,10 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
       }
     };
 
-    logFood(foodItem);
+    if (onSave) {
+      onSave(foodItem);
+    }
+    
     if (saveFavorite) {
       toggleFavoriteFood(foodItem);
     }
