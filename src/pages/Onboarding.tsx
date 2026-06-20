@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Target, Flame, ChevronRight, Activity, Zap, Droplet, Wheat } from 'lucide-react';
+import { Target, Flame, ChevronRight, ChevronLeft, Activity, Zap, Droplet, Wheat } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { DailyNutrition, Biometrics } from '../types';
 
@@ -95,7 +95,15 @@ export const Onboarding: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-6 text-white font-inter">
-      <div className="max-w-md w-full esports-panel p-8 fade-in">
+      <div className="max-w-md w-full esports-panel p-8 fade-in relative">
+        {step > 1 && (
+          <button 
+            onClick={() => setStep(prev => prev === 5 ? 3 : prev - 1)}
+            className="absolute top-8 left-8 text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
         <div className="flex justify-center mb-8">
           <span className="text-3xl font-rajdhani font-bold tracking-widest text-white uppercase">
             Ev<span className="text-neon-blue">oke</span>
@@ -117,7 +125,7 @@ export const Onboarding: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Target className={goal === 'Cut' ? "text-neon-blue" : "text-gray-500"} />
                 <div className="text-left">
-                  <h3 className="font-bold text-lg font-rajdhani uppercase tracking-wider">The Cut</h3>
+                  <h3 className="font-bold text-lg font-rajdhani uppercase tracking-wider">Cut</h3>
                   <p className="text-xs text-gray-400">Lose fat, maintain muscle. Consistency focus.</p>
                 </div>
               </div>
@@ -133,7 +141,7 @@ export const Onboarding: React.FC = () => {
               <div className="flex items-center gap-4">
                 <Activity className={goal === 'Bulk' ? "text-neon-gold" : "text-gray-500"} />
                 <div className="text-left">
-                  <h3 className="font-bold text-lg font-rajdhani uppercase tracking-wider">The Bulk</h3>
+                  <h3 className="font-bold text-lg font-rajdhani uppercase tracking-wider">Bulk</h3>
                   <p className="text-xs text-gray-400">Build mass, push PRs. Progression focus.</p>
                 </div>
               </div>
