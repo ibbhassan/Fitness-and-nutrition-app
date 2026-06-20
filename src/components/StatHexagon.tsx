@@ -22,7 +22,7 @@ export const StatHexagon: React.FC<StatHexagonProps> = ({ stats, hidePanel = fal
 
   const content = (
     <ResponsiveContainer width="100%" height="100%">
-      <RadarChart cx="50%" cy="50%" outerRadius="55%" data={data}>
+      <RadarChart cx="50%" cy="50%" outerRadius="65%" data={data}>
         <PolarGrid stroke="#2a2a2a" />
         <PolarAngleAxis 
           dataKey="subject" 
