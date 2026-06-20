@@ -29,6 +29,7 @@ interface UserContextType {
   healthSyncEnabled: boolean;
   toggleHealthSync: () => void;
   dailySteps: number;
+  setDailySteps: (steps: number) => void;
   addSteps: (amount: number) => void;
   activeWorkout: { id: string, name: string } | null;
   activeExercises: ActiveExercise[];
@@ -91,15 +92,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
 
-  // Mock live step updating if health sync is enabled
-  useEffect(() => {
-    if (healthSyncEnabled) {
-      const interval = setInterval(() => {
-        setDailySteps((prev: number) => prev + Math.floor(Math.random() * 5) + 1);
-      }, 5000); // Add 1-5 steps every 5 seconds for visual effect
-      return () => clearInterval(interval);
-    }
-  }, [healthSyncEnabled]);
+
 
   // Sync to local storage whenever state changes
   useEffect(() => {
@@ -312,6 +305,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       healthSyncEnabled,
       toggleHealthSync: () => setHealthSyncEnabled((p: boolean) => !p),
       dailySteps,
+      setDailySteps,
       addSteps: (amount: number) => setDailySteps((prev: number) => prev + amount),
       activeWorkout,
       activeExercises,

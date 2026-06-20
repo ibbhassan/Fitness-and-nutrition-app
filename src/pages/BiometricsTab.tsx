@@ -3,14 +3,24 @@ import { Scale, HeartPulse, TrendingDown } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 export const BiometricsTab: React.FC = () => {
-  const { weightHistory, logWeight, biometrics } = useUser();
+  const { weightHistory, logWeight, biometrics, dailySteps, setDailySteps } = useUser();
   const todayDateStr = new Date().toISOString().split('T')[0];
   const todayLog = weightHistory.find(w => w.date === todayDateStr);
   const [todaysWeightInput, setTodaysWeightInput] = useState(todayLog ? todayLog.weightLbs.toString() : '');
+  const [stepsInput, setStepsInput] = useState(dailySteps ? dailySteps.toString() : '');
+  const [stepsLogged, setStepsLogged] = useState(false);
 
   const handleLogWeight = () => {
     if (todaysWeightInput) {
       logWeight(Number(todaysWeightInput));
+    }
+  };
+
+  const handleLogSteps = () => {
+    if (stepsInput) {
+      setDailySteps(Number(stepsInput));
+      setStepsLogged(true);
+      setTimeout(() => setStepsLogged(false), 3000);
     }
   };
 
@@ -65,6 +75,37 @@ export const BiometricsTab: React.FC = () => {
             <p className="text-xs text-gray-500 font-inter z-10 text-center">
               Based on {weightHistory.length} entries.
             </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-tactical-900 border border-tactical-700 p-6 rounded-lg flex flex-col justify-between">
+            <div>
+              <h3 className="text-xl font-rajdhani font-bold text-white flex items-center gap-2 mb-2 uppercase tracking-wider">
+                <HeartPulse className="w-5 h-5 text-neon-blue" /> Daily Steps
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">Web apps cannot directly sync with Apple Health. Enter your daily steps manually here.</p>
+            </div>
+            <div className="flex gap-2">
+              <input 
+                type="number" 
+                placeholder="Steps"
+                value={stepsInput}
+                onChange={(e) => setStepsInput(e.target.value)}
+                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 font-bold focus:border-neon-blue outline-none transition-all"
+              />
+              <button 
+                onClick={handleLogSteps}
+                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+              >
+                Log
+              </button>
+            </div>
+            {stepsLogged && (
+              <p className="mt-4 text-xs font-inter text-neon-blue flex items-center gap-1">
+                ✓ Successfully updated steps.
+              </p>
+            )}
           </div>
         </div>
       </div>
