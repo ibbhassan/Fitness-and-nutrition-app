@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Save, Star } from 'lucide-react';
+import { Save, Star, Calculator } from 'lucide-react';
 import { useUser } from '../context/UserContext';
-import type { FoodItem } from '../types';
 import { clsx } from 'clsx';
+import type { FoodItem } from '../types';
 
 interface FoodEntryModalProps {
   onClose: () => void;
@@ -15,156 +15,208 @@ interface FoodEntryModalProps {
 export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood, onSave, onDelete, isEditing }) => {
   const { toggleFavoriteFood } = useUser();
   const [name, setName] = useState(initialFood?.name || '');
-  const [amount, setAmount] = useState<string>(initialFood?.amount?.toString() || '1');
-  const [unit, setUnit] = useState(initialFood?.unit || 'serving');
-  const [calories, setCalories] = useState<string>(initialFood?.macrosPerUnit?.calories?.toString() || '');
-  const [protein, setProtein] = useState<string>(initialFood?.macrosPerUnit?.protein?.toString() || '');
-  const [carbs, setCarbs] = useState<string>(initialFood?.macrosPerUnit?.carbs?.toString() || '');
-  const [fat, setFat] = useState<string>(initialFood?.macrosPerUnit?.fat?.toString() || '');
   const [saveFavorite, setSaveFavorite] = useState(false);
+
+  // We set label serving amount to 1 by default. If editing, we just use 1.
+  const [labelServingAmount, setLabelServingAmount] = useState<string>('1');
+  const [labelServingUnit, setLabelServingUnit] = useState<string>(initialFood?.unit || 'serving');
+  
+  // The macros per the label's serving size
+  const [labelCalories, setLabelCalories] = useState<string>(initialFood?.macrosPerUnit?.calories?.toString() || '');
+  const [labelProtein, setLabelProtein] = useState<string>(initialFood?.macrosPerUnit?.protein?.toString() || '');
+  const [labelCarbs, setLabelCarbs] = useState<string>(initialFood?.macrosPerUnit?.carbs?.toString() || '');
+  const [labelFat, setLabelFat] = useState<string>(initialFood?.macrosPerUnit?.fat?.toString() || '');
+
+  // What the user actually ate
+  const [amountEaten, setAmountEaten] = useState<string>(initialFood?.amount?.toString() || '1');
+
+  // Calculate live totals for display
+  const parsedLabelAmount = parseFloat(labelServingAmount) || 1;
+  const parsedEaten = parseFloat(amountEaten) || 0;
+  const ratio = parsedEaten / parsedLabelAmount;
+
+  const liveCalories = Math.round((parseFloat(labelCalories) || 0) * ratio);
+  const liveProtein = Math.round((parseFloat(labelProtein) || 0) * ratio);
+  const liveCarbs = Math.round((parseFloat(labelCarbs) || 0) * ratio);
+  const liveFat = Math.round((parseFloat(labelFat) || 0) * ratio);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !calories) return;
-
-    const numAmount = parseFloat(amount) || 1;
     
-    const foodItem: FoodItem = {
-      id: initialFood?.id || `manual-${Date.now()}`,
+    // Normalize macros down to 1 single unit for storage
+    const unitRatio = 1 / parsedLabelAmount;
+
+    const food: FoodItem = {
+      id: initialFood?.id || String(Date.now()),
       name,
-      amount: numAmount,
-      unit,
-      barcode: initialFood?.barcode,
+      amount: parsedEaten,
+      unit: labelServingUnit,
       macrosPerUnit: {
-        calories: parseFloat(calories) || 0,
-        protein: parseFloat(protein) || 0,
-        carbs: parseFloat(carbs) || 0,
-        fat: parseFloat(fat) || 0,
+        calories: (parseFloat(labelCalories) || 0) * unitRatio,
+        protein: (parseFloat(labelProtein) || 0) * unitRatio,
+        carbs: (parseFloat(labelCarbs) || 0) * unitRatio,
+        fat: (parseFloat(labelFat) || 0) * unitRatio,
       }
     };
-
-    if (onSave) {
-      onSave(foodItem);
-    }
     
-    if (saveFavorite) {
-      toggleFavoriteFood(foodItem);
-    }
-    
-    onClose();
+    if (saveFavorite) toggleFavoriteFood(food);
+    if (onSave) onSave(food);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] px-4 fade-in">
-      <div className="bg-tactical-800 border border-tactical-600 rounded-xl w-full max-w-md relative overflow-hidden">
-        {/* Header */}
-        <div className="bg-tactical-900 p-4 flex items-center justify-between border-b border-tactical-700">
-          <h3 className="esports-heading text-xl text-white">Log Food</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-tactical-900/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-tactical-800 border-2 border-tactical-600 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="p-4 border-b border-tactical-700 flex justify-between items-center bg-tactical-900 shrink-0">
+          <h2 className="font-rajdhani font-bold text-xl text-white uppercase tracking-wider">
+            {isEditing ? 'Edit Log' : 'Manual Entry'}
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-2">✕</button>
+        </div>
+
+        <div className="p-4 overflow-y-auto">
+          <form id="food-entry-form" onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Food Name</label>
+              <input 
+                type="text" 
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:ring-1 focus:ring-neon-blue outline-none"
+                placeholder="e.g., Olive Oil"
+              />
+            </div>
+
+            {/* Nutrition Label Section */}
+            <div className="bg-tactical-900 border border-tactical-700 rounded-xl p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-neon-gold" />
+              <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-3">1. Nutrition Label</h3>
+              <p className="text-xs text-gray-400 mb-4 font-inter leading-relaxed">
+                Enter the nutrition facts exactly as they appear on the package.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Serving Size</label>
+                  <input 
+                    type="number" min="0.1" step="0.1" required
+                    value={labelServingAmount} onChange={e => setLabelServingAmount(e.target.value)}
+                    className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none"
+                    placeholder="e.g., 15"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Unit</label>
+                  <select 
+                    value={labelServingUnit} onChange={e => setLabelServingUnit(e.target.value)}
+                    className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none appearance-none"
+                  >
+                    <option value="serving">serving</option>
+                    <option value="g">grams (g)</option>
+                    <option value="ml">milliliters (ml)</option>
+                    <option value="oz">ounces (oz)</option>
+                    <option value="cup">cup</option>
+                    <option value="tbsp">tablespoon (tbsp)</option>
+                    <option value="tsp">teaspoon (tsp)</option>
+                    <option value="piece">piece</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                <div>
+                  <div className="text-[10px] text-neon-red font-bold uppercase mb-1">Cal</div>
+                  <input type="number" required value={labelCalories} onChange={e => setLabelCalories(e.target.value)} className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-2 py-2 text-white text-sm outline-none" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-neon-blue font-bold uppercase mb-1">Pro (g)</div>
+                  <input type="number" value={labelProtein} onChange={e => setLabelProtein(e.target.value)} className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-2 py-2 text-white text-sm outline-none" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-neon-gold font-bold uppercase mb-1">Carb (g)</div>
+                  <input type="number" value={labelCarbs} onChange={e => setLabelCarbs(e.target.value)} className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-2 py-2 text-white text-sm outline-none" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-neon-purple font-bold uppercase mb-1">Fat (g)</div>
+                  <input type="number" value={labelFat} onChange={e => setLabelFat(e.target.value)} className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-2 py-2 text-white text-sm outline-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* What you ate section */}
+            <div className="bg-tactical-900 border border-tactical-700 rounded-xl p-4 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
+              <h3 className="font-rajdhani font-bold text-white uppercase tracking-wider mb-3">2. How much did you eat?</h3>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Amount Eaten</label>
+                  <div className="flex items-center">
+                    <input 
+                      type="number" min="0" step="0.1" required
+                      value={amountEaten} onChange={e => setAmountEaten(e.target.value)}
+                      className="w-full bg-tactical-800 border border-tactical-600 rounded-l-lg px-4 py-3 text-white text-lg font-bold outline-none focus:border-neon-blue"
+                    />
+                    <div className="bg-tactical-700 border border-tactical-600 border-l-0 rounded-r-lg px-4 py-3 text-gray-300 font-rajdhani font-bold">
+                      {labelServingUnit}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Calculation Result */}
+            <div className="bg-tactical-800 border border-tactical-600 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-neon-green" />
+                <span className="text-xs font-rajdhani uppercase tracking-wider text-gray-400">Total Logging:</span>
+              </div>
+              <div className="font-rajdhani font-bold text-white tracking-wider flex items-center gap-2">
+                <span className="text-neon-red">{liveCalories} kcal</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-blue">{liveProtein} P</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-gold">{liveCarbs} C</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-purple">{liveFat} F</span>
+              </div>
+            </div>
+
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setSaveFavorite(!saveFavorite)}
+                className="flex items-center gap-2 text-sm text-gray-300 hover:text-white"
+              >
+                <div className={clsx("w-5 h-5 rounded flex items-center justify-center border", saveFavorite ? "bg-neon-gold border-neon-gold" : "border-gray-500")}>
+                  {saveFavorite && <Star className="w-3 h-3 text-tactical-900 fill-current" />}
+                </div>
+                Save to Favorites
+              </button>
+            )}
+          </form>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-tactical-700 bg-tactical-900 shrink-0 flex gap-3">
+          {isEditing && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="bg-tactical-800 border border-neon-red text-neon-red font-bold font-rajdhani text-lg py-3 px-6 rounded-lg hover:bg-neon-red/10 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+          <button
+            type="submit"
+            form="food-entry-form"
+            className="flex-1 bg-neon-blue text-tactical-900 font-bold font-rajdhani text-lg py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[#00d0ff] transition-colors"
+          >
+            <Save className="w-5 h-5" /> {isEditing ? 'Save Changes' : 'Log Food'}
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Food Name</label>
-            <input 
-              type="text" 
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white focus:border-neon-blue focus:ring-1 focus:ring-neon-blue outline-none"
-              placeholder="e.g., Oatmeal"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Amount</label>
-              <input 
-                type="number" 
-                min="0.1"
-                step="0.1"
-                required
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Unit</label>
-              <select 
-                value={unit}
-                onChange={e => setUnit(e.target.value)}
-                className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white outline-none appearance-none"
-              >
-                <option value="serving">serving</option>
-                <option value="g">grams (g)</option>
-                <option value="kg">kilograms (kg)</option>
-                <option value="oz">ounces (oz)</option>
-                <option value="lbs">pounds (lbs)</option>
-                <option value="ml">milliliters (ml)</option>
-                <option value="L">liters (L)</option>
-                <option value="cup">cup</option>
-                <option value="tbsp">tablespoon (tbsp)</option>
-                <option value="tsp">teaspoon (tsp)</option>
-                <option value="piece">piece</option>
-                <option value="slice">slice</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-2">Macros (Per {unit || 'unit'})</label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs text-neon-red mb-1">Calories (kcal)*</div>
-                <input type="number" required value={calories} onChange={e => setCalories(e.target.value)} className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none" />
-              </div>
-              <div>
-                <div className="text-xs text-neon-blue mb-1">Protein (g)</div>
-                <input type="number" value={protein} onChange={e => setProtein(e.target.value)} className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none" />
-              </div>
-              <div>
-                <div className="text-xs text-neon-gold mb-1">Carbs (g)</div>
-                <input type="number" value={carbs} onChange={e => setCarbs(e.target.value)} className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none" />
-              </div>
-              <div>
-                <div className="text-xs text-neon-purple mb-1">Fat (g)</div>
-                <input type="number" value={fat} onChange={e => setFat(e.target.value)} className="w-full bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none" />
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSaveFavorite(!saveFavorite)}
-            className="flex items-center gap-2 text-sm text-gray-300 mt-4 hover:text-white"
-          >
-            <div className={clsx("w-5 h-5 rounded flex items-center justify-center border", saveFavorite ? "bg-neon-gold border-neon-gold" : "border-gray-500")}>
-              {saveFavorite && <Star className="w-3 h-3 text-tactical-900 fill-current" />}
-            </div>
-            Save to Favorites
-          </button>
-
-          <div className="flex gap-3 mt-6">
-            {isEditing && onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                className="bg-tactical-900 border border-neon-red text-neon-red font-bold font-rajdhani text-lg py-3 px-6 rounded-lg hover:bg-neon-red/10 transition-colors"
-              >
-                Delete
-              </button>
-            )}
-            <button
-              type="submit"
-              className="flex-1 bg-neon-blue text-tactical-900 font-bold font-rajdhani text-lg py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[#00d0ff] transition-colors"
-            >
-              <Save className="w-5 h-5" /> {isEditing ? 'Save Changes' : 'Log Food'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
