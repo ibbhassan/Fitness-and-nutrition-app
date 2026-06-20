@@ -175,9 +175,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     ));
   };
 
-  const deleteFoodLog = (id: string) => {
-    setFoodLogs(prev => prev.filter(log => log.id !== id));
-  };
 
   const removeFoodLog = (id: string) => {
     setFoodLogs(prev => prev.filter(log => log.id !== id));
