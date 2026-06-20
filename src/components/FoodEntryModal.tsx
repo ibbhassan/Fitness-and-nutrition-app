@@ -67,8 +67,8 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-tactical-900/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-tactical-800 border-2 border-tactical-600 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-tactical-800 flex flex-col animate-in slide-in-from-bottom-full duration-200 sm:items-center sm:bg-black/80 sm:p-4">
+      <div className="w-full h-full sm:max-w-md sm:h-[85vh] sm:rounded-2xl flex flex-col bg-tactical-800 overflow-hidden relative pb-safe sm:pb-0 shadow-2xl">
         <div className="p-4 border-b border-tactical-700 flex justify-between items-center bg-tactical-900 shrink-0">
           <h2 className="font-rajdhani font-bold text-xl text-white uppercase tracking-wider">
             {isEditing ? 'Edit Log' : 'Manual Entry'}
