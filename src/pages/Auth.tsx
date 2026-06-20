@@ -63,6 +63,18 @@ export const Auth: React.FC = () => {
             />
           </div>
 
+          <div className="flex items-center gap-2 pt-2">
+            <input 
+              type="checkbox" 
+              id="keepSignedIn" 
+              className="w-4 h-4 rounded bg-tactical-800 border border-tactical-600 text-neon-blue focus:ring-neon-blue focus:ring-offset-tactical-900 accent-neon-blue"
+              defaultChecked
+            />
+            <label htmlFor="keepSignedIn" className="text-sm font-inter text-gray-400 cursor-pointer hover:text-white transition-colors">
+              Keep me signed in
+            </label>
+          </div>
+
           <button 
             type="submit"
             className="w-full bg-neon-blue text-tactical-900 py-4 rounded font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#00d0dd] transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] mt-4"
