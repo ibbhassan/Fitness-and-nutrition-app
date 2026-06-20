@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Settings, Medal, Shield, Target, Flame, Activity, X } from 'lucide-react';
+import { Settings, Medal, Shield, Target, Flame, Activity, X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { StatHexagon } from '../components/StatHexagon';
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
