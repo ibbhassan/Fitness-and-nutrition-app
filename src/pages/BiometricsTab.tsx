@@ -49,11 +49,11 @@ export const BiometricsTab: React.FC = () => {
                 placeholder="Lbs"
                 value={todaysWeightInput}
                 onChange={(e) => setTodaysWeightInput(e.target.value)}
-                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 font-bold focus:border-neon-blue outline-none transition-all"
+                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 min-w-0 font-bold focus:border-neon-blue outline-none transition-all w-full"
               />
               <button 
                 onClick={handleLogWeight}
-                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+                className="bg-neon-blue text-tactical-900 px-4 shrink-0 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
               >
                 Log
               </button>
@@ -92,11 +92,11 @@ export const BiometricsTab: React.FC = () => {
                 placeholder="Steps"
                 value={stepsInput}
                 onChange={(e) => setStepsInput(e.target.value)}
-                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 font-bold focus:border-neon-blue outline-none transition-all"
+                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 min-w-0 font-bold focus:border-neon-blue outline-none transition-all w-full"
               />
               <button 
                 onClick={handleLogSteps}
-                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+                className="bg-neon-blue text-tactical-900 px-4 shrink-0 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
               >
                 Log
               </button>
