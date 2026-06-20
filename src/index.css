@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tactical-900: #0a0a0a;
+  --color-tactical-800: #121212;
+  --color-tactical-700: #1a1a1a;
+  --color-tactical-600: #2a2a2a;
+  
+  --color-neon-blue: #00f0ff;
+  --color-neon-purple: #b026ff;
+  --color-neon-green: #39ff14;
+  --color-neon-red: #ff003c;
+  --color-neon-gold: #ffd700;
+  
+  --font-rajdhani: "Rajdhani", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-tactical-900 text-gray-100 font-inter antialiased min-h-screen;
+}
+
+.esports-panel {
+  @apply bg-tactical-800 border border-tactical-600 rounded-lg shadow-lg;
+}
+
+.esports-heading {
+  @apply font-rajdhani font-bold tracking-wider uppercase;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
