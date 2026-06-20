@@ -34,6 +34,18 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
     return foodLogs.filter(log => log.date === yesterdayStr && log.mealType === mealType);
   }, [foodLogs, mealType]);
 
+  const mealMacros = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return foodLogs
+      .filter(log => log.date === today && log.mealType === mealType)
+      .reduce((acc, log) => ({
+        calories: acc.calories + (log.food.macrosPerUnit.calories * log.food.amount),
+        protein: acc.protein + (log.food.macrosPerUnit.protein * log.food.amount),
+        carbs: acc.carbs + (log.food.macrosPerUnit.carbs * log.food.amount),
+        fat: acc.fat + (log.food.macrosPerUnit.fat * log.food.amount),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  }, [foodLogs, mealType]);
+
   const handleSaveFood = (food: FoodItem) => {
     const log: FoodLogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -122,6 +134,15 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
         <div className="bg-tactical-900 p-4 flex items-center justify-between border-b border-tactical-700 shrink-0">
           <div>
             <h3 className="esports-heading text-xl text-white">Log {mealType}</h3>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs mt-1">
+              <span className="text-neon-red font-bold">{Math.round(mealMacros.calories)} kcal</span>
+              <span className="text-tactical-600">|</span>
+              <span className="text-neon-blue">{Math.round(mealMacros.protein)}g P</span>
+              <span className="text-tactical-600">|</span>
+              <span className="text-neon-gold">{Math.round(mealMacros.carbs)}g C</span>
+              <span className="text-tactical-600">|</span>
+              <span className="text-neon-purple">{Math.round(mealMacros.fat)}g F</span>
+            </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-tactical-800">
             <X className="w-5 h-5" />

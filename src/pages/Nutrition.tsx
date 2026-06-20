@@ -17,10 +17,15 @@ export const Nutrition: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
   const todaysLogs = foodLogs.filter(log => log.date === today);
 
-  const getMealTotal = (meal: MealType) => {
+  const getMealMacros = (meal: MealType) => {
     return todaysLogs
       .filter(log => log.mealType === meal)
-      .reduce((sum, log) => sum + (log.food.macrosPerUnit.calories * log.food.amount), 0);
+      .reduce((acc, log) => ({
+        calories: acc.calories + (log.food.macrosPerUnit.calories * log.food.amount),
+        protein: acc.protein + (log.food.macrosPerUnit.protein * log.food.amount),
+        carbs: acc.carbs + (log.food.macrosPerUnit.carbs * log.food.amount),
+        fat: acc.fat + (log.food.macrosPerUnit.fat * log.food.amount),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
   const getMealLogs = (meal: MealType) => todaysLogs.filter(log => log.mealType === meal);
@@ -40,7 +45,7 @@ export const Nutrition: React.FC = () => {
   };
 
   const MealCard = ({ title, icon: Icon, colorClass }: { title: MealType; icon: any; colorClass: string }) => {
-    const totalCal = Math.round(getMealTotal(title));
+    const macros = getMealMacros(title);
     const logs = getMealLogs(title);
     
     return (
@@ -52,7 +57,15 @@ export const Nutrition: React.FC = () => {
             </div>
             <div>
               <h3 className="font-rajdhani font-bold text-white text-lg">{title}</h3>
-              <div className="text-xs text-gray-400">{totalCal} kcal</div>
+              <div className="flex items-center gap-2 text-xs mt-0.5">
+                <span className="text-neon-red font-bold">{Math.round(macros.calories)} kcal</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-blue">{Math.round(macros.protein)}g P</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-gold">{Math.round(macros.carbs)}g C</span>
+                <span className="text-tactical-600">|</span>
+                <span className="text-neon-purple">{Math.round(macros.fat)}g F</span>
+              </div>
             </div>
           </div>
           <button 
