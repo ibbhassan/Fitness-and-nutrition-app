@@ -35,7 +35,7 @@ export const Auth: React.FC = () => {
         
         <h2 className="esports-heading text-2xl mb-6 flex items-center gap-2 relative z-10">
           <Shield className="w-6 h-6 text-neon-gold" />
-          {isLogin ? 'System Login' : 'Create Operative'}
+          {isLogin ? 'System Login' : 'Create Account'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -67,7 +67,7 @@ export const Auth: React.FC = () => {
             type="submit"
             className="w-full bg-neon-blue text-tactical-900 py-4 rounded font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#00d0dd] transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] mt-4"
           >
-            {isLogin ? 'Initialize Session' : 'Register Operative'}
+            {isLogin ? 'Initialize Session' : 'Register'}
           </button>
         </form>
 
@@ -76,7 +76,7 @@ export const Auth: React.FC = () => {
             onClick={() => setIsLogin(!isLogin)}
             className="text-xs font-inter text-gray-400 hover:text-neon-blue transition-colors"
           >
-            {isLogin ? "Don't have an account? Create one." : "Already an operative? Login."}
+            {isLogin ? "Don't have an account? Create one." : "Already have an account? Login."}
           </button>
         </div>
       </div>
