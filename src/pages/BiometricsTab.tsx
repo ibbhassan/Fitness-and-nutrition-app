@@ -43,17 +43,17 @@ export const BiometricsTab: React.FC = () => {
               </h3>
               <p className="text-sm text-gray-400 mb-6">Tracking daily ensures our adaptive TDEE algorithm works accurately to adjust your macros over time.</p>
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[1fr_auto] gap-2">
               <input 
                 type="number" 
                 placeholder="Lbs"
                 value={todaysWeightInput}
                 onChange={(e) => setTodaysWeightInput(e.target.value)}
-                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 min-w-0 font-bold focus:border-neon-blue outline-none transition-all w-full"
+                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded font-bold focus:border-neon-blue outline-none transition-all w-full"
               />
               <button 
                 onClick={handleLogWeight}
-                className="bg-neon-blue text-tactical-900 px-4 shrink-0 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap"
               >
                 Log
               </button>
@@ -86,17 +86,17 @@ export const BiometricsTab: React.FC = () => {
               </h3>
               <p className="text-sm text-gray-400 mb-6">Web apps cannot directly sync with Apple Health. Enter your daily steps manually here.</p>
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[1fr_auto] gap-2">
               <input 
                 type="number" 
                 placeholder="Steps"
                 value={stepsInput}
                 onChange={(e) => setStepsInput(e.target.value)}
-                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded flex-1 min-w-0 font-bold focus:border-neon-blue outline-none transition-all w-full"
+                className="bg-tactical-800 border border-tactical-700 text-white p-3 rounded font-bold focus:border-neon-blue outline-none transition-all w-full"
               />
               <button 
                 onClick={handleLogSteps}
-                className="bg-neon-blue text-tactical-900 px-4 shrink-0 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]"
+                className="bg-neon-blue text-tactical-900 px-6 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] whitespace-nowrap"
               >
                 Log
               </button>
