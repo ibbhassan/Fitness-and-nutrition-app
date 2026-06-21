@@ -407,6 +407,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   </div>
                   
                   <div className="max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                    <button 
+                      onClick={() => {
+                        setIsQuickLogOpen(false);
+                        setActiveTab('nutrition');
+                      }}
+                      className="w-full flex items-center justify-between p-4 bg-neon-blue/10 border border-neon-blue rounded-lg hover:bg-neon-blue/20 transition-all text-left mb-1"
+                    >
+                      <div>
+                        <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Log New Meal</h3>
+                        <p className="text-xs text-gray-400 mt-1">Jump to the AI Logger or search</p>
+                      </div>
+                      <Plus className="w-5 h-5 text-neon-blue" />
+                    </button>
+
                     {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => {
                       const mealLogs = yesterdayLogs.filter(l => l.mealType === mealType);
                       return (
@@ -432,20 +446,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                         </button>
                       );
                     })}
-
-                    <button 
-                      onClick={() => {
-                        setIsQuickLogOpen(false);
-                        setActiveTab('nutrition');
-                      }}
-                      className="w-full flex items-center justify-between p-4 bg-neon-blue/10 border border-neon-blue rounded-lg hover:bg-neon-blue/20 transition-all text-left mt-4"
-                    >
-                      <div>
-                        <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Log New Meal</h3>
-                        <p className="text-xs text-gray-400 mt-1">Jump to the AI Logger or search</p>
-                      </div>
-                      <Plus className="w-5 h-5 text-neon-blue" />
-                    </button>
                   </div>
                   
                   <button onClick={() => setQuickLogMode('menu')} className="text-xs text-gray-500 hover:text-white mt-4 font-inter block w-full text-center">
