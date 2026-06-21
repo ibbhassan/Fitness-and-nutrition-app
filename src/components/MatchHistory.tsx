@@ -48,7 +48,12 @@ export const MatchHistory: React.FC = () => {
                   className="flex items-center p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
                 >
                   {/* Grade Column */}
-                  <div className="w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-6 shrink-0">
+                  <div className="w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-6 shrink-0 gap-1">
+                    {match.isPr && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
+                        <Trophy className="w-2.5 h-2.5" /> PR
+                      </span>
+                    )}
                     <span className={clsx("font-rajdhani font-bold text-5xl transition-transform group-hover:scale-110", getGradeColor(grade))}>
                       {grade}
                     </span>
@@ -56,13 +61,8 @@ export const MatchHistory: React.FC = () => {
 
                   {/* Info Column */}
                   <div className="flex-1 px-4 sm:px-6 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 w-full">
+                    <div className="mb-2 w-full">
                       <h3 className="text-white font-rajdhani font-bold text-xl sm:text-2xl uppercase tracking-wide truncate">{match.name}</h3>
-                      {match.isPr && (
-                        <span className="px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
-                          <Trophy className="w-3 h-3" /> PR
-                        </span>
-                      )}
                     </div>
                     
                     {/* Extra details row */}
