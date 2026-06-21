@@ -10,6 +10,11 @@ export const Dashboard: React.FC = () => {
   const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
+  const formatLocalDate = (d: Date | string) => {
+    const date = new Date(d);
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  };
+
   const getWeightTrackingWeekStart = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); 
@@ -26,8 +31,11 @@ export const Dashboard: React.FC = () => {
     return Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      const isLogged = weightHistory.some(entry => entry.date === dateStr);
+      const dateStr = formatLocalDate(d);
+      const isLogged = weightHistory.some(entry => {
+        // If entry.date is an ISO string, format it. If it's already YYYY-MM-DD, formatLocalDate handles it.
+        return formatLocalDate(entry.date) === dateStr;
+      });
       return { label: days[d.getDay()], isLogged, date: dateStr };
     });
   };
@@ -36,7 +44,7 @@ export const Dashboard: React.FC = () => {
 
   // Average weight for THIS week only
   const thisWeekLogs = weightHistory.filter(entry => 
-    weekLabels.some(wl => wl.date === entry.date)
+    weekLabels.some(wl => wl.date === formatLocalDate(entry.date))
   );
 
   const avgWeight = thisWeekLogs.length > 0 
@@ -52,9 +60,9 @@ export const Dashboard: React.FC = () => {
     return Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() - (6 - i));
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(d);
       
-      const loggedWorkout = workoutHistory.find(w => w.date === dateStr);
+      const loggedWorkout = workoutHistory.find(w => formatLocalDate(w.date) === dateStr);
       const isScheduled = scheduledWorkoutDays.includes(d.getDay());
       
       let status = 'rest';
@@ -76,6 +84,32 @@ export const Dashboard: React.FC = () => {
 
   const consistencyData = getConsistencyData();
   const workoutsThisWeek = consistencyData.filter(d => d.status === 'completed').length;
+
+  const calculateStreak = () => {
+    let streak = 0;
+    const today = new Date();
+    const todayStr = formatLocalDate(today);
+    
+    let isTodayLogged = workoutHistory.some(w => formatLocalDate(w.date) === todayStr);
+    let d = new Date(today);
+    if (!isTodayLogged) {
+       d.setDate(d.getDate() - 1);
+    }
+    
+    while(true) {
+       const dateStr = formatLocalDate(d);
+       const logged = workoutHistory.some(w => formatLocalDate(w.date) === dateStr);
+       if (logged) {
+          streak++;
+          d.setDate(d.getDate() - 1);
+       } else {
+          break;
+       }
+    }
+    return streak;
+  };
+
+  const currentStreak = calculateStreak();
   
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions['weekly-workouts'];
   const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions['daily-steps'];
@@ -322,7 +356,7 @@ export const Dashboard: React.FC = () => {
               <h2 className="esports-heading text-xl text-white flex items-center gap-2">
                 <Activity className="w-5 h-5 text-neon-blue" /> Weekly Consistency
               </h2>
-              <span className="text-sm text-gray-400 font-rajdhani uppercase tracking-widest">Streak: 1 Day</span>
+              <span className="text-sm text-gray-400 font-rajdhani uppercase tracking-widest">Streak: {currentStreak} Day{currentStreak !== 1 ? 's' : ''}</span>
             </div>
             
             <div className="flex justify-between items-center gap-2">
