@@ -1,3 +1,4 @@
+import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -494,7 +495,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   
                   <button 
                     onClick={() => {
-                      const todayStr = new Date().toISOString().split('T')[0];
+                      const todayStr = getLocalDateString();
                       quickMealItems.forEach(item => {
                         addFoodLog({
                           id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

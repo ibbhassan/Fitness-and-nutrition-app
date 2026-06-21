@@ -1,3 +1,4 @@
+import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2, ChevronLeft, ChevronRight, Calendar, Star } from 'lucide-react';
@@ -14,7 +15,7 @@ export const Nutrition: React.FC = () => {
   
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLogEntry | null>(null);
-  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
 
   const dailyNutrition = getMacrosForDate(viewDate);
@@ -164,7 +165,7 @@ export const Nutrition: React.FC = () => {
     setViewDate(d.toISOString().split('T')[0]);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];

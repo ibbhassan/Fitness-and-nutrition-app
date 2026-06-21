@@ -1,3 +1,4 @@
+import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState } from 'react';
 import { Scale, HeartPulse, TrendingDown, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -7,7 +8,7 @@ import { useUser } from '../context/UserContext';
 
 export const BiometricsTab: React.FC = () => {
   const { weightHistory, logWeight, biometrics, dailySteps, setDailySteps } = useUser();
-  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
 
   const viewDateLog = weightHistory.find(w => w.date === viewDate);
@@ -84,7 +85,7 @@ export const BiometricsTab: React.FC = () => {
     setViewDate(d.toISOString().split('T')[0]);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];

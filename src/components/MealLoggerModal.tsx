@@ -1,3 +1,4 @@
+import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useMemo } from 'react';
 import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -531,7 +532,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                       </div>
                       <button 
                         onClick={() => {
-                          const today = new Date().toISOString().split('T')[0];
+                          const today = getLocalDateString();
                           meal.items.forEach(item => {
                             addFoodLog({
                               id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

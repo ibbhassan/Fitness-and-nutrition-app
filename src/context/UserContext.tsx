@@ -1,3 +1,4 @@
+import { getLocalDateString } from '../utils/dateUtils';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem, FoodLogEntry, Meal, ExerciseDefinition } from '../types';
@@ -85,7 +86,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       favoriteFoods: [] as FoodItem[],
       foodLogs: [] as FoodLogEntry[],
       savedMeals: [] as Meal[],
-      lastStepDate: new Date().toISOString().split('T')[0]
+      lastStepDate: getLocalDateString()
     };
   };
 
@@ -105,8 +106,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [manualQuestCompletions, setManualQuestCompletions] = useState<Record<string, boolean>>(initialState.manualQuestCompletions || {});
   const [healthSyncEnabled, setHealthSyncEnabled] = useState(initialState.healthSyncEnabled || false);
   const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
-  const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || new Date().toISOString().split('T')[0]);
-  const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || getLocalDateString());
+  const [currentDate, setCurrentDate] = useState<string>(getLocalDateString());
   const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string, startTime: number} | null>(initialState.activeWorkout || null);
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
   const [customExercises, setCustomExercises] = useState<ExerciseDefinition[]>(initialState.customExercises || []);
@@ -118,7 +119,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Set up an interval to check for date rollover (midnight)
   useEffect(() => {
     const interval = setInterval(() => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       if (today !== currentDate) {
         setCurrentDate(today);
       }
@@ -127,7 +128,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Also check on visibility change (e.g., coming back to app)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         if (today !== currentDate) {
           setCurrentDate(today);
         }
@@ -197,7 +198,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logWeight = (weightLbs: number, dateStr?: string) => {
-    const targetDate = dateStr || new Date().toISOString().split('T')[0];
+    const targetDate = dateStr || getLocalDateString();
     setWeightHistory(prev => {
       const existing = prev.findIndex(entry => entry.date === targetDate);
       if (existing !== -1) {
