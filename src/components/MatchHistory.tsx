@@ -62,7 +62,7 @@ export const MatchHistory: React.FC = () => {
                   {/* Info Column */}
                   <div className="flex-1 px-3 sm:px-6 min-w-0">
                     <div className="mb-2 w-full">
-                      <h3 className="text-white font-rajdhani font-bold text-[13px] sm:text-2xl uppercase tracking-tighter sm:tracking-wide whitespace-nowrap">{match.name}</h3>
+                      <h3 className="text-white font-rajdhani font-bold text-[15px] sm:text-2xl uppercase tracking-wide whitespace-nowrap">{match.name}</h3>
                     </div>
                     
                     {/* Extra details row */}
