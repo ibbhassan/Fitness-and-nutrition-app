@@ -45,10 +45,10 @@ export const MatchHistory: React.FC = () => {
                 <div 
                   key={match.id} 
                   onClick={() => setSelectedWorkout(match)}
-                  className="flex items-center p-3 sm:p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
+                  className="flex items-center py-6 px-4 sm:p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
                 >
                   {/* Grade Column */}
-                  <div className="w-14 sm:w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-3 sm:pr-6 shrink-0 gap-1">
+                  <div className="w-16 sm:w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-3 sm:pr-6 shrink-0 gap-1">
                     {match.isPr && (
                       <span className="px-1.5 py-0.5 text-[9px] font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
                         <Trophy className="w-2.5 h-2.5" /> PR
@@ -61,8 +61,8 @@ export const MatchHistory: React.FC = () => {
 
                   {/* Info Column */}
                   <div className="flex-1 px-3 sm:px-6 min-w-0">
-                    <div className="mb-2 w-full overflow-x-auto custom-scrollbar pb-1">
-                      <h3 className="text-white font-rajdhani font-bold text-base sm:text-2xl uppercase tracking-wide whitespace-nowrap">{match.name}</h3>
+                    <div className="mb-2 w-full">
+                      <h3 className="text-white font-rajdhani font-bold text-[13px] sm:text-2xl uppercase tracking-tighter sm:tracking-wide whitespace-nowrap">{match.name}</h3>
                     </div>
                     
                     {/* Extra details row */}
