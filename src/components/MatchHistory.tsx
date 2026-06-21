@@ -56,10 +56,10 @@ export const MatchHistory: React.FC = () => {
 
                   {/* Info Column */}
                   <div className="flex-1 px-4 sm:px-6 min-w-0">
-                    <div className="flex items-start sm:items-center gap-3 mb-2 flex-col sm:flex-row">
-                      <h3 className="text-white font-rajdhani font-bold text-xl sm:text-2xl uppercase tracking-wide break-words">{match.name}</h3>
+                    <div className="flex items-center gap-3 mb-2 w-full">
+                      <h3 className="text-white font-rajdhani font-bold text-xl sm:text-2xl uppercase tracking-wide truncate">{match.name}</h3>
                       {match.isPr && (
-                        <span className="px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0 self-start sm:self-center mt-1 sm:mt-0">
+                        <span className="px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
                           <Trophy className="w-3 h-3" /> PR
                         </span>
                       )}
