@@ -107,11 +107,9 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         if (qrCode.isScanning) await qrCode.stop();
         onScanSuccess(foodItem);
       } else {
-        setError('Product not found in database. Please enter manually.');
-        setTimeout(async () => {
-          if (qrCode.isScanning) await qrCode.stop();
-          onScanSuccess({ barcode, name: '' });
-        }, 2000);
+        setError('Product not found. Please try again or enter manually.');
+        if (qrCode.isScanning) qrCode.resume();
+        setIsLoading(false);
       }
     } catch (err) {
       setError('Network error checking database.');

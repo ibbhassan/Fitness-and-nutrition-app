@@ -1,13 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { clsx } from 'clsx';
-import type { MatchHistoryEntry } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import type { WorkoutLog } from '../types';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell } from 'lucide-react';
+import { useUser } from '../context/UserContext';
 
-interface MatchHistoryProps {
-  history: MatchHistoryEntry[];
-}
-
-const getGradeColor = (grade: string) => {
+const getGradeColor = (grade?: string) => {
   switch (grade) {
     case 'S+': return 'text-neon-gold drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]';
     case 'S': return 'text-neon-purple drop-shadow-[0_0_8px_rgba(176,38,255,0.8)]';
@@ -17,55 +14,172 @@ const getGradeColor = (grade: string) => {
   }
 };
 
-export const MatchHistory: React.FC<MatchHistoryProps> = ({ history }) => {
+export const MatchHistory: React.FC = () => {
+  const { workoutHistory } = useUser();
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
+
+  // Sort history newest first
+  const sortedHistory = [...workoutHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return (
-    <div className="esports-panel p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="esports-heading text-xl text-white">Workout History</h2>
-        <span className="text-sm text-gray-400">Last 5 Workouts</span>
+    <>
+      <div className="esports-panel p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="esports-heading text-xl text-white">Workout History</h2>
+          <span className="text-sm text-gray-400">{sortedHistory.length} Workouts</span>
+        </div>
+
+        {sortedHistory.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 font-inter">
+            No workouts logged yet. Your history will appear here.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sortedHistory.map((match) => {
+              const grade = match.grade || 'A';
+              const epChange = match.epChange || 0;
+              
+              return (
+                <div 
+                  key={match.id} 
+                  onClick={() => setSelectedWorkout(match)}
+                  className="flex items-center p-4 bg-tactical-900 rounded-md border border-tactical-700 hover:border-tactical-600 transition-colors cursor-pointer"
+                >
+                  {/* Grade Column */}
+                  <div className="w-16 flex flex-col items-center justify-center border-r border-tactical-700 pr-4 shrink-0">
+                    <span className={clsx("font-rajdhani font-bold text-3xl", getGradeColor(grade))}>
+                      {grade}
+                    </span>
+                  </div>
+
+                  {/* Info Column */}
+                  <div className="flex-1 px-4 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-medium truncate">{match.name}</h3>
+                      {match.isPr && (
+                        <span className="px-2 py-0.5 text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
+                          <Trophy className="w-3 h-3" /> PR
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">{match.durationMinutes} min • {new Date(match.date).toLocaleDateString()}</p>
+                  </div>
+
+                  {/* EP Column */}
+                  <div className="w-16 flex flex-col items-end pl-4 border-l border-tactical-700 shrink-0">
+                    <span className="text-xs text-gray-400 font-rajdhani uppercase mb-1">EP</span>
+                    <div className={clsx(
+                      "flex items-center font-bold",
+                      epChange > 0 ? "text-neon-green" : epChange < 0 ? "text-neon-red" : "text-gray-400"
+                    )}>
+                      {epChange > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : epChange < 0 ? <TrendingDown className="w-4 h-4 mr-1" /> : <Minus className="w-4 h-4 mr-1" />}
+                      {Math.abs(epChange)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div className="space-y-4">
-        {history.map((match) => (
-          <div 
-            key={match.id} 
-            className="flex items-center p-4 bg-tactical-900 rounded-md border border-tactical-700 hover:border-tactical-600 transition-colors"
-          >
-            {/* Grade Column */}
-            <div className="w-16 flex flex-col items-center justify-center border-r border-tactical-700 pr-4">
-              <span className={clsx("font-rajdhani font-bold text-3xl", getGradeColor(match.grade))}>
-                {match.grade}
-              </span>
+      {/* Workout Details Modal */}
+      {selectedWorkout && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pb-safe">
+          <div className="absolute inset-0 bg-tactical-900/80 backdrop-blur-sm" onClick={() => setSelectedWorkout(null)}></div>
+          
+          <div className="relative w-full max-w-2xl bg-tactical-800 border border-tactical-600 rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-tactical-700">
+              <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider">{selectedWorkout.name}</h2>
+              <button 
+                onClick={() => setSelectedWorkout(null)}
+                className="text-gray-400 hover:text-white transition-colors p-1"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-
-            {/* Info Column */}
-            <div className="flex-1 px-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-white font-medium">{match.title}</h3>
-                {match.isPr && (
-                  <span className="px-2 py-0.5 text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1">
-                    <Trophy className="w-3 h-3" /> PR
+            
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              
+              {/* Summary Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
+                  <Clock className="w-5 h-5 text-neon-blue mb-1" />
+                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Duration</span>
+                  <span className="text-lg font-bold text-white">{selectedWorkout.durationMinutes} min</span>
+                </div>
+                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
+                  <Activity className="w-5 h-5 text-neon-purple mb-1" />
+                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Grade</span>
+                  <span className={clsx("text-4xl font-bold mt-2 leading-none", getGradeColor(selectedWorkout.grade || 'A'))}>
+                    {selectedWorkout.grade || 'A'}
                   </span>
+                </div>
+                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
+                  <Dumbbell className="w-5 h-5 text-neon-green mb-1" />
+                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Volume</span>
+                  <span className="text-lg font-bold text-white text-center">{selectedWorkout.volume.toLocaleString()} lbs</span>
+                </div>
+              </div>
+
+              {/* Exercises List */}
+              <div className="space-y-4">
+                <h3 className="font-rajdhani font-bold text-lg text-gray-300 uppercase tracking-wider border-b border-tactical-700 pb-2">Exercises</h3>
+                
+                {selectedWorkout.exercises.map((ex, exIdx) => {
+                  const completedSets = ex.sets.filter(s => s.completed);
+                  if (completedSets.length === 0) return null;
+                  
+                  return (
+                    <div key={ex.id} className="bg-tactical-900 rounded-lg border border-tactical-700 overflow-hidden">
+                      <div className="px-4 py-3 bg-tactical-800/50 border-b border-tactical-700">
+                        <h4 className="font-bold text-white">{exIdx + 1}. {ex.name || 'Unnamed Exercise'}</h4>
+                      </div>
+                      <div className="p-2 sm:p-4">
+                        <div className="grid grid-cols-12 gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-1">
+                          <div className="col-span-3 sm:col-span-2 text-center">Set</div>
+                          <div className="col-span-4 sm:col-span-5 text-center">Lbs</div>
+                          <div className="col-span-5 sm:col-span-5 text-center">Reps</div>
+                        </div>
+                        <div className="space-y-1">
+                          {completedSets.map((set, sIdx) => (
+                            <div key={set.id} className="grid grid-cols-12 gap-2 items-center p-2 bg-tactical-800 rounded">
+                              <div className="col-span-3 sm:col-span-2 flex justify-center">
+                                <span className={clsx(
+                                  "px-2 py-0.5 rounded text-xs font-bold",
+                                  set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold" : 
+                                  set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple" :
+                                  set.type === 'Failure' ? "bg-neon-red/20 text-neon-red" : 
+                                  "bg-tactical-700 text-gray-300"
+                                )}>
+                                  {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : sIdx + 1}
+                                </span>
+                              </div>
+                              <div className="col-span-4 sm:col-span-5 text-center font-inter text-white text-sm">
+                                {set.weight}
+                              </div>
+                              <div className="col-span-5 sm:col-span-5 text-center font-inter text-white text-sm">
+                                {set.reps}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {selectedWorkout.exercises.filter(ex => ex.sets.some(s => s.completed)).length === 0 && (
+                  <p className="text-gray-500 text-sm italic">No completed exercises in this workout.</p>
                 )}
               </div>
-              <p className="text-sm text-gray-400 mt-1">{match.durationMinutes} min • {match.date}</p>
-              {match.notes && <p className="text-xs text-gray-500 mt-2 italic">"{match.notes}"</p>}
             </div>
-
-            {/* LP Column */}
-            <div className="w-20 flex flex-col items-end pl-4 border-l border-tactical-700">
-              <span className="text-xs text-gray-400 font-rajdhani uppercase mb-1">EP</span>
-              <div className={clsx(
-                "flex items-center font-bold",
-                match.lpChange > 0 ? "text-neon-green" : match.lpChange < 0 ? "text-neon-red" : "text-gray-400"
-              )}>
-                {match.lpChange > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : match.lpChange < 0 ? <TrendingDown className="w-4 h-4 mr-1" /> : <Minus className="w-4 h-4 mr-1" />}
-                {Math.abs(match.lpChange)}
-              </div>
-            </div>
+            
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };

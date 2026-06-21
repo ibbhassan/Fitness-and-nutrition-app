@@ -10,36 +10,40 @@ export const Dashboard: React.FC = () => {
   const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
-  const avgWeight = weightHistory.length > 0 
-    ? (weightHistory.reduce((sum, entry) => sum + entry.weightLbs, 0) / weightHistory.length).toFixed(1)
-    : (biometrics?.weightLbs || 0).toFixed(1);
-
-  const daysLogged = weightHistory.length;
+  const getWeightTrackingWeekStart = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); 
+    const daysSinceSaturday = (dayOfWeek + 1) % 7; 
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - daysSinceSaturday);
+    return weekStart;
+  };
 
   const getWeekLabels = () => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    if (weightHistory.length === 0) {
-      const today = new Date();
-      return Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        return { label: days[d.getDay()], isLogged: false };
-      });
-    }
-
-    const firstDateStr = weightHistory[0].date;
-    const firstDate = new Date(firstDateStr + 'T12:00:00');
+    const weekStart = getWeightTrackingWeekStart();
     
     return Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(firstDate);
-      d.setDate(firstDate.getDate() + i);
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
       const isLogged = weightHistory.some(entry => entry.date === dateStr);
-      return { label: days[d.getDay()], isLogged };
+      return { label: days[d.getDay()], isLogged, date: dateStr };
     });
   };
 
   const weekLabels = getWeekLabels();
+
+  // Average weight for THIS week only
+  const thisWeekLogs = weightHistory.filter(entry => 
+    weekLabels.some(wl => wl.date === entry.date)
+  );
+
+  const avgWeight = thisWeekLogs.length > 0 
+    ? (thisWeekLogs.reduce((sum, entry) => sum + entry.weightLbs, 0) / thisWeekLogs.length).toFixed(1)
+    : (biometrics?.weightLbs || 0).toFixed(1);
+
+  const daysLogged = thisWeekLogs.length;
 
   // Dynamic data for weekly consistency (last 7 days)
   const getConsistencyData = () => {

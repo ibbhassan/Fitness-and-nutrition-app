@@ -1,15 +1,42 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Play, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Plus, Play, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
 import { RestTimer } from '../components/RestTimer';
 import { clsx } from 'clsx';
 
+const LiveWorkoutTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
+  const [elapsed, setElapsed] = useState(Date.now() - startTime);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - startTime);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const totalSeconds = Math.floor(elapsed / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  
+  let timeString = '';
+  if (h > 0) {
+    timeString = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  } else {
+    timeString = `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  return <span className="ml-2 tabular-nums">{timeString}</span>;
+};
+
 export const WorkoutLogger: React.FC = () => {
   const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [finalDuration, setFinalDuration] = useState<string>('');
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
   // Custom Preset Creator State
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
@@ -33,6 +60,18 @@ export const WorkoutLogger: React.FC = () => {
     setTargetIndexForLibrary(index);
     setTargetListForLibrary(target);
     setIsLibraryOpen(true);
+  };
+
+  const handleAddPresetExercise = () => {
+    const newIdx = newPresetExercises.length;
+    setNewPresetExercises([...newPresetExercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }]);
+    openLibrary(newIdx, 'preset');
+  };
+
+  const handleAddActiveExercise = () => {
+    const newIdx = exercises.length;
+    setExercises([...exercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }]);
+    openLibrary(newIdx, 'active');
   };
 
   const handleSelectExercise = (exerciseName: string) => {
@@ -223,13 +262,27 @@ export const WorkoutLogger: React.FC = () => {
       });
     });
 
+    const durationMs = Date.now() - activeWorkout.startTime;
+    const durationMinutes = Math.max(1, Math.round(durationMs / 60000));
+    
+    const h = Math.floor(durationMs / 3600000);
+    const m = Math.floor((durationMs % 3600000) / 60000);
+    const s = Math.floor((durationMs % 60000) / 1000);
+    let fDuration = '';
+    if (h > 0) fDuration = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    else fDuration = `${m}:${s.toString().padStart(2, '0')}`;
+    setFinalDuration(fDuration);
+
     logWorkout({
       id: `log-${Date.now()}`,
       date: new Date().toISOString(),
       name: activeWorkout.name,
-      durationMinutes: 45, // Hardcoded for now
+      durationMinutes,
       exercises: exercises,
-      volume: totalVolume
+      volume: totalVolume,
+      grade: 'S+',
+      epChange: 18,
+      isPr: true
     });
     
     setShowCelebration(true);
@@ -357,87 +410,102 @@ export const WorkoutLogger: React.FC = () => {
                 <div className="col-span-4 sm:col-span-4 text-center"></div>
               </div>
 
-              {exercise.sets.map((set, setIndex) => {
-                const prevData = getPreviousSetData(exercise.name, setIndex);
-                return (
-                  <div 
-                    key={set.id} 
-                    className={clsx(
-                      "grid grid-cols-12 gap-1 sm:gap-2 items-center p-1 sm:p-2 rounded transition-colors mb-1",
-                      set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800"
-                    )}
-                  >
-                    {/* Set Number / Type Toggle */}
-                    <div className="col-span-2 sm:col-span-1 flex justify-center">
-                      <button
-                        onClick={() => cycleSetType(exIndex, setIndex, set.type)}
-                        className={clsx(
-                          "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
-                          set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
-                          set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
-                          set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
-                          "bg-tactical-700 text-white"
-                        )}
-                      >
-                        {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
-                      </button>
-                    </div>
-                    
-                    {/* Previous Data */}
-                    <div className="col-span-3 sm:col-span-3 text-center hidden sm:flex items-center justify-center">
-                      <span className="text-gray-500 font-inter text-xs">
-                        {prevData ? `${prevData.weight} x ${prevData.reps}` : '-'}
-                      </span>
-                    </div>
-
-                    {/* Weight Input */}
-                    <div className="col-span-3 sm:col-span-2">
-                      <input 
-                        type="number" 
-                        value={set.weight || ''}
-                        onChange={(e) => updateSet(exIndex, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    {/* Reps Input */}
-                    <div className="col-span-3 sm:col-span-2">
-                      <input 
-                        type="number" 
-                        value={set.reps || ''}
-                        onChange={(e) => updateSet(exIndex, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    {/* Actions */}
-                    <div className="col-span-4 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
-                      {!isPreset && (
-                        <button 
-                          onClick={() => toggleSetComplete(exIndex, setIndex)}
+              <Reorder.Group 
+                axis="y" 
+                values={exercise.sets} 
+                onReorder={(newSets) => {
+                  const newEx = [...exerciseList];
+                  newEx[exIndex].sets = newSets;
+                  setExerciseList(newEx);
+                }}
+                className="space-y-1"
+              >
+                {exercise.sets.map((set, setIndex) => {
+                  const prevData = getPreviousSetData(exercise.name, setIndex);
+                  return (
+                    <Reorder.Item 
+                      key={set.id} 
+                      value={set}
+                      className={clsx(
+                        "grid grid-cols-12 gap-1 sm:gap-2 items-center p-1 sm:p-2 rounded transition-colors",
+                        set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800"
+                      )}
+                    >
+                      {/* Set Number / Type Toggle */}
+                      <div className="col-span-2 sm:col-span-1 flex justify-center">
+                        <button
+                          onClick={() => cycleSetType(exIndex, setIndex, set.type)}
                           className={clsx(
-                            "w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center transition-all",
-                            set.completed 
-                              ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
-                              : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
+                            "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
+                            set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
+                            set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
+                            set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
+                            "bg-tactical-700 text-white"
                           )}
                         >
-                          <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
+                          {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
                         </button>
-                      )}
-                      <button
-                        onClick={() => removeSet(exIndex, setIndex)}
-                        className="w-8 h-8 sm:w-10 sm:h-10 bg-tactical-800 hover:bg-tactical-700 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
-                        title="Delete Set"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                      </div>
+                      
+                      {/* Previous Data */}
+                      <div className="col-span-3 sm:col-span-3 text-center hidden sm:flex items-center justify-center">
+                        <span className="text-gray-500 font-inter text-xs">
+                          {prevData ? `${prevData.weight} x ${prevData.reps}` : '-'}
+                        </span>
+                      </div>
+
+                      {/* Weight */}
+                      <div className="col-span-3 sm:col-span-2">
+                        <input 
+                          type="number" 
+                          value={set.weight || ''}
+                          onChange={(e) => updateSet(exIndex, setIndex, 'weight', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                          className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Reps */}
+                      <div className="col-span-3 sm:col-span-2">
+                        <input 
+                          type="number" 
+                          value={set.reps || ''}
+                          onChange={(e) => updateSet(exIndex, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                          className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-4 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
+                        {!isPreset && (
+                          <button 
+                            onClick={() => toggleSetComplete(exIndex, setIndex)}
+                            className={clsx(
+                              "w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center transition-all",
+                              set.completed 
+                                ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
+                                : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
+                            )}
+                          >
+                            <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeSet(exIndex, setIndex)}
+                          className="w-8 h-8 sm:w-10 sm:h-10 bg-tactical-800 hover:bg-tactical-700 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
+                          title="Delete Set"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-gray-400 p-1 flex items-center justify-center">
+                          <GripVertical className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </Reorder.Item>
+                  );
+                })}
+              </Reorder.Group>
               
               <button
                 onClick={() => addSet(exIndex)}
@@ -454,9 +522,8 @@ export const WorkoutLogger: React.FC = () => {
 
   if (isCreatingPreset) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pb-24">
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
-          <div className="flex justify-between items-start mb-6 border-b border-tactical-700 pb-4">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in pb-24 mt-6">
+        <div className="flex justify-between items-start mb-6 border-b border-tactical-700 pb-4">
             <div className="flex-1 mr-4">
               <input 
                 type="text" 
@@ -482,32 +549,30 @@ export const WorkoutLogger: React.FC = () => {
             {renderExerciseTable(newPresetExercises, setNewPresetExercises, true)}
           </div>
 
-          <div className="flex gap-4 mt-6">
+          <button 
+            onClick={handleAddPresetExercise}
+            className="mt-6 w-full bg-neon-green text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(57,255,20,0.4)] uppercase tracking-wider flex items-center justify-center"
+          >
+            <Plus className="w-5 h-5 mr-2" /> Add Exercise
+          </button>
+
+          <div className="mt-4">
             <button 
-              onClick={() => setNewPresetExercises([...newPresetExercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }])}
-              className="flex-1 py-3 border-2 border-dashed border-tactical-600 rounded-lg text-gray-400 hover:text-neon-gold hover:border-neon-gold transition-colors font-rajdhani font-bold uppercase tracking-wider flex justify-center items-center"
+              onClick={saveNewPreset}
+              disabled={!newPresetName || newPresetExercises.some(e => !e.name)}
+              className="w-full bg-neon-gold text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(255,215,0,0.4)] uppercase tracking-wider flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-5 h-5 mr-2" /> Add Exercise
+              <Save className="w-5 h-5 mr-2" /> Save Preset
             </button>
-            <div className="mt-6 pt-6 border-t border-tactical-700 flex justify-end">
-              <button 
-                onClick={saveNewPreset}
-                disabled={!newPresetName || newPresetExercises.some(e => !e.name)}
-                className="bg-neon-gold text-tactical-900 px-6 py-3 rounded-lg font-rajdhani font-bold uppercase hover:bg-[#ffc100] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                <Save className="w-5 h-5 mr-2" /> Save Preset
-              </button>
-            </div>
           </div>
           {renderLibraryModal()}
-        </div>
       </div>
     );
   }
 
   if (!activeWorkout) {
     return (
-      <div className="max-w-4xl mx-auto fade-in">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in">
         <div className="flex flex-col items-center mb-8 gap-4">
           <h1 className="esports-heading text-2xl sm:text-3xl text-white text-center">Workout Library</h1>
           <button 
@@ -618,42 +683,53 @@ export const WorkoutLogger: React.FC = () => {
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pb-24">
-      <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-tactical-700 pb-4">
-          <div>
-            <h1 className="esports-heading text-2xl text-white">{activeWorkout.name}</h1>
-            <p className="text-neon-blue font-bold text-sm mt-1 flex items-center">
-              <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse mr-2"></span> ACTIVE WORKOUT
-            </p>
-          </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <button 
-              onClick={abortWorkout}
-              className="flex-1 sm:flex-none text-gray-500 hover:text-white px-4 py-2 border border-tactical-600 rounded sm:border-none sm:py-0 transition-colors font-rajdhani font-bold uppercase"
-            >
-              Abort
-            </button>
-            <button 
-              onClick={handleFinishWorkout}
-              className="flex-1 sm:flex-none bg-neon-blue text-tactical-900 px-6 py-2 rounded font-rajdhani font-bold hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)]"
-            >
-              Finish
-            </button>
-          </div>
-        </div>
+  const portalTarget = document.getElementById('global-header-actions');
 
-        <div className="space-y-6">
+  return (
+    <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pt-[72px] pb-24">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in relative">
+      {portalTarget && createPortal(
+        <button 
+          onClick={handleFinishWorkout}
+          className="bg-neon-blue text-tactical-900 px-4 py-1.5 rounded font-rajdhani font-bold hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)] uppercase tracking-wider text-sm mr-2"
+        >
+          Finish
+        </button>,
+        portalTarget
+      )}
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-tactical-700 pb-4">
+        <div>
+          <h1 className="esports-heading text-2xl text-white">{activeWorkout.name}</h1>
+          <p className="text-neon-blue font-bold text-sm mt-1 flex items-center">
+            <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse mr-2"></span> 
+            ACTIVE WORKOUT
+            {activeWorkout.startTime && (
+              <LiveWorkoutTimer startTime={activeWorkout.startTime} />
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-6 mt-4">
           {renderExerciseTable(exercises, setExercises, false)}
         </div>
 
         <button 
-          onClick={() => setExercises([...exercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }])}
-          className="mt-6 flex items-center justify-center w-full py-4 border-2 border-dashed border-tactical-600 rounded-lg text-gray-400 hover:text-neon-blue hover:border-neon-blue transition-colors font-rajdhani font-bold uppercase tracking-wider"
+          onClick={handleAddActiveExercise}
+          className="mt-6 w-full bg-neon-green text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(57,255,20,0.4)] uppercase tracking-wider flex items-center justify-center"
         >
           <Plus className="w-5 h-5 mr-2" /> Add Exercise
         </button>
+
+        <div className="mt-6">
+          <button 
+            onClick={abortWorkout}
+            className="w-full bg-neon-red text-white py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(255,0,60,0.4)] uppercase tracking-wider flex items-center justify-center"
+          >
+            <X className="w-5 h-5 mr-2" /> Cancel Workout
+          </button>
+        </div>
       </div>
 
       <RestTimer lastCompletedSetTime={lastCompletedSetTime} />
@@ -692,6 +768,11 @@ export const WorkoutLogger: React.FC = () => {
               <p className="text-gray-300 font-inter mb-6">
                 Incredible consistency! You completed <span className="text-neon-blue font-bold">{activeWorkout?.name || 'Workout'}</span>.
               </p>
+
+              <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-3 flex justify-between items-center">
+                <span className="text-gray-400 font-rajdhani uppercase">Duration</span>
+                <span className="text-xl font-rajdhani font-bold text-white">{finalDuration}</span>
+              </div>
 
               <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-8 flex justify-between items-center">
                 <span className="text-gray-400 font-rajdhani uppercase">Evoke Points</span>

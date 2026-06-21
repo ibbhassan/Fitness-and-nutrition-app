@@ -10,10 +10,12 @@ import { MatchHistory } from './components/MatchHistory';
 import { Onboarding } from './pages/Onboarding';
 import { Auth } from './pages/Auth';
 import { UserProvider, useUser } from './context/UserContext';
-import { seedMatchHistory } from './utils/seedData';
+import { PatchNotesModal } from './components/PatchNotesModal';
+
+const CURRENT_VERSION = 'v1.1.0';
 
 const MainApp = () => {
-  const { user, hasCompletedOnboarding } = useUser();
+  const { user, hasCompletedOnboarding, profile, markPatchNotesSeen } = useUser();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   if (!user) {
@@ -34,8 +36,14 @@ const MainApp = () => {
       { activeTab === 'profile' && <Profile /> }
       {activeTab === 'history' && (
         <div className="max-w-4xl mx-auto fade-in space-y-6">
-          <MatchHistory history={seedMatchHistory} />
+          <MatchHistory />
         </div>
+      )}
+      {profile?.lastSeenPatchVersion !== CURRENT_VERSION && activeTab === 'dashboard' && (
+        <PatchNotesModal 
+          version={CURRENT_VERSION} 
+          onClose={() => markPatchNotesSeen(CURRENT_VERSION)} 
+        />
       )}
     </Layout>
   );

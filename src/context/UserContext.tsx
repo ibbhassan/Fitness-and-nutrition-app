@@ -9,6 +9,7 @@ interface UserContextType {
   logout: () => void;
   hasCompletedOnboarding: boolean;
   completeOnboarding: (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => void;
+  markPatchNotesSeen: (version: string) => void;
   profile: UserProfile;
   nutrition: DailyNutrition;
   targetWorkoutsPerWeek: number;
@@ -16,7 +17,7 @@ interface UserContextType {
   workoutSplit: Record<number, string>;
   biometrics: Biometrics | null;
   weightHistory: WeightEntry[];
-  logWeight: (weightLbs: number) => void;
+  logWeight: (weightLbs: number, dateStr?: string) => void;
   addNutritionMacros: (macros: { calories: number; protein: number; carbs: number; fat: number; }) => void;
   customPresets: WorkoutPreset[];
   saveCustomPreset: (preset: WorkoutPreset) => void;
@@ -32,7 +33,7 @@ interface UserContextType {
   dailySteps: number;
   setDailySteps: (steps: number) => void;
   addSteps: (amount: number) => void;
-  activeWorkout: { id: string, name: string } | null;
+  activeWorkout: { id: string, name: string, startTime: number } | null;
   activeExercises: ActiveExercise[];
   startWorkout: (preset: WorkoutPreset | null) => void;
   abortWorkout: () => void;
@@ -49,6 +50,10 @@ interface UserContextType {
   saveMeal: (meal: Meal) => void;
   logFood: (food: FoodItem) => void;
   toggleFavoriteFood: (food: FoodItem) => void;
+  saveToFavorites: (food: FoodItem) => void;
+  removeFavoriteFood: (foodName: string) => void;
+  devAdvanceDay?: () => void;
+  getMacrosForDate: (dateStr: string) => DailyNutrition;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -79,7 +84,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       recentFoods: [] as FoodItem[],
       favoriteFoods: [] as FoodItem[],
       foodLogs: [] as FoodLogEntry[],
-      savedMeals: [] as Meal[]
+      savedMeals: [] as Meal[],
+      lastStepDate: new Date().toISOString().split('T')[0]
     };
   };
 
@@ -99,13 +105,49 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [manualQuestCompletions, setManualQuestCompletions] = useState<Record<string, boolean>>(initialState.manualQuestCompletions || {});
   const [healthSyncEnabled, setHealthSyncEnabled] = useState(initialState.healthSyncEnabled || false);
   const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
-  const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string} | null>(initialState.activeWorkout || null);
+  const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string, startTime: number} | null>(initialState.activeWorkout || null);
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
   const [customExercises, setCustomExercises] = useState<ExerciseDefinition[]>(initialState.customExercises || []);
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
   const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>(initialState.foodLogs || []);
   const [savedMeals, setSavedMeals] = useState<Meal[]>(initialState.savedMeals || []);
+
+  // Set up an interval to check for date rollover (midnight)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const today = new Date().toISOString().split('T')[0];
+      if (today !== currentDate) {
+        setCurrentDate(today);
+      }
+    }, 60000); // Check every minute
+    
+    // Also check on visibility change (e.g., coming back to app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const today = new Date().toISOString().split('T')[0];
+        if (today !== currentDate) {
+          setCurrentDate(today);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentDate]);
+
+  // Check for daily reset on mount and date change
+  useEffect(() => {
+    if (lastStepDate !== currentDate) {
+      setDailySteps(0);
+      setLastStepDate(currentDate);
+    }
+  }, [currentDate, lastStepDate]);
 
   // Sync to local storage whenever state changes
   useEffect(() => {
@@ -125,6 +167,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       customExercises,
       healthSyncEnabled,
       dailySteps,
+      lastStepDate,
       activeWorkout,
       activeExercises,
       recentFoods,
@@ -133,7 +176,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savedMeals
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
   const login = (username: string) => {
     setUser({ username });
@@ -153,16 +196,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setHasCompletedOnboarding(true);
   };
 
-  const logWeight = (weightLbs: number) => {
-    const today = new Date().toISOString().split('T')[0];
+  const logWeight = (weightLbs: number, dateStr?: string) => {
+    const targetDate = dateStr || new Date().toISOString().split('T')[0];
     setWeightHistory(prev => {
-      const existing = prev.findIndex(entry => entry.date === today);
-      if (existing >= 0) {
-        const newHistory = [...prev];
-        newHistory[existing].weightLbs = weightLbs;
-        return newHistory;
+      const existing = prev.findIndex(entry => entry.date === targetDate);
+      if (existing !== -1) {
+        const next = [...prev];
+        next[existing] = { date: targetDate, weightLbs };
+        return next;
       }
-      return [...prev, { date: today, weightLbs }];
+      return [...prev, { date: targetDate, weightLbs }].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     });
   };
 
@@ -190,13 +233,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setSavedMeals(prev => [...prev, meal]);
   };
 
-  // Dynamically calculate today's macros
-  const getTodayMacros = (): DailyNutrition => {
-    const today = new Date().toISOString().split('T')[0];
-    const todaysLogs = foodLogs.filter(log => log.date === today);
+  // Dynamically calculate macros for a specific date
+  const getMacrosForDate = (dateStr: string): DailyNutrition => {
+    const logsForDate = foodLogs.filter(log => log.date === dateStr);
     
     let c = 0, p = 0, ca = 0, f = 0;
-    todaysLogs.forEach(log => {
+    logsForDate.forEach(log => {
       c += log.food.macrosPerUnit.calories * log.food.amount;
       p += log.food.macrosPerUnit.protein * log.food.amount;
       ca += log.food.macrosPerUnit.carbs * log.food.amount;
@@ -211,7 +253,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
-  const computedNutrition = getTodayMacros();
+  const computedNutrition = getMacrosForDate(currentDate);
 
   const logFood = (food: FoodItem) => {
     setRecentFoods(prev => {
@@ -229,6 +271,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return [{ ...food, isFavorite: true }, ...prev];
       }
     });
+  };
+
+  const saveToFavorites = (food: FoodItem) => {
+    setFavoriteFoods(prev => {
+      const foodName = (food?.name || '').toLowerCase();
+      const exists = prev.some(f => (f?.name || '').toLowerCase() === foodName);
+      if (!exists) {
+        return [{ ...food, isFavorite: true }, ...prev];
+      }
+      return prev;
+    });
+  };
+
+  const removeFavoriteFood = (foodName: string) => {
+    setFavoriteFoods(prev => prev.filter(f => (f?.name || '').toLowerCase() !== foodName.toLowerCase()));
   };
 
   const saveCustomPreset = (preset: WorkoutPreset) => {
@@ -298,6 +355,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  const markPatchNotesSeen = (version: string) => {
+    setProfile(prev => ({ ...prev, lastSeenPatchVersion: version }));
+  };
+
   const saveCustomExercise = (exercise: ExerciseDefinition) => {
     setCustomExercises(prev => [...prev, exercise]);
   };
@@ -308,7 +369,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const startWorkout = (preset: WorkoutPreset | null = null) => {
     if (preset) {
-      setActiveWorkout({ id: preset.id, name: preset.name });
+      setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now() });
       
       const mappedExercises: ActiveExercise[] = preset.exercises.map(ex => {
         // Handle backwards compatibility for old PresetExercise (where sets was a string)
@@ -342,7 +403,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setActiveExercises(mappedExercises);
     } else {
-      setActiveWorkout({ id: 'custom-active', name: 'Freestyle Workout' });
+      setActiveWorkout({ id: 'custom-active', name: 'Freestyle Workout', startTime: Date.now() });
       setActiveExercises([{
         id: String(Date.now()),
         name: '',
@@ -363,6 +424,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       hasCompletedOnboarding,
       completeOnboarding,
+      markPatchNotesSeen,
       profile,
       nutrition: computedNutrition,
       targetWorkoutsPerWeek,
@@ -402,7 +464,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFoodLog,
       saveMeal,
       logFood,
-      toggleFavoriteFood
+      toggleFavoriteFood,
+      saveToFavorites,
+      removeFavoriteFood,
+      devAdvanceDay: () => setCurrentDate('2099-01-01'),
+      getMacrosForDate
     }}>
       {children}
     </UserContext.Provider>
@@ -414,5 +480,5 @@ export const useUser = () => {
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
-  return context;
+  return context as UserContextType & { devAdvanceDay?: () => void };
 };

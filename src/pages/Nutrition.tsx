@@ -1,25 +1,29 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2 } from 'lucide-react';
+import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2, ChevronLeft, ChevronRight, Calendar, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { PanInfo } from 'framer-motion';
 import { clsx } from 'clsx';
 import { MealLoggerModal } from '../components/MealLoggerModal';
 import { FoodEntryModal } from '../components/FoodEntryModal';
+import { CalendarModal } from '../components/CalendarModal';
 import type { MealType, FoodLogEntry } from '../types';
 
 export const Nutrition: React.FC = () => {
-  const { nutrition, foodLogs, updateFoodLog, removeFoodLog } = useUser();
-  const { calories, protein, carbs, fat } = nutrition;
+  const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites } = useUser();
   
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLogEntry | null>(null);
+  const [viewDate, setViewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  // Get today's logs
-  const today = new Date().toISOString().split('T')[0];
-  const todaysLogs = foodLogs.filter(log => log.date === today);
+  const dailyNutrition = getMacrosForDate(viewDate);
+  const { calories, protein, carbs, fat } = dailyNutrition;
+
+  const viewedLogs = foodLogs.filter(log => log.date === viewDate);
 
   const getMealMacros = (meal: MealType) => {
-    return todaysLogs
+    return viewedLogs
       .filter(log => log.mealType === meal)
       .reduce((acc, log) => ({
         calories: acc.calories + (log.food.macrosPerUnit.calories * log.food.amount),
@@ -29,7 +33,7 @@ export const Nutrition: React.FC = () => {
       }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
-  const getMealLogs = (meal: MealType) => todaysLogs.filter(log => log.mealType === meal);
+  const getMealLogs = (meal: MealType) => viewedLogs.filter(log => log.mealType === meal);
 
   const MacroCircle = ({ label, current, target, colorClass }: any) => {
     const percent = Math.min((current / target) * 100, 100);
@@ -81,6 +85,20 @@ export const Nutrition: React.FC = () => {
           <div className="space-y-2 mt-2 border-t border-tactical-800 pt-3">
             {logs.map((log) => (
               <div key={log.id} className="relative overflow-hidden rounded group">
+                {/* Favorite Background */}
+                <div className="absolute inset-y-0 left-0 w-16 bg-neon-gold flex items-center justify-center rounded">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveToFavorites(log.food);
+                      // Add a little visual feedback if desired, or let it just happen
+                    }}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <Star className="w-5 h-5 text-tactical-900 fill-tactical-900" />
+                  </button>
+                </div>
+
                 {/* Delete Background */}
                 <div className="absolute inset-y-0 right-0 w-16 bg-neon-red flex items-center justify-center rounded">
                   <button 
@@ -97,9 +115,16 @@ export const Nutrition: React.FC = () => {
                 {/* Swipeable Foreground */}
                 <motion.div 
                   drag="x"
-                  dragConstraints={{ left: -64, right: 0 }}
-                  dragElastic={0.1}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
                   dragDirectionLock
+                  onDragEnd={(_e, info) => {
+                    if (info.offset.x > 50) {
+                      saveToFavorites(log.food);
+                    } else if (info.offset.x < -50) {
+                      removeFoodLog(log.id);
+                    }
+                  }}
                   onClick={() => setEditingLog(log)}
                   className="relative z-10 bg-tactical-900 flex justify-between items-center text-sm p-2 rounded cursor-pointer border border-transparent group-hover:bg-tactical-800 transition-colors"
                 >
@@ -119,14 +144,76 @@ export const Nutrition: React.FC = () => {
   const calPercent = Math.min((calories.current / calories.target) * 100, 100);
   const remainingCals = calories.target - calories.current;
 
+  const handleDragEnd = (_event: any, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > 50) {
+      const d = new Date(viewDate + 'T12:00:00');
+      if (info.offset.x > 0) {
+        // Swiped right -> Previous day
+        d.setDate(d.getDate() - 1);
+      } else {
+        // Swiped left -> Next day
+        d.setDate(d.getDate() + 1);
+      }
+      setViewDate(d.toISOString().split('T')[0]);
+    }
+  };
+
+  const shiftDate = (days: number) => {
+    const d = new Date(viewDate + 'T12:00:00');
+    d.setDate(d.getDate() + days);
+    setViewDate(d.toISOString().split('T')[0]);
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  let displayDateStr = '';
+  if (viewDate === todayStr) displayDateStr = 'Today';
+  else if (viewDate === yesterdayStr) displayDateStr = 'Yesterday';
+  else if (viewDate === tomorrowStr) displayDateStr = 'Tomorrow';
+  else {
+    const d = new Date(viewDate + 'T12:00:00');
+    displayDateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
   return (
-    <div className="max-w-md mx-auto space-y-6 fade-in mb-24 pb-12">
+    <div className="max-w-md mx-auto space-y-6 fade-in mb-24 pb-12 overflow-x-hidden">
       
       {/* Top Header / Calendar area */}
-      <div className="text-center pt-2">
-        <h1 className="font-rajdhani font-bold text-2xl text-white tracking-widest uppercase">Today</h1>
-        <p className="text-gray-400 text-sm">Fuel the machine.</p>
+      <div className="flex items-center justify-between pt-2 px-4">
+        <button onClick={() => shiftDate(-1)} className="p-2 hover:bg-tactical-800 rounded-full transition-colors text-gray-400 hover:text-white">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <div 
+          className="text-center cursor-pointer group flex flex-col items-center justify-center"
+          onClick={() => setShowCalendar(true)}
+        >
+          <div className="flex items-center gap-2">
+            <h1 className="font-rajdhani font-bold text-2xl text-white tracking-widest uppercase group-hover:text-neon-blue transition-colors">
+              {displayDateStr}
+            </h1>
+            <Calendar className="w-4 h-4 text-gray-500 group-hover:text-neon-blue transition-colors" />
+          </div>
+          <p className="text-gray-400 text-xs">Fuel the machine.</p>
+        </div>
+        <button onClick={() => shiftDate(1)} className="p-2 hover:bg-tactical-800 rounded-full transition-colors text-gray-400 hover:text-white">
+          <ChevronRight className="w-6 h-6" />
+        </button>
       </div>
+
+      <motion.div
+        key={viewDate}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={handleDragEnd}
+        className="space-y-6"
+      >
 
       {/* Unified Macro Summary */}
       <div className="bg-tactical-900 border border-tactical-700 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
@@ -168,15 +255,20 @@ export const Nutrition: React.FC = () => {
 
       {/* Meal Cards */}
       <div className="space-y-4">
-        <MealCard title="Breakfast" icon={Coffee} colorClass="text-neon-gold" />
-        <MealCard title="Lunch" icon={Sun} colorClass="text-neon-blue" />
+        <MealCard title="Breakfast" icon={Coffee} colorClass="text-neon-blue" />
+        <MealCard title="Lunch" icon={Sun} colorClass="text-neon-gold" />
         <MealCard title="Dinner" icon={Moon} colorClass="text-neon-purple" />
-        <MealCard title="Snack" icon={Apple} colorClass="text-neon-green" />
+        <MealCard title="Snack" icon={Apple} colorClass="text-neon-red" />
       </div>
+      </motion.div>
 
       {/* Modals */}
       {activeMeal && (
-        <MealLoggerModal mealType={activeMeal} onClose={() => setActiveMeal(null)} />
+        <MealLoggerModal 
+          mealType={activeMeal} 
+          selectedDate={viewDate}
+          onClose={() => setActiveMeal(null)} 
+        />
       )}
       
       {editingLog && (
@@ -192,6 +284,17 @@ export const Nutrition: React.FC = () => {
             setEditingLog(null);
           }}
           onClose={() => setEditingLog(null)}
+        />
+      )}
+
+      {showCalendar && (
+        <CalendarModal
+          selectedDate={viewDate}
+          onClose={() => setShowCalendar(false)}
+          onSelectDate={(dateStr) => {
+            setViewDate(dateStr);
+            setShowCalendar(false);
+          }}
         />
       )}
 

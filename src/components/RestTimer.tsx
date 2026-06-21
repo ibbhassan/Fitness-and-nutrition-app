@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Plus, Minus, Timer } from 'lucide-react';
+import { Play, Pause, Plus, Minus, Timer, X } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface RestTimerProps {
@@ -10,53 +10,140 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [lastDuration, setLastDuration] = useState(120);
+  const [targetTime, setTargetTime] = useState<number | null>(null);
+  const [increment, setIncrement] = useState(15);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const wakeLockRef = React.useRef<any>(null); // Type any since WakeLockSentinel might not be in TS lib
+
+  useEffect(() => {
+    audioRef.current = new Audio();
+    return () => {
+      audioRef.current?.pause();
+      releaseWakeLock();
+    };
+  }, []);
+
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+      }
+    } catch (err) {
+      console.log('Wake lock failed', err);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+    }
+  };
+
+  const playSilentAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      audioRef.current.loop = true;
+      audioRef.current.volume = 1;
+      audioRef.current.play().catch(() => {});
+    }
+  };
+
+  const playBellAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.src = '/true-boxing-bell.mp3';
+      audioRef.current.loop = false;
+      audioRef.current.volume = 1;
+      audioRef.current.play().catch(() => {});
+    }
+  };
 
   // Auto-start timer when a set is completed
   useEffect(() => {
     if (lastCompletedSetTime > 0) {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      setTargetTime(Date.now() + lastDuration * 1000);
       setTimeLeft(lastDuration);
       setIsActive(true);
+      playSilentAudio();
+      requestWakeLock();
     }
   }, [lastCompletedSetTime]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
-    if (isActive && timeLeft > 0) {
+    if (isActive && targetTime !== null) {
       interval = setInterval(() => {
-        setTimeLeft((time) => time - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && isActive) {
-      setIsActive(false);
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.volume = 0.5;
-        audio.play();
-      } catch (e) {
-        // Ignore audio errors
-      }
+        const remaining = Math.round((targetTime - Date.now()) / 1000);
+        if (remaining <= 0) {
+          setTimeLeft(0);
+          setIsActive(false);
+          setTargetTime(null);
+          releaseWakeLock();
+          
+          // Play bell on the already-active audio element
+          playBellAudio();
+          
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Rest Complete', {
+              body: 'Time for your next set! Let\'s go.',
+              icon: '/pwa-192x192.png'
+            });
+          }
+        } else {
+          setTimeLeft(remaining);
+        }
+      }, 500);
+    } else {
+      releaseWakeLock();
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
+  }, [isActive, targetTime]);
 
   const startTimer = (seconds: number) => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     setLastDuration(seconds);
+    setTargetTime(Date.now() + seconds * 1000);
     setTimeLeft(seconds);
     setIsActive(true);
+    playSilentAudio();
+    requestWakeLock();
   };
 
   const addTime = (seconds: number) => {
-    setTimeLeft((time) => Math.max(0, time + seconds));
+    if (targetTime) {
+      setTargetTime(targetTime + seconds * 1000);
+      setTimeLeft((time) => Math.max(0, time + seconds));
+    }
+  };
+
+  const toggleTimer = () => {
+    if (isActive) {
+      setIsActive(false);
+      setTargetTime(null);
+      audioRef.current?.pause();
+    } else if (timeLeft > 0) {
+      setTargetTime(Date.now() + timeLeft * 1000);
+      setIsActive(true);
+      playSilentAudio();
+    }
+  };
+
+  const cancelTimer = () => {
+    setIsActive(false);
+    setTargetTime(null);
+    setTimeLeft(0);
+    audioRef.current?.pause();
   };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const cancelTimer = () => {
-    setIsActive(false);
-    setTimeLeft(0);
   };
 
   // Auto-hide when timer is at 0 and not active
@@ -87,33 +174,36 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
 
         {/* Right side: Controls */}
         <div className="flex items-center gap-2 order-2 sm:order-3">
-          <button onClick={() => addTime(-30)} className="p-2 bg-tactical-800 hover:bg-tactical-700 text-white rounded border border-tactical-600 transition-colors">
-            <Minus className="w-4 h-4" />
-          </button>
-          
           <button 
-            onClick={() => setIsActive(!isActive)}
-            className={clsx(
-              "w-10 h-10 flex items-center justify-center rounded border transition-all",
-              isActive 
-                ? "bg-tactical-800 border-neon-red text-neon-red hover:bg-tactical-700" 
-                : "bg-neon-blue border-neon-blue text-tactical-900 hover:bg-neon-blue/90"
-            )}
+            onClick={toggleTimer}
+            className="p-2 bg-neon-blue text-black rounded hover:bg-neon-blue/80 transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] mr-2 sm:mr-4"
           >
-            {isActive ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+            {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
           </button>
 
-          <button onClick={() => addTime(30)} className="p-2 bg-tactical-800 hover:bg-tactical-700 text-white rounded border border-tactical-600 transition-colors">
-            <Plus className="w-4 h-4" />
-          </button>
+          <div className="flex items-center bg-tactical-800 rounded border border-tactical-600">
+            <button onClick={() => addTime(-increment)} className="px-3 py-2 hover:bg-tactical-700 text-white rounded-l transition-colors">
+              <Minus className="w-4 h-4" />
+            </button>
+            
+            <button 
+              onClick={() => setIncrement(increment === 10 ? 15 : increment === 15 ? 30 : 10)}
+              className="px-3 py-2 min-w-[46px] text-center text-neon-blue font-rajdhani text-sm font-bold hover:bg-tactical-700 transition-colors border-x border-tactical-600/50"
+              title="Change Increment Amount"
+            >
+              {increment}s
+            </button>
 
-          {/* Cancel/Dismiss Timer Button */}
+            <button onClick={() => addTime(increment)} className="px-3 py-2 hover:bg-tactical-700 text-white rounded-r transition-colors">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
           <button 
-            onClick={cancelTimer} 
-            className="p-2 ml-2 bg-tactical-800 hover:bg-neon-red/20 text-gray-400 hover:text-neon-red rounded border border-tactical-600 hover:border-neon-red transition-colors"
-            title="Cancel Timer"
+            onClick={cancelTimer}
+            className="p-2 bg-tactical-800 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded border border-tactical-600 transition-colors ml-1"
           >
-            <span className="text-sm font-bold font-rajdhani uppercase px-1">Stop</span>
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>

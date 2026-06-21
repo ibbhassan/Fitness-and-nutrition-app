@@ -13,9 +13,11 @@ interface FoodEntryModalProps {
 }
 
 export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initialFood, onSave, onDelete, isEditing }) => {
-  const { toggleFavoriteFood } = useUser();
+  const { saveToFavorites, removeFavoriteFood, favoriteFoods } = useUser();
   const [name, setName] = useState(initialFood?.name || '');
-  const [saveFavorite, setSaveFavorite] = useState(false);
+  const [saveFavorite, setSaveFavorite] = useState(() => {
+    return favoriteFoods.some(f => (f?.name || '').toLowerCase() === (initialFood?.name || '').toLowerCase());
+  });
 
   // We set label serving amount to 1 by default. If editing, we just use 1.
   const [labelServingAmount, setLabelServingAmount] = useState<string>('1');
@@ -62,7 +64,12 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
       }
     };
     
-    if (saveFavorite) toggleFavoriteFood(food);
+    if (saveFavorite) {
+      saveToFavorites(food);
+    } else {
+      removeFavoriteFood(food.name);
+    }
+    
     if (onSave) onSave(food);
   };
 
@@ -223,7 +230,7 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
               </div>
             </div>
 
-            {!isEditing && (
+            <div>
               <button
                 type="button"
                 onClick={() => setSaveFavorite(!saveFavorite)}
@@ -234,7 +241,7 @@ export const FoodEntryModal: React.FC<FoodEntryModalProps> = ({ onClose, initial
                 </div>
                 Save to Favorites
               </button>
-            )}
+            </div>
           </form>
         </div>
 

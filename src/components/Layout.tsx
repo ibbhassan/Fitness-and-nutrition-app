@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
 import { useUser } from '../context/UserContext';
+import type { FoodItem } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) => {
-  const { profile, logout, addNutritionMacros, addSteps, logWeight, customPresets, startWorkout } = useUser();
+  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [prevLevel, setPrevLevel] = useState(profile.level);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -36,22 +37,22 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     setLastScrollY(currentScrollY);
   };
 
-  const defaultLunchItems = [
-    { id: '1', name: 'Oats', amount: 80, unit: 'g', pC: 3.89, pP: 0.169, pCarb: 0.663, pF: 0.069 },
-    { id: '2', name: 'Protein Powder', amount: 75, unit: 'g', pC: 3.8, pP: 0.8, pCarb: 0.1, pF: 0.02 },
-    { id: '3', name: 'Blueberries', amount: 70, unit: 'g', pC: 0.57, pP: 0.007, pCarb: 0.145, pF: 0.003 },
-    { id: '4', name: 'Banana', amount: 1, unit: 'whole', pC: 105, pP: 1.3, pCarb: 27, pF: 0.3 },
-    { id: '5', name: 'Walnuts', amount: 16, unit: 'g', pC: 6.54, pP: 0.152, pCarb: 0.137, pF: 0.652 },
-  ];
-  
-  const [lunchItems, setLunchItems] = useState(defaultLunchItems);
+  const yesterdayLunchLogs = useMemo(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    return foodLogs.filter(log => log.date === yesterdayStr && log.mealType === 'Lunch');
+  }, [foodLogs]);
+
+  const [lunchItems, setLunchItems] = useState<FoodItem[]>([]);
 
   const calculateLunchMacros = () => {
     return lunchItems.reduce((acc, item) => {
-      acc.calories += item.amount * item.pC;
-      acc.protein += item.amount * item.pP;
-      acc.carbs += item.amount * item.pCarb;
-      acc.fat += item.amount * item.pF;
+      acc.calories += item.macrosPerUnit.calories * item.amount;
+      acc.protein += item.macrosPerUnit.protein * item.amount;
+      acc.carbs += item.macrosPerUnit.carbs * item.amount;
+      acc.fat += item.macrosPerUnit.fat * item.amount;
       return acc;
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
@@ -124,21 +125,22 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
   return (
     <div className="flex flex-col h-[100dvh] bg-tactical-900 text-gray-100 overflow-hidden">
-      {/* Top Header */}
-      <header className="flex-none bg-tactical-800 border-b border-tactical-600 p-4 flex items-center justify-between z-10 shadow-sm">
+      <header className="flex-none bg-tactical-800 border-b border-tactical-600 p-4 flex items-center justify-between z-[60] shadow-sm relative">
         <div className="flex items-center">
           <Activity className="w-6 h-6 text-neon-blue mr-2" />
           <span className="text-xl font-rajdhani font-bold tracking-widest text-white uppercase">
             Evoke
           </span>
         </div>
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="text-gray-400 hover:text-neon-red transition-colors p-2 rounded-full hover:bg-tactical-700"
-          aria-label="Logout"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div id="global-header-actions" className="flex items-center gap-2">
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="text-gray-400 hover:text-neon-red transition-colors p-2 rounded-full hover:bg-tactical-700"
+            aria-label="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -404,12 +406,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   </div>
                   
                   <button 
-                    onClick={() => setQuickLogMode('lunchEditor')}
-                    className="w-full flex items-center justify-between p-4 bg-neon-gold/10 border border-neon-gold rounded-lg hover:bg-neon-gold/20 transition-all text-left"
+                    onClick={() => {
+                      setLunchItems(yesterdayLunchLogs.map(log => log.food));
+                      setQuickLogMode('lunchEditor');
+                    }}
+                    disabled={yesterdayLunchLogs.length === 0}
+                    className="w-full flex items-center justify-between p-4 bg-neon-gold/10 border border-neon-gold rounded-lg hover:bg-neon-gold/20 transition-all text-left disabled:opacity-50"
                   >
                     <div>
                       <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Same Lunch From Yesterday</h3>
-                      <p className="text-xs text-gray-400 mt-1">Oats, Protein, Berries, Banana, Walnuts</p>
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-1">
+                        {yesterdayLunchLogs.length > 0 
+                          ? yesterdayLunchLogs.map(l => l.food.name).join(', ') 
+                          : 'No lunch logged yesterday'}
+                      </p>
                     </div>
                     <Plus className="w-5 h-5 text-neon-gold" />
                   </button>
@@ -460,12 +470,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   
                   <button 
                     onClick={() => {
-                      const macros = calculateLunchMacros();
-                      addNutritionMacros(macros);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      lunchItems.forEach(item => {
+                        addFoodLog({
+                          id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                          date: todayStr,
+                          mealType: 'Lunch',
+                          food: item
+                        });
+                      });
                       setIsQuickLogOpen(false);
                       setQuickLogMode('menu');
                     }}
-                    className="w-full bg-neon-gold text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#ffdf00] transition-all mt-4"
+                    className="w-full bg-neon-gold text-tactical-900 py-3 rounded-lg font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#ffdf00] transition-all mt-4"
                   >
                     Confirm & Log
                   </button>

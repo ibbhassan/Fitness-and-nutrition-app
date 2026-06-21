@@ -44,6 +44,7 @@ export interface UserProfile {
   promoLosses: number;
   stats: UserStats;
   currentMode: 'Cut' | 'Bulk' | 'Maintenance';
+  lastSeenPatchVersion?: string;
 }
 
 export interface DailyNutrition {
@@ -132,4 +133,7 @@ export interface WorkoutLog {
   durationMinutes: number;
   exercises: ActiveExercise[];
   volume: number;
+  grade?: 'S+' | 'S' | 'A' | 'B' | 'C';
+  epChange?: number;
+  isPr?: boolean;
 }

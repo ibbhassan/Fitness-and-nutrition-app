@@ -7,7 +7,7 @@ import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, healthSyncEnabled, toggleHealthSync, devAdvanceDay } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<'Cut' | 'Bulk' | 'Maintenance'>(profile?.currentMode || 'Maintenance');
@@ -269,15 +269,15 @@ export const Profile: React.FC = () => {
               <div className="flex justify-between items-center p-3 bg-tactical-900 rounded-lg border border-tactical-700">
                 <span className="text-gray-300 font-inter text-sm">Apple Health Sync</span>
                 <button 
-                  onClick={useUser().toggleHealthSync}
+                  onClick={toggleHealthSync}
                   className={clsx(
                     "w-12 h-6 rounded-full relative transition-colors duration-300",
-                    useUser().healthSyncEnabled ? "bg-neon-blue/30 border border-neon-blue" : "bg-tactical-700"
+                    healthSyncEnabled ? "bg-neon-blue/30 border border-neon-blue" : "bg-tactical-700"
                   )}
                 >
                   <div className={clsx(
                     "w-4 h-4 rounded-full absolute top-0.5 transition-all duration-300",
-                    useUser().healthSyncEnabled ? "bg-neon-blue right-0.5 shadow-[0_0_5px_#00f0ff]" : "bg-gray-500 left-0.5"
+                    healthSyncEnabled ? "bg-neon-blue right-0.5 shadow-[0_0_5px_#00f0ff]" : "bg-gray-500 left-0.5"
                   )}></div>
                 </button>
               </div>
@@ -289,6 +289,8 @@ export const Profile: React.FC = () => {
               </div>
             </div>
           </div>
+
+
         </div>
 
       </div>
