@@ -407,7 +407,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   </div>
                   
                   <div className="max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                    {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => {
+                    {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => {
                       const mealLogs = yesterdayLogs.filter(l => l.mealType === mealType);
                       return (
                         <button 
@@ -499,7 +499,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                         addFoodLog({
                           id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                           date: todayStr,
-                          mealType: activeMealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks',
+                          mealType: activeMealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack',
                           food: item
                         });
                       });

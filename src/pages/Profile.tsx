@@ -7,7 +7,7 @@ import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, healthSyncEnabled, toggleHealthSync, devAdvanceDay } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, healthSyncEnabled, toggleHealthSync } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<'Cut' | 'Bulk' | 'Maintenance'>(profile?.currentMode || 'Maintenance');
