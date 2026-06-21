@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Flame, Plus, Coffee, Sun, Moon, Apple } from 'lucide-react';
+import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { MealLoggerModal } from '../components/MealLoggerModal';
 import { FoodEntryModal } from '../components/FoodEntryModal';
@@ -79,15 +80,34 @@ export const Nutrition: React.FC = () => {
         {logs.length > 0 && (
           <div className="space-y-2 mt-2 border-t border-tactical-800 pt-3">
             {logs.map((log) => (
-              <div 
-                key={log.id} 
-                onClick={() => setEditingLog(log)}
-                className="flex justify-between items-center text-sm p-2 rounded hover:bg-tactical-800 cursor-pointer transition-colors group"
-              >
-                <div className="text-gray-300 truncate pr-4 group-hover:text-neon-blue transition-colors">
-                  {log.food.name} <span className="text-gray-500 text-xs ml-1">({log.food.amount} {log.food.unit})</span>
+              <div key={log.id} className="relative overflow-hidden rounded group">
+                {/* Delete Background */}
+                <div className="absolute inset-y-0 right-0 w-16 bg-neon-red flex items-center justify-center rounded">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFoodLog(log.id);
+                    }}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <Trash2 className="w-5 h-5 text-tactical-900" />
+                  </button>
                 </div>
-                <div className="text-gray-500 shrink-0">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</div>
+                
+                {/* Swipeable Foreground */}
+                <motion.div 
+                  drag="x"
+                  dragConstraints={{ left: -64, right: 0 }}
+                  dragElastic={0.1}
+                  dragDirectionLock
+                  onClick={() => setEditingLog(log)}
+                  className="relative z-10 bg-tactical-900 flex justify-between items-center text-sm p-2 rounded cursor-pointer border border-transparent group-hover:bg-tactical-800 transition-colors"
+                >
+                  <div className="text-gray-300 truncate pr-4 group-hover:text-neon-blue transition-colors">
+                    {log.food.name} <span className="text-gray-500 text-xs ml-1">({log.food.amount} {log.food.unit})</span>
+                  </div>
+                  <div className="text-gray-500 shrink-0">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</div>
+                </motion.div>
               </div>
             ))}
           </div>
@@ -127,10 +147,13 @@ export const Nutrition: React.FC = () => {
                 className="transition-all duration-1000 ease-out"
               />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <Flame className="w-6 h-6 text-neon-blue mb-1" />
-              <span className="text-3xl font-bold text-white leading-none tracking-tighter">{Math.round(remainingCals > 0 ? remainingCals : 0)}</span>
-              <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400 mt-1">Kcal Left</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">
+              <Flame className="w-4 h-4 text-neon-blue mb-1" />
+              <span className="text-2xl font-bold text-white leading-none tracking-tighter">{Math.round(calories.current)}</span>
+              <span className="text-[9px] font-rajdhani uppercase tracking-widest text-gray-400 mt-0.5">Eaten</span>
+              <div className="w-10 h-px bg-tactical-700 my-1.5" />
+              <span className="text-xl font-bold text-neon-blue leading-none tracking-tighter">{Math.round(remainingCals > 0 ? remainingCals : 0)}</span>
+              <span className="text-[9px] font-rajdhani uppercase tracking-widest text-gray-500 mt-0.5">Left</span>
             </div>
           </div>
         </div>

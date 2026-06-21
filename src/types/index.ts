@@ -96,18 +96,10 @@ export interface Meal {
   name: string;
   items: FoodItem[];
 }
-export interface PresetExercise {
-  id: string | number;
-  name: string;
-  sets: string;
-  reps: string;
-  weight?: string | number;
-}
-
 export interface WorkoutPreset {
   id: string;
   name: string;
-  exercises: PresetExercise[];
+  exercises: ActiveExercise[];
 }
 
 export interface ExerciseDefinition {

@@ -152,7 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="flex-none bg-tactical-800 border-t border-tactical-600 pb-safe flex justify-around items-center px-1 pt-2 pb-2 z-40 relative shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+      <nav className="flex-none bg-tactical-800 border-t border-tactical-600 pb-safe flex justify-around items-center px-2 pt-1 pb-3 z-40 relative shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -162,7 +162,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={clsx(
-                "flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0 sm:p-1 rounded-lg transition-all duration-200 relative",
+                "flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-all duration-200 relative -translate-y-1",
                 isActive 
                   ? "text-neon-blue" 
                   : "text-gray-400 hover:text-gray-200"
@@ -175,7 +175,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                 <Icon className={clsx("w-5 h-5 sm:w-6 sm:h-6 transition-transform", isActive && "scale-110")} />
               </div>
               <span className={clsx(
-                "text-[9px] sm:text-[10px] font-inter font-medium truncate w-full text-center transition-colors",
+                "text-[9px] sm:text-[10px] font-inter font-medium whitespace-nowrap overflow-visible transition-colors",
                 isActive ? "text-neon-blue font-bold" : ""
               )}>
                 {item.label}

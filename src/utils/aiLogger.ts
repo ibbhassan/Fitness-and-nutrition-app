@@ -16,7 +16,7 @@ export const parseMealText = async (text: string): Promise<ParsedMacros> => {
     throw new Error('Gemini API key is not configured in .env file.');
   }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `
   You are an expert nutritionist. Analyze the following meal description and estimate the macronutrients and calories.
@@ -40,8 +40,8 @@ export const parseMealText = async (text: string): Promise<ParsedMacros> => {
     // Ensure we strip out any markdown formatting just in case
     const cleanJson = responseText.replace(/```json/i, '').replace(/```/g, '').trim();
     return JSON.parse(cleanJson) as ParsedMacros;
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI Logging error:", error);
-    throw new Error('Failed to parse meal data.');
+    throw new Error(`AI Error: ${error.message || 'Failed to parse meal data'}`);
   }
 };

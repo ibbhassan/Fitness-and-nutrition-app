@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem, FoodLogEntry, Meal } from '../types';
+import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem, FoodLogEntry, Meal, ExerciseDefinition } from '../types';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 
 interface UserContextType {
@@ -20,6 +20,7 @@ interface UserContextType {
   addNutritionMacros: (macros: { calories: number; protein: number; carbs: number; fat: number; }) => void;
   customPresets: WorkoutPreset[];
   saveCustomPreset: (preset: WorkoutPreset) => void;
+  deleteCustomPreset: (id: string) => void;
   updateAvatar: (avatar: AvatarConfig) => void;
   workoutHistory: WorkoutLog[];
   logWorkout: (log: WorkoutLog) => void;
@@ -36,6 +37,8 @@ interface UserContextType {
   startWorkout: (preset: WorkoutPreset | null) => void;
   abortWorkout: () => void;
   setActiveExercises: React.Dispatch<React.SetStateAction<ActiveExercise[]>>;
+  customExercises: ExerciseDefinition[];
+  saveCustomExercise: (exercise: ExerciseDefinition) => void;
   recentFoods: FoodItem[];
   favoriteFoods: FoodItem[];
   foodLogs: FoodLogEntry[];
@@ -72,6 +75,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       customPresets: [] as WorkoutPreset[],
       workoutHistory: [] as WorkoutLog[],
       manualQuestCompletions: {} as Record<string, boolean>,
+      customExercises: [] as ExerciseDefinition[],
       recentFoods: [] as FoodItem[],
       favoriteFoods: [] as FoodItem[],
       foodLogs: [] as FoodLogEntry[],
@@ -97,6 +101,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
   const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string} | null>(initialState.activeWorkout || null);
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
+  const [customExercises, setCustomExercises] = useState<ExerciseDefinition[]>(initialState.customExercises || []);
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
   const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>(initialState.foodLogs || []);
@@ -117,6 +122,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       customPresets,
       workoutHistory,
       manualQuestCompletions,
+      customExercises,
       healthSyncEnabled,
       dailySteps,
       activeWorkout,
@@ -127,7 +133,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savedMeals
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, healthSyncEnabled, dailySteps, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
   const login = (username: string) => {
     setUser({ username });
@@ -226,7 +232,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const saveCustomPreset = (preset: WorkoutPreset) => {
-    setCustomPresets(prev => [...prev, preset]);
+    setCustomPresets(prev => {
+      const existingIndex = prev.findIndex(p => p.id === preset.id);
+      if (existingIndex >= 0) {
+        const newPresets = [...prev];
+        newPresets[existingIndex] = preset;
+        return newPresets;
+      }
+      return [...prev, preset];
+    });
+  };
+
+  const deleteCustomPreset = (id: string) => {
+    setCustomPresets(prev => prev.filter(p => p.id !== id));
   };
 
   const updateAvatar = (avatar: AvatarConfig) => {
@@ -280,6 +298,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  const saveCustomExercise = (exercise: ExerciseDefinition) => {
+    setCustomExercises(prev => [...prev, exercise]);
+  };
+
   const logWorkout = (log: WorkoutLog) => {
     setWorkoutHistory(prev => [...prev, log]);
   };
@@ -289,19 +311,33 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setActiveWorkout({ id: preset.id, name: preset.name });
       
       const mappedExercises: ActiveExercise[] = preset.exercises.map(ex => {
-        const numSets = parseInt(ex.sets) || 3;
-        const sets: LoggedSet[] = Array.from({ length: numSets }).map((_, i) => ({
-          id: `${Date.now()}-${i}`,
-          reps: 0,
-          weight: 0,
-          type: 'Normal',
-          completed: false
-        }));
+        // Handle backwards compatibility for old PresetExercise (where sets was a string)
+        if (typeof ex.sets === 'string') {
+          const numSets = parseInt(ex.sets as string) || 3;
+          const sets: LoggedSet[] = Array.from({ length: numSets }).map((_, i) => ({
+            id: `${Date.now()}-${i}`,
+            reps: 0,
+            weight: 0,
+            type: 'Normal',
+            completed: false
+          }));
+          return {
+            id: String(ex.id),
+            name: ex.name,
+            sets
+          };
+        }
         
+        // New format: already an ActiveExercise shape
         return {
           id: String(ex.id),
           name: ex.name,
-          sets
+          // Deep clone the sets to reset completion status and ensure unique IDs
+          sets: (ex.sets as LoggedSet[]).map((set, i) => ({
+            ...set,
+            id: `${Date.now()}-${ex.id}-${i}`,
+            completed: false
+          }))
         };
       });
       setActiveExercises(mappedExercises);
@@ -338,6 +374,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addNutritionMacros: () => {},
       customPresets,
       saveCustomPreset,
+      deleteCustomPreset,
       updateAvatar,
       workoutHistory,
       logWorkout,
@@ -354,6 +391,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startWorkout,
       abortWorkout,
       setActiveExercises,
+      customExercises,
+      saveCustomExercise,
       recentFoods,
       favoriteFoods,
       foodLogs,

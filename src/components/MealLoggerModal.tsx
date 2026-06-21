@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark } from 'lucide-react';
+import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useUser } from '../context/UserContext';
 import { BarcodeScanner } from './BarcodeScanner';
 import { FoodEntryModal } from './FoodEntryModal';
@@ -165,24 +166,43 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, onCl
               </h4>
               <div className="space-y-2">
                 {todaysMealLogs.map(log => (
-                  <div 
-                    key={log.id} 
-                    onClick={() => setEditingLog(log)}
-                    className="bg-tactical-900 border border-tactical-700 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:border-neon-blue transition-colors group"
-                  >
-                    <div>
-                      <h4 className="font-bold text-white text-sm group-hover:text-neon-blue transition-colors">{log.food.name}</h4>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {log.food.amount} {log.food.unit} • <span className="text-neon-red font-bold">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</span>
+                  <div key={log.id} className="relative overflow-hidden rounded-xl group">
+                    {/* Delete Background */}
+                    <div className="absolute inset-y-0 right-0 w-20 bg-neon-red flex items-center justify-center rounded-xl">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFoodLog(log.id);
+                        }}
+                        className="w-full h-full flex items-center justify-center"
+                      >
+                        <Trash2 className="w-6 h-6 text-tactical-900" />
+                      </button>
+                    </div>
+
+                    {/* Swipeable Foreground */}
+                    <motion.div 
+                      drag="x"
+                      dragConstraints={{ left: -80, right: 0 }}
+                      dragElastic={0.1}
+                      dragDirectionLock
+                      onClick={() => setEditingLog(log)}
+                      className="relative z-10 bg-tactical-900 border border-tactical-700 p-3 rounded-xl flex items-center justify-between cursor-pointer group-hover:border-neon-blue transition-colors bg-opacity-100"
+                    >
+                      <div>
+                        <h4 className="font-bold text-white text-sm group-hover:text-neon-blue transition-colors">{log.food.name}</h4>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {log.food.amount} {log.food.unit} • <span className="text-neon-red font-bold">{Math.round(log.food.macrosPerUnit.calories * log.food.amount)} kcal</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px]">
-                      <span className="text-neon-blue font-bold">{Math.round(log.food.macrosPerUnit.protein * log.food.amount)}g P</span>
-                      <span className="text-tactical-600">|</span>
-                      <span className="text-neon-gold font-bold">{Math.round(log.food.macrosPerUnit.carbs * log.food.amount)}g C</span>
-                      <span className="text-tactical-600">|</span>
-                      <span className="text-neon-purple font-bold">{Math.round(log.food.macrosPerUnit.fat * log.food.amount)}g F</span>
-                    </div>
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-neon-blue font-bold">{Math.round(log.food.macrosPerUnit.protein * log.food.amount)}g P</span>
+                        <span className="text-tactical-600">|</span>
+                        <span className="text-neon-gold font-bold">{Math.round(log.food.macrosPerUnit.carbs * log.food.amount)}g C</span>
+                        <span className="text-tactical-600">|</span>
+                        <span className="text-neon-purple font-bold">{Math.round(log.food.macrosPerUnit.fat * log.food.amount)}g F</span>
+                      </div>
+                    </motion.div>
                   </div>
                 ))}
               </div>

@@ -2,20 +2,25 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Play, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft } from 'lucide-react';
 import { useUser } from '../context/UserContext';
-import type { WorkoutPreset, LoggedSet, PresetExercise } from '../types';
+import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
 import { RestTimer } from '../components/RestTimer';
 import { clsx } from 'clsx';
 
 export const WorkoutLogger: React.FC = () => {
-  const { customPresets, saveCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, setActiveExercises: setExercises } = useUser();
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
   // Custom Preset Creator State
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
-  const [newPresetExercises, setNewPresetExercises] = useState<PresetExercise[]>([
-    { id: Date.now(), name: '', sets: '', reps: '' }
+  const [newPresetExercises, setNewPresetExercises] = useState<ActiveExercise[]>([
+    { 
+      id: String(Date.now()), 
+      name: '', 
+      sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] 
+    }
   ]);
 
   // Exercise Library Selection State
@@ -46,8 +51,9 @@ export const WorkoutLogger: React.FC = () => {
     setLibrarySearchTerm('');
   };
 
-  const filteredLibrary = exerciseLibrary.filter(ex => 
-    ex.name.toLowerCase().includes(librarySearchTerm.toLowerCase()) || 
+  const allExercises = [...exerciseLibrary, ...customExercises];
+  const filteredLibrary = allExercises.filter(ex => 
+    ex.name.toLowerCase().includes(librarySearchTerm.toLowerCase()) ||
     ex.muscleGroup.toLowerCase().includes(librarySearchTerm.toLowerCase())
   );
 
@@ -124,8 +130,34 @@ export const WorkoutLogger: React.FC = () => {
                 ))}
                 
                 {filteredLibrary.length === 0 && (
-                  <div className="col-span-full py-12 text-center text-gray-500 font-inter">
-                    No exercises found matching "{librarySearchTerm}".
+                  <div className="col-span-full py-12 text-center flex flex-col items-center">
+                    <p className="text-gray-500 font-inter mb-4">No exercises found matching "{librarySearchTerm}".</p>
+                    {librarySearchTerm && (
+                      <button 
+                        onClick={() => {
+                          const newEx = { id: `custom-${Date.now()}`, name: librarySearchTerm, muscleGroup: 'Full Body' as const };
+                          saveCustomExercise(newEx);
+                          handleSelectExercise(newEx.name);
+                        }}
+                        className="bg-tactical-800 border border-tactical-600 text-white px-4 py-2 rounded-lg font-rajdhani uppercase font-bold hover:bg-tactical-700 hover:text-neon-blue transition-colors flex items-center"
+                      >
+                        <Plus className="w-4 h-4 mr-2" /> Create "{librarySearchTerm}"
+                      </button>
+                    )}
+                  </div>
+                )}
+                {filteredLibrary.length > 0 && librarySearchTerm && !filteredLibrary.some(ex => ex.name.toLowerCase() === librarySearchTerm.toLowerCase()) && (
+                  <div className="col-span-full mt-4 flex justify-center">
+                    <button 
+                      onClick={() => {
+                        const newEx = { id: `custom-${Date.now()}`, name: librarySearchTerm, muscleGroup: 'Full Body' as const };
+                        saveCustomExercise(newEx);
+                        handleSelectExercise(newEx.name);
+                      }}
+                      className="bg-tactical-800 border border-tactical-600 text-gray-400 px-4 py-2 rounded-lg font-rajdhani uppercase font-bold hover:bg-tactical-700 hover:text-neon-blue transition-colors flex items-center"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Create "{librarySearchTerm}"
+                    </button>
                   </div>
                 )}
               </div>
@@ -137,10 +169,44 @@ export const WorkoutLogger: React.FC = () => {
   );
 
   const getRecommendedPresets = (): WorkoutPreset[] => {
+    const createSets = (numSets: number, reps: number): LoggedSet[] => {
+      return Array.from({ length: numSets }).map((_, i) => ({
+        id: `${Date.now()}-${i}`,
+        reps: reps,
+        weight: 0,
+        type: 'Normal',
+        completed: false
+      }));
+    };
+
     return [
-      { id: 'rec-1', name: 'Push', exercises: [{ id: 1, name: 'Bench Press', sets: '4', reps: '5-8' }, { id: 2, name: 'Overhead Press', sets: '3', reps: '8-10' }, { id: 3, name: 'Tricep Extensions', sets: '3', reps: '10-12' }] },
-      { id: 'rec-2', name: 'Pull', exercises: [{ id: 1, name: 'Barbell Row', sets: '4', reps: '5-8' }, { id: 2, name: 'Pull-ups', sets: '3', reps: '8-10' }, { id: 3, name: 'Bicep Curls', sets: '3', reps: '10-12' }] },
-      { id: 'rec-3', name: 'Legs', exercises: [{ id: 1, name: 'Squat', sets: '4', reps: '5-8' }, { id: 2, name: 'Leg Press', sets: '3', reps: '10-12' }, { id: 3, name: 'Calf Raises', sets: '4', reps: '15-20' }] }
+      { 
+        id: 'rec-1', 
+        name: 'Push', 
+        exercises: [
+          { id: '1', name: 'Bench Press', sets: createSets(4, 8) }, 
+          { id: '2', name: 'Overhead Press', sets: createSets(3, 10) }, 
+          { id: '3', name: 'Tricep Extensions', sets: createSets(3, 12) }
+        ] 
+      },
+      { 
+        id: 'rec-2', 
+        name: 'Pull', 
+        exercises: [
+          { id: '1', name: 'Barbell Row', sets: createSets(4, 8) }, 
+          { id: '2', name: 'Pull-ups', sets: createSets(3, 10) }, 
+          { id: '3', name: 'Bicep Curls', sets: createSets(3, 12) }
+        ] 
+      },
+      { 
+        id: 'rec-3', 
+        name: 'Legs', 
+        exercises: [
+          { id: '1', name: 'Squat', sets: createSets(4, 8) }, 
+          { id: '2', name: 'Leg Press', sets: createSets(3, 12) }, 
+          { id: '3', name: 'Calf Raises', sets: createSets(4, 20) }
+        ] 
+      }
     ];
   };
 
@@ -177,135 +243,248 @@ export const WorkoutLogger: React.FC = () => {
   const saveNewPreset = () => {
     if (!newPresetName) return;
     const newPreset: WorkoutPreset = {
-      id: `custom-${Date.now()}`,
+      id: editingPresetId || `custom-${Date.now()}`,
       name: newPresetName,
       exercises: newPresetExercises
     };
     saveCustomPreset(newPreset);
     setIsCreatingPreset(false);
+    setEditingPresetId(null);
     setNewPresetName('');
-    setNewPresetExercises([{ id: Date.now(), name: '', sets: '', reps: '' }]);
+    setNewPresetExercises([{ 
+      id: String(Date.now()), 
+      name: '', 
+      sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] 
+    }]);
   };
 
-  const toggleSetComplete = (exIndex: number, setIndex: number) => {
-    const newEx = [...exercises];
-    const isNowCompleted = !newEx[exIndex].sets[setIndex].completed;
-    newEx[exIndex].sets[setIndex].completed = isNowCompleted;
-    setExercises(newEx);
+  const editPreset = (preset: WorkoutPreset) => {
+    setEditingPresetId(preset.id);
+    setNewPresetName(preset.name);
+    setNewPresetExercises(preset.exercises);
+    setIsCreatingPreset(true);
+  };
 
-    if (isNowCompleted) {
-      setLastCompletedSetTime(Date.now());
+  const getPreviousSetData = (exerciseName: string, setIndex: number) => {
+    if (!exerciseName || !workoutHistory) return null;
+    const reversedHistory = [...workoutHistory].reverse();
+    for (const log of reversedHistory) {
+      const ex = log.exercises.find((e: ActiveExercise) => e.name.toLowerCase() === exerciseName.toLowerCase());
+      if (ex && ex.sets[setIndex]) {
+        return ex.sets[setIndex];
+      }
     }
+    return null;
   };
 
-  const addSetToExercise = (exIndex: number) => {
-    const newEx = [...exercises];
-    newEx[exIndex].sets.push({
-      id: String(Date.now()),
-      reps: 0,
-      weight: 0,
-      type: 'Normal',
-      completed: false
-    });
-    setExercises(newEx);
-  };
+  const renderExerciseTable = (
+    exerciseList: ActiveExercise[],
+    setExerciseList: (list: ActiveExercise[]) => void,
+    isPreset: boolean
+  ) => {
+    const updateSet = (exIndex: number, setIndex: number, field: keyof LoggedSet, value: any) => {
+      const newEx = [...exerciseList];
+      newEx[exIndex].sets[setIndex] = { ...newEx[exIndex].sets[setIndex], [field]: value };
+      setExerciseList(newEx);
+    };
 
-  const removeSetFromExercise = (exIndex: number, setIndex: number) => {
-    const newEx = [...exercises];
-    newEx[exIndex].sets.splice(setIndex, 1);
-    setExercises(newEx);
-  };
+    const addSet = (exIndex: number) => {
+      const newEx = [...exerciseList];
+      const prevSet = newEx[exIndex].sets[newEx[exIndex].sets.length - 1];
+      newEx[exIndex].sets.push({
+        id: `${Date.now()}-${newEx[exIndex].sets.length}`,
+        reps: prevSet ? prevSet.reps : 0,
+        weight: prevSet ? prevSet.weight : 0,
+        type: 'Normal',
+        completed: false
+      });
+      setExerciseList(newEx);
+    };
 
-  const updateSet = (exIndex: number, setIndex: number, field: keyof LoggedSet, value: any) => {
-    const newEx = [...exercises];
-    newEx[exIndex].sets[setIndex] = { ...newEx[exIndex].sets[setIndex], [field]: value };
-    setExercises(newEx);
+    const removeSet = (exIndex: number, setIndex: number) => {
+      const newEx = [...exerciseList];
+      newEx[exIndex].sets.splice(setIndex, 1);
+      setExerciseList(newEx);
+    };
+
+    const cycleSetType = (exIndex: number, setIndex: number, currentType: string) => {
+      const types: Array<'Normal' | 'Warmup' | 'Drop' | 'Failure'> = ['Normal', 'Warmup', 'Drop', 'Failure'];
+      const nextIndex = (types.indexOf(currentType as 'Normal' | 'Warmup' | 'Drop' | 'Failure') + 1) % types.length;
+      updateSet(exIndex, setIndex, 'type', types[nextIndex]);
+    };
+
+    const toggleSetComplete = (exIndex: number, setIndex: number) => {
+      if (isPreset) return;
+      const newEx = [...exerciseList];
+      const isNowCompleted = !newEx[exIndex].sets[setIndex].completed;
+      newEx[exIndex].sets[setIndex].completed = isNowCompleted;
+      setExerciseList(newEx);
+      if (isNowCompleted) {
+        setLastCompletedSetTime(Date.now());
+      }
+    };
+
+    return (
+      <div className="space-y-10">
+        {exerciseList.map((exercise, exIndex) => (
+          <div key={exercise.id}>
+            <div className="flex justify-between items-center mb-3 px-1">
+              <button 
+                onClick={() => openLibrary(exIndex, isPreset ? 'preset' : 'active')}
+                className="text-neon-blue hover:text-[#00f0ff] transition-colors font-rajdhani font-bold text-xl uppercase tracking-wider"
+              >
+                {exercise.name || 'Select Exercise...'}
+              </button>
+              <button 
+                onClick={() => {
+                  const newEx = [...exerciseList];
+                  newEx.splice(exIndex, 1);
+                  setExerciseList(newEx);
+                }}
+                className="text-gray-500 hover:text-neon-red transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div>
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-1">
+                <div className="col-span-2 sm:col-span-1 text-center">Set</div>
+                <div className="col-span-3 sm:col-span-3 text-center hidden sm:block">Previous</div>
+                <div className="col-span-3 sm:col-span-2 text-center">Lbs</div>
+                <div className="col-span-3 sm:col-span-2 text-center">Reps</div>
+                <div className="col-span-4 sm:col-span-4 text-center"></div>
+              </div>
+
+              {exercise.sets.map((set, setIndex) => {
+                const prevData = getPreviousSetData(exercise.name, setIndex);
+                return (
+                  <div 
+                    key={set.id} 
+                    className={clsx(
+                      "grid grid-cols-12 gap-1 sm:gap-2 items-center p-1 sm:p-2 rounded transition-colors mb-1",
+                      set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800"
+                    )}
+                  >
+                    {/* Set Number / Type Toggle */}
+                    <div className="col-span-2 sm:col-span-1 flex justify-center">
+                      <button
+                        onClick={() => cycleSetType(exIndex, setIndex, set.type)}
+                        className={clsx(
+                          "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
+                          set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
+                          set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
+                          set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
+                          "bg-tactical-700 text-white"
+                        )}
+                      >
+                        {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
+                      </button>
+                    </div>
+                    
+                    {/* Previous Data */}
+                    <div className="col-span-3 sm:col-span-3 text-center hidden sm:flex items-center justify-center">
+                      <span className="text-gray-500 font-inter text-xs">
+                        {prevData ? `${prevData.weight} x ${prevData.reps}` : '-'}
+                      </span>
+                    </div>
+
+                    {/* Weight Input */}
+                    <div className="col-span-3 sm:col-span-2">
+                      <input 
+                        type="number" 
+                        value={set.weight || ''}
+                        onChange={(e) => updateSet(exIndex, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Reps Input */}
+                    <div className="col-span-3 sm:col-span-2">
+                      <input 
+                        type="number" 
+                        value={set.reps || ''}
+                        onChange={(e) => updateSet(exIndex, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-4 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
+                      {!isPreset && (
+                        <button 
+                          onClick={() => toggleSetComplete(exIndex, setIndex)}
+                          className={clsx(
+                            "w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center transition-all",
+                            set.completed 
+                              ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
+                              : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
+                          )}
+                        >
+                          <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => removeSet(exIndex, setIndex)}
+                        className="w-8 h-8 sm:w-10 sm:h-10 bg-tactical-800 hover:bg-tactical-700 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
+                        title="Delete Set"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              <button
+                onClick={() => addSet(exIndex)}
+                className="mt-2 w-full py-2 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded transition-colors font-rajdhani font-bold text-sm uppercase flex justify-center items-center"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Add Set
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (isCreatingPreset) {
     return (
-      <div className="max-w-3xl mx-auto fade-in">
-        <div className="esports-panel p-6">
-          <div className="flex justify-between items-center mb-6 border-b border-tactical-700 pb-4">
-            <div>
-              <h1 className="esports-heading text-2xl text-white">Create Custom Preset</h1>
-              <p className="text-gray-400 text-sm mt-1">Design your own blueprint for combat.</p>
+      <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pb-24">
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
+          <div className="flex justify-between items-start mb-6 border-b border-tactical-700 pb-4">
+            <div className="flex-1 mr-4">
+              <input 
+                type="text" 
+                placeholder="Workout Name..." 
+                value={newPresetName}
+                onChange={(e) => setNewPresetName(e.target.value)}
+                className="w-full bg-transparent border-none p-0 text-white focus:outline-none focus:ring-0 text-3xl font-rajdhani font-bold placeholder-tactical-600"
+              />
+              <p className="text-gray-400 text-sm mt-2">Design your own blueprint for combat.</p>
             </div>
             <button 
-              onClick={() => setIsCreatingPreset(false)}
-              className="text-gray-400 hover:text-white transition-colors flex items-center"
+              onClick={() => {
+                setIsCreatingPreset(false);
+                setEditingPresetId(null);
+              }}
+              className="text-gray-400 hover:text-white transition-colors flex items-center mt-2 whitespace-nowrap"
             >
               <ArrowLeft className="w-5 h-5 mr-2" /> Back
             </button>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-2">Preset Name</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Heavy Legs" 
-              value={newPresetName}
-              onChange={(e) => setNewPresetName(e.target.value)}
-              className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white focus:outline-none focus:border-neon-gold focus:ring-1 focus:ring-neon-gold transition-all text-lg font-rajdhani font-bold"
-            />
-          </div>
-
           <div className="space-y-4">
-            {newPresetExercises.map((exercise, index) => (
-              <div key={exercise.id} className="bg-tactical-900 border border-tactical-700 p-4 rounded-lg flex flex-wrap gap-4 items-end relative">
-                {newPresetExercises.length > 1 && (
-                  <button 
-                    onClick={() => setNewPresetExercises(newPresetExercises.filter(e => e.id !== exercise.id))}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-neon-red transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-                
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Exercise</label>
-                  <button 
-                    onClick={() => openLibrary(index, 'preset')}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-2 text-white hover:border-neon-gold transition-colors text-left flex justify-between items-center"
-                  >
-                    <span>{exercise.name || 'Select Exercise...'}</span>
-                  </button>
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Sets</label>
-                  <input 
-                    type="text" 
-                    value={exercise.sets}
-                    onChange={(e) => {
-                      const newEx = [...newPresetExercises];
-                      newEx[index].sets = e.target.value;
-                      setNewPresetExercises(newEx);
-                    }}
-                    placeholder="e.g. 4" 
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-2 text-white focus:outline-none focus:border-neon-gold"
-                  />
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Reps</label>
-                  <input 
-                    type="text" 
-                    value={exercise.reps}
-                    onChange={(e) => {
-                      const newEx = [...newPresetExercises];
-                      newEx[index].reps = e.target.value;
-                      setNewPresetExercises(newEx);
-                    }}
-                    placeholder="e.g. 8-12" 
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-2 text-white focus:outline-none focus:border-neon-gold"
-                  />
-                </div>
-              </div>
-            ))}
+            {renderExerciseTable(newPresetExercises, setNewPresetExercises, true)}
           </div>
 
           <div className="flex gap-4 mt-6">
             <button 
-              onClick={() => setNewPresetExercises([...newPresetExercises, { id: Date.now(), name: '', sets: '', reps: '' }])}
+              onClick={() => setNewPresetExercises([...newPresetExercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }])}
               className="flex-1 py-3 border-2 border-dashed border-tactical-600 rounded-lg text-gray-400 hover:text-neon-gold hover:border-neon-gold transition-colors font-rajdhani font-bold uppercase tracking-wider flex justify-center items-center"
             >
               <Plus className="w-5 h-5 mr-2" /> Add Exercise
@@ -329,20 +508,87 @@ export const WorkoutLogger: React.FC = () => {
   if (!activeWorkout) {
     return (
       <div className="max-w-4xl mx-auto fade-in">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h1 className="esports-heading text-3xl text-white">The Armory</h1>
-            <p className="text-gray-400 mt-2">Select a saved preset or start a freestyle workout.</p>
-          </div>
+        <div className="flex flex-col items-center mb-8 gap-4">
+          <h1 className="esports-heading text-2xl sm:text-3xl text-white text-center">Workout Library</h1>
           <button 
             onClick={() => handleStartWorkout(null)}
-            className="bg-tactical-800 border border-tactical-600 text-white px-6 py-2 rounded font-rajdhani font-bold hover:bg-tactical-700 transition-colors"
+            className="bg-neon-blue text-tactical-900 px-4 py-2 rounded font-rajdhani font-bold uppercase tracking-wider hover:bg-[#00d0dd] transition-colors text-sm sm:text-base w-full sm:w-auto text-center"
           >
-            Start Empty Workout
+            Empty Workout
           </button>
         </div>
 
         <div className="mb-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-rajdhani font-bold text-neon-gold uppercase tracking-wider flex items-center">
+              <Save className="w-5 h-5 mr-2" /> My Presets
+            </h2>
+            <button 
+              onClick={() => {
+                setEditingPresetId(null);
+                setNewPresetName('');
+                setNewPresetExercises([{ 
+      id: String(Date.now()), 
+      name: '', 
+      sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] 
+    }]);
+                setIsCreatingPreset(true);
+              }}
+              className="text-neon-gold hover:text-[#ffdf00] text-sm font-bold uppercase flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-1" /> New Preset
+            </button>
+          </div>
+          
+          {customPresets.length === 0 ? (
+            <div className="bg-tactical-900 border border-dashed border-tactical-700 rounded-xl p-8 text-center">
+              <p className="text-gray-500 font-inter">No custom presets yet. Create your own battle plans to see them here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {customPresets.map(preset => (
+                <div key={preset.id} className="relative overflow-hidden rounded-xl group">
+                  {/* Delete Background */}
+                  <div className="absolute inset-y-0 right-0 w-24 bg-neon-red flex items-center justify-center rounded-xl">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCustomPreset(preset.id);
+                      }}
+                      className="w-full h-full flex items-center justify-center"
+                    >
+                      <Trash2 className="w-6 h-6 text-tactical-900" />
+                    </button>
+                  </div>
+
+                  {/* Swipeable Foreground */}
+                  <motion.div 
+                    drag="x"
+                    dragConstraints={{ left: -96, right: 0 }}
+                    dragElastic={0.1}
+                    dragDirectionLock
+                    onClick={() => editPreset(preset)}
+                    className="relative z-10 bg-tactical-900 border border-tactical-700 rounded-xl p-5 hover:border-neon-gold transition-colors group cursor-pointer h-full flex flex-col"
+                  >
+                    <h3 className="font-rajdhani font-bold text-xl text-white mb-2">{preset.name}</h3>
+                    <p className="text-xs text-gray-400 font-inter mb-4 flex-1">{preset.exercises.length} Exercises</p>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartWorkout(preset);
+                      }}
+                      className="w-full bg-tactical-800 text-gray-300 border border-tactical-600 py-2 rounded font-rajdhani font-bold uppercase tracking-wider group-hover:bg-neon-gold group-hover:text-tactical-900 group-hover:border-neon-gold transition-all flex items-center justify-center mt-auto"
+                    >
+                      <Play className="w-4 h-4 mr-2" /> Start
+                    </button>
+                  </motion.div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
           <h2 className="text-xl font-rajdhani font-bold text-neon-blue uppercase tracking-wider mb-4 flex items-center">
             <Dumbbell className="w-5 h-5 mr-2" /> Recommended For You
           </h2>
@@ -368,48 +614,13 @@ export const WorkoutLogger: React.FC = () => {
             ))}
           </div>
         </div>
-
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-rajdhani font-bold text-neon-gold uppercase tracking-wider flex items-center">
-              <Save className="w-5 h-5 mr-2" /> Your Custom Presets
-            </h2>
-            <button 
-              onClick={() => setIsCreatingPreset(true)}
-              className="text-neon-gold hover:text-[#ffdf00] text-sm font-bold uppercase flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-1" /> New Preset
-            </button>
-          </div>
-          
-          {customPresets.length === 0 ? (
-            <div className="bg-tactical-900 border border-dashed border-tactical-700 rounded-xl p-8 text-center">
-              <p className="text-gray-500 font-inter">No custom presets yet. Create your own battle plans to see them here.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {customPresets.map(preset => (
-                <div key={preset.id} className="bg-tactical-900 border border-tactical-700 rounded-xl p-5 hover:border-neon-gold transition-colors group">
-                  <h3 className="font-rajdhani font-bold text-xl text-white mb-2">{preset.name}</h3>
-                  <p className="text-xs text-gray-400 font-inter mb-4">{preset.exercises.length} Exercises</p>
-                  <button 
-                    onClick={() => handleStartWorkout(preset)}
-                    className="w-full bg-tactical-800 text-gray-300 border border-tactical-600 py-2 rounded font-rajdhani font-bold uppercase tracking-wider group-hover:bg-neon-gold group-hover:text-tactical-900 group-hover:border-neon-gold transition-all flex items-center justify-center"
-                  >
-                    <Play className="w-4 h-4 mr-2" /> Start
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto fade-in relative">
-      <div className="esports-panel p-4 sm:p-6 mb-24">
+    <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pb-24">
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 fade-in">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-tactical-700 pb-4">
           <div>
             <h1 className="esports-heading text-2xl text-white">{activeWorkout.name}</h1>
@@ -434,124 +645,7 @@ export const WorkoutLogger: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {exercises.map((exercise, exIndex) => (
-            <div key={exercise.id} className="bg-tactical-900 border border-tactical-700 rounded-lg overflow-hidden">
-              <div className="p-4 border-b border-tactical-700 bg-tactical-800 flex justify-between items-center">
-                <button 
-                  onClick={() => openLibrary(exIndex, 'active')}
-                  className="text-white hover:text-neon-blue transition-colors font-rajdhani font-bold text-lg"
-                >
-                  {exercise.name || 'Select Exercise...'}
-                </button>
-                <button 
-                  onClick={() => {
-                    const newEx = [...exercises];
-                    newEx.splice(exIndex, 1);
-                    setExercises(newEx);
-                  }}
-                  className="text-gray-500 hover:text-neon-red"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="p-4">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-2 hidden sm:grid">
-                  <div className="col-span-1 text-center">Set</div>
-                  <div className="col-span-3">Type</div>
-                  <div className="col-span-2 text-center">Weight</div>
-                  <div className="col-span-2 text-center">Reps</div>
-                  <div className="col-span-4 text-center">Actions</div>
-                </div>
-
-                {exercise.sets.map((set, setIndex) => (
-                  <div 
-                    key={set.id} 
-                    className={clsx(
-                      "grid grid-cols-12 gap-2 items-center p-2 rounded transition-colors mb-2 sm:mb-0",
-                      set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800"
-                    )}
-                  >
-                    <div className="col-span-12 sm:col-span-1 text-center font-inter text-gray-400 text-sm mb-2 sm:mb-0 flex justify-between sm:block">
-                      <span className="sm:hidden font-rajdhani uppercase text-xs">Set</span>
-                      <span className="bg-tactical-800 sm:bg-transparent px-2 sm:px-0 rounded">{setIndex + 1}</span>
-                    </div>
-                    
-                    <div className="col-span-12 sm:col-span-3 mb-2 sm:mb-0">
-                      <select 
-                        value={set.type}
-                        onChange={(e) => updateSet(exIndex, setIndex, 'type', e.target.value)}
-                        className={clsx(
-                          "w-full bg-tactical-800 border-none rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-neon-blue appearance-none cursor-pointer",
-                          set.type === 'Warmup' ? "text-neon-gold" : 
-                          set.type === 'Drop' ? "text-neon-purple" :
-                          set.type === 'Failure' ? "text-neon-red" : "text-white"
-                        )}
-                      >
-                        <option value="Normal">Normal</option>
-                        <option value="Warmup">Warmup</option>
-                        <option value="Drop">Drop Set</option>
-                        <option value="Failure">Failure</option>
-                      </select>
-                    </div>
-
-                    <div className="col-span-6 sm:col-span-2">
-                      <span className="sm:hidden block text-xs font-rajdhani uppercase text-gray-500 mb-1">Weight</span>
-                      <input 
-                        type="number" 
-                        value={set.weight || ''}
-                        onChange={(e) => updateSet(exIndex, setIndex, 'weight', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-2 text-white text-center focus:outline-none focus:border-neon-blue"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    <div className="col-span-6 sm:col-span-2">
-                      <span className="sm:hidden block text-xs font-rajdhani uppercase text-gray-500 mb-1">Reps</span>
-                      <input 
-                        type="number" 
-                        value={set.reps || ''}
-                        onChange={(e) => updateSet(exIndex, setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                        className="w-full bg-tactical-800 border border-tactical-600 rounded p-2 text-white text-center focus:outline-none focus:border-neon-blue"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    <div className="col-span-12 sm:col-span-4 flex justify-center gap-2 mt-2 sm:mt-0">
-                      <button 
-                        onClick={() => toggleSetComplete(exIndex, setIndex)}
-                        className={clsx(
-                          "flex-1 sm:flex-none sm:w-12 h-10 rounded flex items-center justify-center transition-all",
-                          set.completed 
-                            ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
-                            : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
-                        )}
-                      >
-                        <Check className={clsx("w-6 h-6", set.completed ? "text-tactical-900" : "hidden")} />
-                        {!set.completed && <span className="sm:hidden text-gray-400 font-rajdhani uppercase text-sm">Complete</span>}
-                      </button>
-
-                      <button
-                        onClick={() => removeSetFromExercise(exIndex, setIndex)}
-                        className="w-10 h-10 bg-tactical-800 border border-tactical-600 hover:border-neon-red hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
-                        title="Delete Set"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                <button 
-                  onClick={() => addSetToExercise(exIndex)}
-                  className="w-full mt-2 py-2 text-xs font-rajdhani font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-tactical-800/50 hover:bg-tactical-800 rounded transition-colors"
-                >
-                  + Add Set
-                </button>
-              </div>
-            </div>
-          ))}
+          {renderExerciseTable(exercises, setExercises, false)}
         </div>
 
         <button 
