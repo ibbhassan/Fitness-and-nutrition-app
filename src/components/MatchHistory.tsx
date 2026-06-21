@@ -45,28 +45,28 @@ export const MatchHistory: React.FC = () => {
                 <div 
                   key={match.id} 
                   onClick={() => setSelectedWorkout(match)}
-                  className="flex items-center p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
+                  className="flex items-center p-3 sm:p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
                 >
                   {/* Grade Column */}
-                  <div className="w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-6 shrink-0 gap-1">
+                  <div className="w-14 sm:w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-3 sm:pr-6 shrink-0 gap-1">
                     {match.isPr && (
                       <span className="px-1.5 py-0.5 text-[9px] font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
                         <Trophy className="w-2.5 h-2.5" /> PR
                       </span>
                     )}
-                    <span className={clsx("font-rajdhani font-bold text-5xl transition-transform group-hover:scale-110", getGradeColor(grade))}>
+                    <span className={clsx("font-rajdhani font-bold text-4xl sm:text-5xl transition-transform group-hover:scale-110", getGradeColor(grade))}>
                       {grade}
                     </span>
                   </div>
 
                   {/* Info Column */}
-                  <div className="flex-1 px-4 sm:px-6 min-w-0">
-                    <div className="mb-2 w-full">
-                      <h3 className="text-white font-rajdhani font-bold text-xl sm:text-2xl uppercase tracking-wide truncate">{match.name}</h3>
+                  <div className="flex-1 px-3 sm:px-6 min-w-0">
+                    <div className="mb-2 w-full overflow-x-auto custom-scrollbar pb-1">
+                      <h3 className="text-white font-rajdhani font-bold text-base sm:text-2xl uppercase tracking-wide whitespace-nowrap">{match.name}</h3>
                     </div>
                     
                     {/* Extra details row */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-400 font-inter mb-2">
+                    <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-[10px] sm:text-sm text-gray-400 font-inter mb-2">
                       <div className="flex items-center gap-1 shrink-0">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-tactical-400" />
                         <span>{match.durationMinutes} min</span>
@@ -77,27 +77,27 @@ export const MatchHistory: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <Dumbbell className="w-3 h-3 sm:w-4 sm:h-4 text-tactical-400" />
-                        <span>{match.exercises.length} Exercises, {totalSets} Sets</span>
+                        <span>{match.exercises.length} Ex, {totalSets} Sets</span>
                       </div>
                     </div>
                     
                     {/* Exercise preview */}
-                    <p className="text-xs text-gray-500 font-inter line-clamp-2 pr-2">
+                    <p className="text-[10px] sm:text-xs text-gray-500 font-inter line-clamp-2 pr-2">
                       {exerciseNames}
                     </p>
                   </div>
 
                   {/* EP & Date Column */}
-                  <div className="flex flex-col items-end pl-4 sm:pl-6 border-l border-tactical-700 shrink-0 min-w-[80px] sm:min-w-[100px]">
-                    <span className="text-[10px] sm:text-xs text-gray-500 font-inter mb-2 text-right">
+                  <div className="flex flex-col items-end pl-3 sm:pl-6 border-l border-tactical-700 shrink-0 min-w-[70px] sm:min-w-[100px]">
+                    <span className="text-[9px] sm:text-xs text-gray-500 font-inter mb-2 text-right">
                       {new Date(match.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
-                    <span className="text-[10px] sm:text-xs text-gray-400 font-rajdhani uppercase mb-1">EP Earned</span>
+                    <span className="text-[9px] sm:text-xs text-gray-400 font-rajdhani uppercase mb-1">EP Earned</span>
                     <div className={clsx(
-                      "flex items-center font-bold text-lg sm:text-xl",
+                      "flex items-center font-bold text-base sm:text-xl",
                       epChange > 0 ? "text-neon-green" : epChange < 0 ? "text-neon-red" : "text-gray-400"
                     )}>
-                      {epChange > 0 ? <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mr-1" /> : epChange < 0 ? <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 mr-1" /> : <Minus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />}
+                      {epChange > 0 ? <TrendingUp className="w-3 h-3 sm:w-5 sm:h-5 mr-1" /> : epChange < 0 ? <TrendingDown className="w-3 h-3 sm:w-5 sm:h-5 mr-1" /> : <Minus className="w-3 h-3 sm:w-5 sm:h-5 mr-1" />}
                       {Math.abs(epChange)}
                     </div>
                   </div>
