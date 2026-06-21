@@ -23,10 +23,10 @@ export const MatchHistory: React.FC = () => {
 
   return (
     <>
-      <div className="esports-panel p-6">
+      <div className="pt-2">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="esports-heading text-xl text-white">Workout History</h2>
-          <span className="text-sm text-gray-400">{sortedHistory.length} Workouts</span>
+          <h2 className="esports-heading text-2xl text-white">Workout History</h2>
+          <span className="text-sm font-rajdhani font-bold text-gray-400 uppercase tracking-widest">{sortedHistory.length} Workouts</span>
         </div>
 
         {sortedHistory.length === 0 ? (
@@ -34,45 +34,70 @@ export const MatchHistory: React.FC = () => {
             No workouts logged yet. Your history will appear here.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {sortedHistory.map((match) => {
               const grade = match.grade || 'A';
               const epChange = match.epChange || 0;
+              const totalSets = match.exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+              const exerciseNames = match.exercises.map(e => e.name).join(', ');
               
               return (
                 <div 
                   key={match.id} 
                   onClick={() => setSelectedWorkout(match)}
-                  className="flex items-center p-4 bg-tactical-900 rounded-md border border-tactical-700 hover:border-tactical-600 transition-colors cursor-pointer"
+                  className="flex items-center p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
                 >
                   {/* Grade Column */}
-                  <div className="w-16 flex flex-col items-center justify-center border-r border-tactical-700 pr-4 shrink-0">
-                    <span className={clsx("font-rajdhani font-bold text-3xl", getGradeColor(grade))}>
+                  <div className="w-20 flex flex-col items-center justify-center border-r border-tactical-700 pr-6 shrink-0">
+                    <span className={clsx("font-rajdhani font-bold text-5xl transition-transform group-hover:scale-110", getGradeColor(grade))}>
                       {grade}
                     </span>
                   </div>
 
                   {/* Info Column */}
-                  <div className="flex-1 px-4 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-white font-medium truncate">{match.name}</h3>
+                  <div className="flex-1 px-6 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-white font-rajdhani font-bold text-2xl uppercase tracking-wide truncate">{match.name}</h3>
                       {match.isPr && (
                         <span className="px-2 py-0.5 text-xs font-bold bg-neon-gold/20 text-neon-gold border border-neon-gold/50 rounded flex items-center gap-1 shrink-0">
                           <Trophy className="w-3 h-3" /> PR
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400 mt-1">{match.durationMinutes} min • {new Date(match.date).toLocaleDateString()}</p>
+                    
+                    {/* Extra details row */}
+                    <div className="flex items-center gap-4 text-sm text-gray-400 font-inter mb-2">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4 text-tactical-400" />
+                        <span>{match.durationMinutes} min</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Activity className="w-4 h-4 text-tactical-400" />
+                        <span>{match.volume.toLocaleString()} lbs</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Dumbbell className="w-4 h-4 text-tactical-400" />
+                        <span>{match.exercises.length} Exercises, {totalSets} Sets</span>
+                      </div>
+                    </div>
+                    
+                    {/* Exercise preview */}
+                    <p className="text-xs text-gray-500 font-inter truncate">
+                      {exerciseNames}
+                    </p>
                   </div>
 
-                  {/* EP Column */}
-                  <div className="w-16 flex flex-col items-end pl-4 border-l border-tactical-700 shrink-0">
-                    <span className="text-xs text-gray-400 font-rajdhani uppercase mb-1">EP</span>
+                  {/* EP & Date Column */}
+                  <div className="flex flex-col items-end pl-6 border-l border-tactical-700 shrink-0 min-w-[100px]">
+                    <span className="text-xs text-gray-500 font-inter mb-2">
+                      {new Date(match.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <span className="text-xs text-gray-400 font-rajdhani uppercase mb-1">EP Earned</span>
                     <div className={clsx(
-                      "flex items-center font-bold",
+                      "flex items-center font-bold text-xl",
                       epChange > 0 ? "text-neon-green" : epChange < 0 ? "text-neon-red" : "text-gray-400"
                     )}>
-                      {epChange > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : epChange < 0 ? <TrendingDown className="w-4 h-4 mr-1" /> : <Minus className="w-4 h-4 mr-1" />}
+                      {epChange > 0 ? <TrendingUp className="w-5 h-5 mr-1" /> : epChange < 0 ? <TrendingDown className="w-5 h-5 mr-1" /> : <Minus className="w-5 h-5 mr-1" />}
                       {Math.abs(epChange)}
                     </div>
                   </div>
