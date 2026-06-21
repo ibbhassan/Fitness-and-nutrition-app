@@ -60,9 +60,9 @@ export const MatchHistory: React.FC = () => {
                   </div>
 
                   {/* Info Column */}
-                  <div className="flex-1 px-3 sm:px-6 min-w-0">
-                    <div className="mb-2 w-full">
-                      <h3 className="text-white font-rajdhani font-bold text-[15px] sm:text-2xl uppercase tracking-wide whitespace-nowrap">{match.name}</h3>
+                  <div className="flex-1 px-3 sm:px-6 min-w-0 overflow-hidden">
+                    <div className="mb-2 w-full pr-2">
+                      <h3 className="text-white font-rajdhani font-bold text-[clamp(12px,4vw,16px)] sm:text-2xl uppercase tracking-wide truncate">{match.name}</h3>
                     </div>
                     
                     {/* Extra details row */}
