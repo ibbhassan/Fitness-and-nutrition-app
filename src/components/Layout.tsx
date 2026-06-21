@@ -19,7 +19,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
   const [showLevelUp, setShowLevelUp] = useState(false);
 
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
-  const [quickLogMode, setQuickLogMode] = useState<'menu' | 'nutrition' | 'lunchEditor' | 'steps' | 'weight' | 'workout'>('menu');
+  const [quickLogMode, setQuickLogMode] = useState<'menu' | 'nutrition' | 'mealEditor' | 'steps' | 'weight' | 'workout'>('menu');
+  const [activeMealType, setActiveMealType] = useState<string>('Lunch');
   const [manualStepsInput, setManualStepsInput] = useState<number>(0);
   const [manualWeightInput, setManualWeightInput] = useState<number>(0);
 
@@ -37,18 +38,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     setLastScrollY(currentScrollY);
   };
 
-  const yesterdayLunchLogs = useMemo(() => {
+  const yesterdayLogs = useMemo(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     
-    return foodLogs.filter(log => log.date === yesterdayStr && log.mealType === 'Lunch');
+    return foodLogs.filter(log => log.date === yesterdayStr);
   }, [foodLogs]);
 
-  const [lunchItems, setLunchItems] = useState<FoodItem[]>([]);
+  const [quickMealItems, setQuickMealItems] = useState<FoodItem[]>([]);
 
-  const calculateLunchMacros = () => {
-    return lunchItems.reduce((acc, item) => {
+  const calculateQuickMealMacros = () => {
+    return quickMealItems.reduce((acc, item) => {
       acc.calories += item.macrosPerUnit.calories * item.amount;
       acc.protein += item.macrosPerUnit.protein * item.amount;
       acc.carbs += item.macrosPerUnit.carbs * item.amount;
@@ -405,40 +406,63 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                     <h2 className="esports-heading text-xl text-white">Quick Add Nutrition</h2>
                   </div>
                   
-                  <button 
-                    onClick={() => {
-                      setLunchItems(yesterdayLunchLogs.map(log => log.food));
-                      setQuickLogMode('lunchEditor');
-                    }}
-                    disabled={yesterdayLunchLogs.length === 0}
-                    className="w-full flex items-center justify-between p-4 bg-neon-gold/10 border border-neon-gold rounded-lg hover:bg-neon-gold/20 transition-all text-left disabled:opacity-50"
-                  >
-                    <div>
-                      <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Same Lunch From Yesterday</h3>
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-1">
-                        {yesterdayLunchLogs.length > 0 
-                          ? yesterdayLunchLogs.map(l => l.food.name).join(', ') 
-                          : 'No lunch logged yesterday'}
-                      </p>
-                    </div>
-                    <Plus className="w-5 h-5 text-neon-gold" />
-                  </button>
+                  <div className="max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                    {['Breakfast', 'Lunch', 'Dinner', 'Snacks'].map((mealType) => {
+                      const mealLogs = yesterdayLogs.filter(l => l.mealType === mealType);
+                      return (
+                        <button 
+                          key={mealType}
+                          onClick={() => {
+                            setQuickMealItems(mealLogs.map(log => log.food));
+                            setActiveMealType(mealType);
+                            setQuickLogMode('mealEditor');
+                          }}
+                          disabled={mealLogs.length === 0}
+                          className="w-full flex items-center justify-between p-4 bg-tactical-900 border border-tactical-700 rounded-lg hover:border-neon-gold transition-all text-left disabled:opacity-50"
+                        >
+                          <div>
+                            <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Yesterday's {mealType}</h3>
+                            <p className="text-xs text-gray-400 mt-1 line-clamp-1">
+                              {mealLogs.length > 0 
+                                ? mealLogs.map(l => l.food.name).join(', ') 
+                                : `No ${mealType.toLowerCase()} logged yesterday`}
+                            </p>
+                          </div>
+                          <Plus className="w-5 h-5 text-neon-gold" />
+                        </button>
+                      );
+                    })}
+
+                    <button 
+                      onClick={() => {
+                        setIsQuickLogOpen(false);
+                        setActiveTab('nutrition');
+                      }}
+                      className="w-full flex items-center justify-between p-4 bg-neon-blue/10 border border-neon-blue rounded-lg hover:bg-neon-blue/20 transition-all text-left mt-4"
+                    >
+                      <div>
+                        <h3 className="font-rajdhani font-bold text-white uppercase tracking-wide text-lg">Log New Meal</h3>
+                        <p className="text-xs text-gray-400 mt-1">Jump to the AI Logger or search</p>
+                      </div>
+                      <Plus className="w-5 h-5 text-neon-blue" />
+                    </button>
+                  </div>
                   
-                  <button onClick={() => setQuickLogMode('menu')} className="text-xs text-gray-500 hover:text-white mt-4 font-inter">
+                  <button onClick={() => setQuickLogMode('menu')} className="text-xs text-gray-500 hover:text-white mt-4 font-inter block w-full text-center">
                     ← Back to Menu
                   </button>
                 </div>
               )}
 
-              {quickLogMode === 'lunchEditor' && (
+              {quickLogMode === 'mealEditor' && (
                 <div className="space-y-4 fade-in">
                   <div className="flex items-center gap-2 mb-4">
                     <Utensils className="w-6 h-6 text-neon-gold" />
-                    <h2 className="esports-heading text-xl text-white">Adjust Amounts</h2>
+                    <h2 className="esports-heading text-xl text-white">Adjust {activeMealType} Amounts</h2>
                   </div>
                   
                   <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {lunchItems.map((item, index) => (
+                    {quickMealItems.map((item, index) => (
                       <div key={item.id} className="flex items-center justify-between bg-tactical-900 border border-tactical-700 p-3 rounded-lg">
                         <span className="text-white text-sm font-bold w-1/2">{item.name}</span>
                         <div className="flex items-center gap-2 w-1/2 justify-end">
@@ -446,9 +470,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                             type="number"
                             value={item.amount || ''}
                             onChange={(e) => {
-                              const newItems = [...lunchItems];
+                              const newItems = [...quickMealItems];
                               newItems[index].amount = e.target.value === '' ? 0 : Number(e.target.value);
-                              setLunchItems(newItems);
+                              setQuickMealItems(newItems);
                             }}
                             className="bg-tactical-800 border border-tactical-600 text-white p-2 rounded w-20 text-right focus:border-neon-gold outline-none"
                           />
@@ -461,21 +485,21 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mt-4">
                     <h4 className="text-xs font-rajdhani uppercase text-gray-400 tracking-wider mb-2">Calculated Macros</h4>
                     <div className="flex justify-between text-sm">
-                      <span className="text-white"><span className="text-neon-gold font-bold">{Math.round(calculateLunchMacros().calories)}</span> kcal</span>
-                      <span className="text-gray-400">P: <span className="text-white">{Math.round(calculateLunchMacros().protein)}g</span></span>
-                      <span className="text-gray-400">C: <span className="text-white">{Math.round(calculateLunchMacros().carbs)}g</span></span>
-                      <span className="text-gray-400">F: <span className="text-white">{Math.round(calculateLunchMacros().fat)}g</span></span>
+                      <span className="text-white"><span className="text-neon-gold font-bold">{Math.round(calculateQuickMealMacros().calories)}</span> kcal</span>
+                      <span className="text-gray-400">P: <span className="text-white">{Math.round(calculateQuickMealMacros().protein)}g</span></span>
+                      <span className="text-gray-400">C: <span className="text-white">{Math.round(calculateQuickMealMacros().carbs)}g</span></span>
+                      <span className="text-gray-400">F: <span className="text-white">{Math.round(calculateQuickMealMacros().fat)}g</span></span>
                     </div>
                   </div>
                   
                   <button 
                     onClick={() => {
                       const todayStr = new Date().toISOString().split('T')[0];
-                      lunchItems.forEach(item => {
+                      quickMealItems.forEach(item => {
                         addFoodLog({
                           id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                           date: todayStr,
-                          mealType: 'Lunch',
+                          mealType: activeMealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks',
                           food: item
                         });
                       });
