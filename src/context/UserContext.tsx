@@ -34,9 +34,10 @@ interface UserContextType {
   dailySteps: number;
   setDailySteps: (steps: number) => void;
   addSteps: (amount: number) => void;
-  activeWorkout: { id: string, name: string, startTime: number } | null;
+  activeWorkout: { id: string, name: string, startTime: number, paused?: boolean, accumulatedPauseMs?: number, lastPauseTime?: number | null } | null;
   activeExercises: ActiveExercise[];
   startWorkout: (preset: WorkoutPreset | null) => void;
+  togglePauseWorkout: () => void;
   abortWorkout: () => void;
   setActiveExercises: React.Dispatch<React.SetStateAction<ActiveExercise[]>>;
   customExercises: ExerciseDefinition[];
@@ -108,7 +109,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
   const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || getLocalDateString());
   const [currentDate, setCurrentDate] = useState<string>(getLocalDateString());
-  const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string, startTime: number} | null>(initialState.activeWorkout || null);
+  const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string, startTime: number, paused?: boolean, accumulatedPauseMs?: number, lastPauseTime?: number | null} | null>(initialState.activeWorkout || null);
   const [activeExercises, setActiveExercises] = useState<ActiveExercise[]>(initialState.activeExercises || []);
   const [customExercises, setCustomExercises] = useState<ExerciseDefinition[]>(initialState.customExercises || []);
   const [recentFoods, setRecentFoods] = useState<FoodItem[]>(initialState.recentFoods || []);
@@ -370,7 +371,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const startWorkout = (preset: WorkoutPreset | null = null) => {
     if (preset) {
-      setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now() });
+      setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now(), paused: false, accumulatedPauseMs: 0, lastPauseTime: null });
       
       const mappedExercises: ActiveExercise[] = preset.exercises.map(ex => {
         // Handle backwards compatibility for old PresetExercise (where sets was a string)
@@ -404,7 +405,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setActiveExercises(mappedExercises);
     } else {
-      setActiveWorkout({ id: 'custom-active', name: 'Freestyle Workout', startTime: Date.now() });
+      setActiveWorkout({ id: 'custom-active', name: 'Freestyle Workout', startTime: Date.now(), paused: false, accumulatedPauseMs: 0, lastPauseTime: null });
       setActiveExercises([{
         id: String(Date.now()),
         name: '',
@@ -416,6 +417,28 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const abortWorkout = () => {
     setActiveWorkout(null);
     setActiveExercises([]);
+  };
+
+  const togglePauseWorkout = () => {
+    if (!activeWorkout) return;
+    
+    if (activeWorkout.paused) {
+      // Resuming
+      const pauseDuration = activeWorkout.lastPauseTime ? Date.now() - activeWorkout.lastPauseTime : 0;
+      setActiveWorkout({
+        ...activeWorkout,
+        paused: false,
+        accumulatedPauseMs: (activeWorkout.accumulatedPauseMs || 0) + pauseDuration,
+        lastPauseTime: null
+      });
+    } else {
+      // Pausing
+      setActiveWorkout({
+        ...activeWorkout,
+        paused: true,
+        lastPauseTime: Date.now()
+      });
+    }
   };
 
   return (
@@ -452,6 +475,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       activeWorkout,
       activeExercises,
       startWorkout,
+      togglePauseWorkout,
       abortWorkout,
       setActiveExercises,
       customExercises,

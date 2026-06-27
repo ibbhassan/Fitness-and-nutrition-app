@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Play, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical } from 'lucide-react';
+import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
 import { RestTimer } from '../components/RestTimer';
 import { clsx } from 'clsx';
 
-const LiveWorkoutTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
-  const [elapsed, setElapsed] = useState(Date.now() - startTime);
+const LiveWorkoutTimer: React.FC<{ startTime: number, paused?: boolean, accumulatedPauseMs?: number, lastPauseTime?: number | null }> = ({ startTime, paused, accumulatedPauseMs = 0, lastPauseTime }) => {
+  const calculateElapsed = () => {
+    if (paused && lastPauseTime) {
+      return (lastPauseTime - startTime) - accumulatedPauseMs;
+    }
+    return (Date.now() - startTime) - accumulatedPauseMs;
+  };
+  
+  const [elapsed, setElapsed] = useState(calculateElapsed());
 
   useEffect(() => {
+    if (paused) {
+      setElapsed(calculateElapsed());
+      return;
+    }
     const interval = setInterval(() => {
-      setElapsed(Date.now() - startTime);
+      setElapsed(calculateElapsed());
     }, 1000);
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, paused, accumulatedPauseMs, lastPauseTime]);
 
   const totalSeconds = Math.floor(elapsed / 1000);
   const h = Math.floor(totalSeconds / 3600);
@@ -34,7 +45,7 @@ const LiveWorkoutTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
 };
 
 export const WorkoutLogger: React.FC = () => {
-  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
@@ -262,8 +273,13 @@ export const WorkoutLogger: React.FC = () => {
       });
     });
 
-    const durationMs = Date.now() - activeWorkout.startTime;
-    const durationMinutes = Math.max(1, Math.round(durationMs / 60000));
+    const totalPause = activeWorkout.accumulatedPauseMs || 0;
+    const finalPauseMs = activeWorkout.paused && activeWorkout.lastPauseTime 
+      ? totalPause + (Date.now() - activeWorkout.lastPauseTime) 
+      : totalPause;
+      
+    const durationMs = (Date.now() - activeWorkout.startTime) - finalPauseMs;
+    const durationMinutes = Math.max(1, Math.floor(durationMs / 60000));
     
     const h = Math.floor(durationMs / 3600000);
     const m = Math.floor((durationMs % 3600000) / 60000);
@@ -758,11 +774,26 @@ const ExerciseCard = ({
         <div>
           <h1 className="esports-heading text-2xl text-white">{activeWorkout.name}</h1>
           <p className="text-neon-blue font-bold text-sm mt-1 flex items-center">
-            <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse mr-2"></span> 
-            ACTIVE WORKOUT
-            {activeWorkout.startTime && (
-              <LiveWorkoutTimer startTime={activeWorkout.startTime} />
+            {activeWorkout.paused ? (
+              <span className="w-2 h-2 rounded-full bg-neon-gold mr-2"></span>
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse mr-2"></span> 
             )}
+            {activeWorkout.paused ? 'PAUSED' : 'ACTIVE WORKOUT'}
+            {activeWorkout.startTime && (
+              <LiveWorkoutTimer 
+                startTime={activeWorkout.startTime} 
+                paused={activeWorkout.paused}
+                accumulatedPauseMs={activeWorkout.accumulatedPauseMs}
+                lastPauseTime={activeWorkout.lastPauseTime}
+              />
+            )}
+            <button 
+              onClick={togglePauseWorkout}
+              className="ml-3 p-1 bg-tactical-800 hover:bg-tactical-700 rounded-full transition-colors border border-tactical-600"
+            >
+              {activeWorkout.paused ? <Play className="w-3.5 h-3.5 text-neon-green" /> : <Pause className="w-3.5 h-3.5 text-neon-gold" />}
+            </button>
           </p>
         </div>
       </div>
