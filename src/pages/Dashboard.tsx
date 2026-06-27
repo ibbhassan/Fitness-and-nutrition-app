@@ -113,7 +113,15 @@ export const Dashboard: React.FC = () => {
   
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions['weekly-workouts'];
   const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions['daily-steps'];
-  const isWeeklyPrComplete = !!manualQuestCompletions['weekly-pr'];
+  
+  const last7DaysStrings = Array.from({ length: 7 }).map((_, i) => {
+     const d = new Date();
+     d.setDate(d.getDate() - i);
+     return formatLocalDate(d);
+  });
+  const prsThisWeek = workoutHistory.some(w => w.isPr && last7DaysStrings.includes(formatLocalDate(w.date)));
+  
+  const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions['weekly-pr'];
   const isWeeklyNutritionComplete = !!manualQuestCompletions['weekly-nutrition'];
 
   React.useEffect(() => {
@@ -127,6 +135,12 @@ export const Dashboard: React.FC = () => {
       toggleManualQuest('daily-steps', 10);
     }
   }, [dailySteps, seedSteps.target]);
+
+  React.useEffect(() => {
+    if (prsThisWeek && !manualQuestCompletions['weekly-pr']) {
+      toggleManualQuest('weekly-pr', 50);
+    }
+  }, [prsThisWeek]);
 
   const getUpcomingWorkout = () => {
     if (!scheduledWorkoutDays || scheduledWorkoutDays.length === 0) return { title: 'No Workouts Scheduled', subtitle: 'Update your schedule in settings' };
