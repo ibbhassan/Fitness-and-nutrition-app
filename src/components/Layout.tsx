@@ -1,10 +1,11 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play } from 'lucide-react';
+import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
 import { useUser } from '../context/UserContext';
+import { LiveWorkoutTimer } from './LiveWorkoutTimer';
 import type { FoodItem } from '../types';
 
 interface LayoutProps {
@@ -14,7 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) => {
-  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog } = useUser();
+  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [prevLevel, setPrevLevel] = useState(profile.level);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -154,6 +155,47 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           {children}
         </div>
       </main>
+
+      {/* Floating Active Workout Pill */}
+      {activeWorkout && activeTab !== 'workout' && (
+        <div className="absolute bottom-16 left-4 right-4 z-50 fade-in">
+          <div 
+            onClick={() => setActiveTab('workout')}
+            className="bg-tactical-800 border border-neon-blue rounded-full p-3 flex items-center justify-between shadow-[0_0_20px_rgba(0,240,255,0.2)] cursor-pointer group hover:bg-tactical-700 transition-colors"
+          >
+            <div className="flex items-center">
+              <div className={clsx(
+                "w-2 h-2 rounded-full mr-3",
+                activeWorkout.paused ? "bg-neon-gold" : "bg-neon-blue animate-pulse"
+              )} />
+              <div>
+                <p className="text-white font-rajdhani font-bold text-sm tracking-wider uppercase leading-none mb-1 group-hover:text-neon-blue transition-colors">{activeWorkout.name}</p>
+                <div className="text-gray-400 font-inter text-xs flex items-center gap-1">
+                  <LiveWorkoutTimer 
+                    startTime={activeWorkout.startTime}
+                    paused={activeWorkout.paused}
+                    accumulatedPauseMs={activeWorkout.accumulatedPauseMs}
+                    lastPauseTime={activeWorkout.lastPauseTime}
+                  />
+                  <span>elapsed</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePauseWorkout();
+                }}
+                className="w-8 h-8 rounded-full bg-tactical-900 border border-tactical-600 flex items-center justify-center hover:border-neon-gold transition-colors"
+              >
+                {activeWorkout.paused ? <Play className="w-3.5 h-3.5 text-neon-green" /> : <Pause className="w-3.5 h-3.5 text-neon-gold" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <nav className="flex-none bg-tactical-800 border-t border-tactical-600 pb-safe flex justify-around items-center px-2 pt-1 pb-3 z-40 relative shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
