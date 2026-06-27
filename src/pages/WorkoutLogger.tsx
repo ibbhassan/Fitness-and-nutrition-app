@@ -275,7 +275,7 @@ export const WorkoutLogger: React.FC = () => {
 
     logWorkout({
       id: `log-${Date.now()}`,
-      date: new Date().toISOString(),
+      date: new Date(activeWorkout.startTime).toISOString(),
       name: activeWorkout.name,
       durationMinutes,
       exercises: exercises,

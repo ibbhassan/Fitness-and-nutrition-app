@@ -89,8 +89,11 @@ export const MatchHistory: React.FC = () => {
 
                   {/* EP & Date Column */}
                   <div className="flex flex-col items-end pl-3 sm:pl-6 border-l border-tactical-700 shrink-0 min-w-[70px] sm:min-w-[100px]">
-                    <span className="text-[9px] sm:text-xs text-gray-500 font-inter mb-2 text-right">
+                    <span className="text-[9px] sm:text-xs text-gray-500 font-inter text-right">
                       {new Date(match.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <span className="text-[9px] sm:text-[10px] text-tactical-400 font-inter mb-2 text-right">
+                      {new Date(match.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                     </span>
                     <span className="text-[9px] sm:text-xs text-gray-400 font-rajdhani uppercase mb-1">EP Earned</span>
                     <div className={clsx(
@@ -116,7 +119,12 @@ export const MatchHistory: React.FC = () => {
           <div className="relative w-full max-w-2xl bg-tactical-800 border border-tactical-600 rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-tactical-700">
-              <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider">{selectedWorkout.name}</h2>
+              <div>
+                <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider">{selectedWorkout.name}</h2>
+                <span className="text-sm text-gray-400 font-inter">
+                  {new Date(selectedWorkout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(selectedWorkout.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                </span>
+              </div>
               <button 
                 onClick={() => setSelectedWorkout(null)}
                 className="text-gray-400 hover:text-white transition-colors p-1"
