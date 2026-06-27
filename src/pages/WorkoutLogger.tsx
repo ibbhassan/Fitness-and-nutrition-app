@@ -414,10 +414,10 @@ const ExerciseCard = ({
         {/* Table Header */}
         <div className="grid grid-cols-12 gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-1">
           <div className="col-span-2 sm:col-span-1 text-center">Set</div>
-          <div className="col-span-3 sm:col-span-3 text-center hidden sm:block">Previous</div>
-          <div className="col-span-3 sm:col-span-2 text-center">Lbs</div>
-          <div className="col-span-3 sm:col-span-2 text-center">Reps</div>
-          <div className="col-span-4 sm:col-span-4 text-center"></div>
+          <div className="col-span-3 sm:col-span-3 text-center">Previous</div>
+          <div className="col-span-2 sm:col-span-2 text-center">Lbs</div>
+          <div className="col-span-2 sm:col-span-2 text-center">Reps</div>
+          <div className="col-span-3 sm:col-span-4 text-center"></div>
         </div>
 
         <Reorder.Group 
@@ -458,14 +458,14 @@ const ExerciseCard = ({
                 </div>
                 
                 {/* Previous Data */}
-                <div className="col-span-3 sm:col-span-3 text-center hidden sm:flex items-center justify-center">
-                  <span className="text-gray-500 font-inter text-xs">
-                    {prevData ? `${prevData.weight} x ${prevData.reps}` : '-'}
+                <div className="col-span-3 sm:col-span-3 flex items-center justify-center">
+                  <span className="text-gray-500 font-inter text-[10px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                    {prevData ? `${prevData.weight}x${prevData.reps}` : '-'}
                   </span>
                 </div>
 
                 {/* Weight */}
-                <div className="col-span-3 sm:col-span-2">
+                <div className="col-span-2 sm:col-span-2">
                   <input 
                     type="number" 
                     value={set.weight || ''}
@@ -476,7 +476,7 @@ const ExerciseCard = ({
                 </div>
 
                 {/* Reps */}
-                <div className="col-span-3 sm:col-span-2">
+                <div className="col-span-2 sm:col-span-2">
                   <input 
                     type="number" 
                     value={set.reps || ''}
@@ -487,7 +487,7 @@ const ExerciseCard = ({
                 </div>
 
                 {/* Actions */}
-                <div className="col-span-4 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
+                <div className="col-span-3 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
                   {!isPreset && (
                     <button 
                       onClick={() => toggleSetComplete(setIndex)}
