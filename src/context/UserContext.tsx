@@ -367,6 +367,51 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logWorkout = (log: WorkoutLog) => {
     setWorkoutHistory(prev => [...prev, log]);
+    
+    // Analyze workout to update stats
+    let strengthGain = 0;
+    let enduranceGain = 0;
+    let volumeGain = 0;
+    let hypertrophyGain = 0;
+    let powerGain = 0;
+
+    log.exercises.forEach(ex => {
+      ex.sets.forEach(set => {
+        if (!set.completed) return;
+        
+        // Volume: Total weight * reps (scaled down so it increases slowly)
+        volumeGain += (set.weight * set.reps) / 2000;
+
+        if (set.reps > 0 && set.reps <= 5 && set.weight > 0) {
+          // Low reps, heavy weight = Strength & Power
+          strengthGain += 0.5;
+          powerGain += 0.3;
+        } else if (set.reps >= 6 && set.reps <= 12) {
+          // Mid reps = Hypertrophy
+          hypertrophyGain += 0.5;
+          strengthGain += 0.2;
+        } else if (set.reps > 12) {
+          // High reps = Endurance
+          enduranceGain += 0.5;
+          hypertrophyGain += 0.2;
+        }
+      });
+    });
+
+    setProfile(prev => {
+      const currentStats = prev.stats || { strength: 0, endurance: 0, consistency: 0, power: 0, hypertrophy: 0, volume: 0 };
+      return {
+        ...prev,
+        stats: {
+          strength: Math.min(100, Math.round((currentStats.strength + strengthGain) * 10) / 10),
+          endurance: Math.min(100, Math.round((currentStats.endurance + enduranceGain) * 10) / 10),
+          consistency: Math.min(100, currentStats.consistency + 1), // Flat +1 per workout
+          power: Math.min(100, Math.round((currentStats.power + powerGain) * 10) / 10),
+          hypertrophy: Math.min(100, Math.round((currentStats.hypertrophy + hypertrophyGain) * 10) / 10),
+          volume: Math.min(100, Math.round((currentStats.volume + volumeGain) * 10) / 10)
+        }
+      };
+    });
   };
 
   const startWorkout = (preset: WorkoutPreset | null = null) => {
