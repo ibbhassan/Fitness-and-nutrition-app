@@ -380,7 +380,7 @@ const ExerciseCard = ({
       value={exercise}
       dragListener={false}
       dragControls={controls}
-      className="bg-tactical-900 border border-tactical-700/50 rounded-lg p-2 sm:p-4 mb-4 relative"
+      className="bg-tactical-900 border-b border-tactical-700/50 p-2 sm:p-3 mb-2 relative"
     >
       <div className="flex justify-between items-center mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ const ExerciseCard = ({
       
       <div>
         {/* Table Header */}
-        <div className="grid grid-cols-12 gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-1">
+        <div className="grid grid-cols-12 gap-1 sm:gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-1 px-0 sm:px-1">
           <div className="col-span-2 sm:col-span-1 text-center">Set</div>
           <div className="col-span-3 sm:col-span-3 text-center">Previous</div>
           <div className="col-span-2 sm:col-span-2 text-center">Lbs</div>
@@ -428,7 +428,7 @@ const ExerciseCard = ({
             newEx[exIndex].sets = newSets;
             setExerciseList(newEx);
           }}
-          className="space-y-1"
+          className="space-y-0"
         >
           {exercise.sets.map((set, setIndex) => {
             const prevData = getPreviousSetData(exercise.name, setIndex);
@@ -437,8 +437,8 @@ const ExerciseCard = ({
                 key={set.id} 
                 value={set}
                 className={clsx(
-                  "grid grid-cols-12 gap-1 sm:gap-2 items-center p-1 sm:p-2 rounded transition-colors",
-                  set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800"
+                  "grid grid-cols-12 gap-1 sm:gap-2 items-center py-1 px-0 sm:px-1 rounded-sm transition-colors",
+                  set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800/50"
                 )}
               >
                 {/* Set Number / Type Toggle */}
@@ -470,7 +470,7 @@ const ExerciseCard = ({
                     type="number" 
                     value={set.weight || ''}
                     onChange={(e) => updateSet(setIndex, 'weight', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
                     placeholder="0"
                   />
                 </div>
@@ -481,7 +481,7 @@ const ExerciseCard = ({
                     type="number" 
                     value={set.reps || ''}
                     onChange={(e) => updateSet(setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-1 sm:p-2 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm"
+                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
                     placeholder="0"
                   />
                 </div>
@@ -492,7 +492,7 @@ const ExerciseCard = ({
                     <button 
                       onClick={() => toggleSetComplete(setIndex)}
                       className={clsx(
-                        "w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center transition-all",
+                        "w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center transition-all",
                         set.completed 
                           ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
                           : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
@@ -503,7 +503,7 @@ const ExerciseCard = ({
                   )}
                   <button
                     onClick={() => removeSet(setIndex)}
-                    className="w-8 h-8 sm:w-10 sm:h-10 bg-tactical-800 hover:bg-tactical-700 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
+                    className="w-7 h-7 sm:w-8 sm:h-8 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
                     title="Delete Set"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -724,7 +724,7 @@ const ExerciseCard = ({
 
   return (
     <div className="w-full relative">
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in relative">
+      <div className="w-full max-w-7xl mx-auto px-0 sm:px-2 fade-in relative">
       {portalTarget && createPortal(
         <button 
           onClick={handleFinishWorkout}
