@@ -758,7 +758,7 @@ const ExerciseCard = ({
   const portalTarget = document.getElementById('global-header-actions');
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0c] overflow-y-auto pt-[72px] pb-24">
+    <div className="w-full relative">
       <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in relative">
       {portalTarget && createPortal(
         <button 
