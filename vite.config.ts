@@ -34,4 +34,13 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    proxy: {
+      '/api/food': {
+        target: 'https://api.nal.usda.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/food/, '')
+      }
+    }
+  }
 })

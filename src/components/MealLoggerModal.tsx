@@ -1,12 +1,13 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useMemo } from 'react';
-import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2 } from 'lucide-react';
+import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '../context/UserContext';
 import { BarcodeScanner } from './BarcodeScanner';
 import { FoodEntryModal } from './FoodEntryModal';
 import { parseMealText } from '../utils/aiLogger';
 import { CreateMealModal } from './CreateMealModal';
+import { FoodLookupModal } from './FoodLookupModal';
 import { clsx } from 'clsx';
 import type { MealType, FoodItem, FoodLogEntry } from '../types';
 
@@ -32,6 +33,9 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
   const [isLogging, setIsLogging] = useState(false);
   const [logError, setLogError] = useState('');
   const [logSuccess, setLogSuccess] = useState('');
+
+  const [showFoodLookup, setShowFoodLookup] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
 
   // "Same as yesterday" logic
   const yesterdayLogs = useMemo(() => {
@@ -95,6 +99,8 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
     setPendingReviewTitle("Yesterday's Logs Review");
   };
 
+
+
   if (showScanner) {
     return (
       <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col">
@@ -116,6 +122,19 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
 
   if (showCreateMeal) {
     return <CreateMealModal onClose={() => setShowCreateMeal(false)} />;
+  }
+
+  if (showFoodLookup) {
+    return (
+      <FoodLookupModal 
+        onClose={() => setShowFoodLookup(false)} 
+        onSelectFood={(food) => {
+          setScannedFood(food);
+          setShowFoodLookup(false);
+          setShowManual(true);
+        }} 
+      />
+    );
   }
 
   if (editingLog) {
@@ -339,25 +358,33 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <button 
+              onClick={() => setShowFoodLookup(true)}
+              className="bg-tactical-900 border border-tactical-700 hover:border-white rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all group"
+            >
+              <Search className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+              <span className="font-rajdhani font-bold text-white text-[11px] sm:text-sm text-center">Search DB</span>
+            </button>
             <button 
               onClick={() => setShowScanner(true)}
               className="bg-tactical-900 border border-tactical-700 hover:border-neon-blue rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all group"
             >
               <ScanBarcode className="w-6 h-6 text-neon-blue group-hover:scale-110 transition-transform" />
-              <span className="font-rajdhani font-bold text-white text-sm">Scan Barcode</span>
+              <span className="font-rajdhani font-bold text-white text-[11px] sm:text-sm text-center">Scan Barcode</span>
             </button>
             <button 
               onClick={() => setShowManual(true)}
               className="bg-tactical-900 border border-tactical-700 hover:border-white rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all group"
             >
               <Plus className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-              <span className="font-rajdhani font-bold text-white text-sm">Manual Entry</span>
+              <span className="font-rajdhani font-bold text-white text-[11px] sm:text-sm text-center">Manual Entry</span>
             </button>
           </div>
 
           {/* Tabs */}
           <div className="flex border-b border-tactical-700 mb-4 sticky top-0 bg-tactical-800 z-10 pt-2">
+
             <button
               onClick={() => setActiveTab('recent')}
               className={clsx(
@@ -389,6 +416,19 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
 
           {/* Tab Content */}
           <div className="space-y-2 pb-6">
+            <div className="relative mb-4">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-500" />
+              </div>
+              <input
+                type="text"
+                value={localSearchQuery}
+                onChange={(e) => setLocalSearchQuery(e.target.value)}
+                placeholder="Search saved foods..."
+                className="w-full bg-tactical-900 border border-tactical-700 rounded-lg pl-10 pr-3 py-2 text-white focus:outline-none focus:border-neon-blue text-sm"
+              />
+            </div>
+
             {activeTab === 'recent' && (
               <>
                 {yesterdayLogs.length > 0 && (
@@ -413,7 +453,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                   <div className="text-center py-8 text-gray-500 font-inter text-sm">No recent foods.</div>
                 )}
                 
-                {recentFoods.map((food, idx) => {
+                {recentFoods.filter(f => f.name.toLowerCase().includes(localSearchQuery.toLowerCase())).map((food, idx) => {
                   const isFav = favoriteFoods.some(f => (f?.name || '').toLowerCase() === (food.name || '').toLowerCase());
                   return (
                     <div key={food.id + idx} className="relative overflow-hidden rounded-lg group">
@@ -467,7 +507,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                 {favoriteFoods.length === 0 && (
                   <div className="text-center py-8 text-gray-500 font-inter text-sm">No favorite foods.</div>
                 )}
-                {favoriteFoods.map((food, idx) => (
+                {favoriteFoods.filter(f => f.name.toLowerCase().includes(localSearchQuery.toLowerCase())).map((food, idx) => (
                   <div key={food.id + idx} className="relative overflow-hidden rounded-lg group">
                     {/* Right Background (Unfavorite) */}
                     <div className="absolute inset-y-0 right-0 w-16 bg-neon-red flex items-center justify-center rounded-lg">
@@ -520,7 +560,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                   <Plus className="w-5 h-5" /> Create Meal
                 </button>
 
-                {savedMeals.map((meal) => {
+                {savedMeals.filter(m => m.name.toLowerCase().includes(localSearchQuery.toLowerCase())).map((meal) => {
                   const totalCal = meal.items.reduce((sum, item) => sum + (item.macrosPerUnit.calories * item.amount), 0);
                   return (
                     <div key={meal.id} className="bg-tactical-900 border border-tactical-700 p-3 rounded-lg flex items-center justify-between">

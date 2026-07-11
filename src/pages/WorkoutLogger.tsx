@@ -9,6 +9,222 @@ import { RestTimer } from '../components/RestTimer';
 import { clsx } from 'clsx';
 import { LiveWorkoutTimer } from '../components/LiveWorkoutTimer';
 
+const ExerciseCard = ({
+  exercise,
+  exIndex,
+  isPreset,
+  exerciseList,
+  setExerciseList,
+  openLibrary,
+  getPreviousSetData,
+  setLastCompletedSetTime
+}: {
+  exercise: ActiveExercise;
+  exIndex: number;
+  isPreset: boolean;
+  exerciseList: ActiveExercise[];
+  setExerciseList: (list: ActiveExercise[]) => void;
+  openLibrary: (index: number, target: 'preset' | 'active') => void;
+  getPreviousSetData: (name: string, setIndex: number) => any;
+  setLastCompletedSetTime?: (time: number) => void;
+}) => {
+  const controls = useDragControls();
+
+  const updateSet = (setIndex: number, field: keyof LoggedSet, value: any) => {
+    const newEx = [...exerciseList];
+    newEx[exIndex].sets[setIndex] = { ...newEx[exIndex].sets[setIndex], [field]: value };
+    setExerciseList(newEx);
+  };
+
+  const addSet = () => {
+    const newEx = [...exerciseList];
+    const prevSet = newEx[exIndex].sets[newEx[exIndex].sets.length - 1];
+    newEx[exIndex].sets.push({
+      id: `${Date.now()}-${newEx[exIndex].sets.length}`,
+      reps: prevSet ? prevSet.reps : 0,
+      weight: prevSet ? prevSet.weight : 0,
+      type: 'Normal',
+      completed: false
+    });
+    setExerciseList(newEx);
+  };
+
+  const removeSet = (setIndex: number) => {
+    const newEx = [...exerciseList];
+    newEx[exIndex].sets.splice(setIndex, 1);
+    setExerciseList(newEx);
+  };
+
+  const cycleSetType = (setIndex: number, currentType: string) => {
+    const types: Array<'Normal' | 'Warmup' | 'Drop' | 'Failure'> = ['Normal', 'Warmup', 'Drop', 'Failure'];
+    const nextIndex = (types.indexOf(currentType as 'Normal' | 'Warmup' | 'Drop' | 'Failure') + 1) % types.length;
+    updateSet(setIndex, 'type', types[nextIndex]);
+  };
+
+  const toggleSetComplete = (setIndex: number) => {
+    if (isPreset) return;
+    const newEx = [...exerciseList];
+    const isNowCompleted = !newEx[exIndex].sets[setIndex].completed;
+    newEx[exIndex].sets[setIndex].completed = isNowCompleted;
+    setExerciseList(newEx);
+    if (isNowCompleted && setLastCompletedSetTime) {
+      setLastCompletedSetTime(Date.now());
+    }
+  };
+
+  return (
+    <Reorder.Item 
+      value={exercise}
+      dragListener={false}
+      dragControls={controls}
+      className="bg-tactical-900 border-b border-tactical-700/50 p-2 sm:p-3 mb-2 relative"
+    >
+      <div className="flex justify-between items-center mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <div 
+            className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-white p-2 flex items-center justify-center -ml-2"
+            onPointerDown={(e) => controls.start(e)}
+            style={{ touchAction: "none" }}
+          >
+            <GripVertical className="w-6 h-6" />
+          </div>
+          <button 
+            onClick={() => openLibrary(exIndex, isPreset ? 'preset' : 'active')}
+            className="text-neon-blue hover:text-[#00f0ff] transition-colors font-rajdhani font-bold text-xl uppercase tracking-wider text-left"
+          >
+            {exercise.name || 'Select Exercise...'}
+          </button>
+        </div>
+        <button 
+          onClick={() => {
+            const newEx = [...exerciseList];
+            newEx.splice(exIndex, 1);
+            setExerciseList(newEx);
+          }}
+          className="text-gray-500 hover:text-neon-red transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div>
+        {/* Table Header */}
+        <div className="grid grid-cols-12 gap-1 sm:gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-1 px-0 sm:px-1">
+          <div className="col-span-2 sm:col-span-1 text-center">Set</div>
+          <div className="col-span-3 sm:col-span-3 text-center">Previous</div>
+          <div className="col-span-2 sm:col-span-2 text-center">Lbs</div>
+          <div className="col-span-2 sm:col-span-2 text-center">Reps</div>
+          <div className="col-span-3 sm:col-span-4 text-center"></div>
+        </div>
+
+        <Reorder.Group 
+          axis="y" 
+          values={exercise.sets} 
+          onReorder={(newSets) => {
+            const newEx = [...exerciseList];
+            newEx[exIndex].sets = newSets;
+            setExerciseList(newEx);
+          }}
+          className="space-y-0"
+        >
+          {exercise.sets.map((set, setIndex) => {
+            const prevData = getPreviousSetData(exercise.name, setIndex);
+            return (
+              <Reorder.Item 
+                key={set.id} 
+                value={set}
+                className={clsx(
+                  "grid grid-cols-12 gap-1 sm:gap-2 items-center py-1 px-0 sm:px-1 rounded-sm transition-colors",
+                  set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800/50"
+                )}
+              >
+                {/* Set Number / Type Toggle */}
+                <div className="col-span-2 sm:col-span-1 flex justify-center">
+                  <button
+                    onClick={() => cycleSetType(setIndex, set.type)}
+                    className={clsx(
+                      "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
+                      set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
+                      set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
+                      set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
+                      "bg-tactical-700 text-white"
+                    )}
+                  >
+                    {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
+                  </button>
+                </div>
+                
+                {/* Previous Data */}
+                <div className="col-span-3 sm:col-span-3 flex items-center justify-center">
+                  <span className="text-gray-500 font-inter text-[10px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                    {prevData ? `${prevData.weight}x${prevData.reps}` : '-'}
+                  </span>
+                </div>
+
+                {/* Weight */}
+                <div className="col-span-2 sm:col-span-2">
+                  <input 
+                    type="number" 
+                    value={set.weight || ''}
+                    onChange={(e) => updateSet(setIndex, 'weight', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Reps */}
+                <div className="col-span-2 sm:col-span-2">
+                  <input 
+                    type="number" 
+                    value={set.reps || ''}
+                    onChange={(e) => updateSet(setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
+                    placeholder="0"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="col-span-3 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
+                  {!isPreset && (
+                    <button 
+                      onClick={() => toggleSetComplete(setIndex)}
+                      className={clsx(
+                        "w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center transition-all",
+                        set.completed 
+                          ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
+                          : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
+                      )}
+                    >
+                      <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => removeSet(setIndex)}
+                    className="w-7 h-7 sm:w-8 sm:h-8 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
+                    title="Delete Set"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-gray-400 p-1 flex items-center justify-center">
+                    <GripVertical className="w-5 h-5" />
+                  </div>
+                </div>
+              </Reorder.Item>
+            );
+          })}
+        </Reorder.Group>
+        
+        <button
+          onClick={addSet}
+          className="mt-2 w-full py-2 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded transition-colors font-rajdhani font-bold text-sm uppercase flex justify-center items-center"
+        >
+          <Plus className="w-4 h-4 mr-1" /> Add Set
+        </button>
+      </div>
+    </Reorder.Item>
+  );
+};
+
 export const WorkoutLogger: React.FC = () => {
   const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
@@ -312,221 +528,6 @@ export const WorkoutLogger: React.FC = () => {
   };
 
 
-const ExerciseCard = ({
-  exercise,
-  exIndex,
-  isPreset,
-  exerciseList,
-  setExerciseList,
-  openLibrary,
-  getPreviousSetData,
-  setLastCompletedSetTime
-}: {
-  exercise: ActiveExercise;
-  exIndex: number;
-  isPreset: boolean;
-  exerciseList: ActiveExercise[];
-  setExerciseList: (list: ActiveExercise[]) => void;
-  openLibrary: (index: number, target: 'preset' | 'active') => void;
-  getPreviousSetData: (name: string, setIndex: number) => any;
-  setLastCompletedSetTime?: (time: number) => void;
-}) => {
-  const controls = useDragControls();
-
-  const updateSet = (setIndex: number, field: keyof LoggedSet, value: any) => {
-    const newEx = [...exerciseList];
-    newEx[exIndex].sets[setIndex] = { ...newEx[exIndex].sets[setIndex], [field]: value };
-    setExerciseList(newEx);
-  };
-
-  const addSet = () => {
-    const newEx = [...exerciseList];
-    const prevSet = newEx[exIndex].sets[newEx[exIndex].sets.length - 1];
-    newEx[exIndex].sets.push({
-      id: `${Date.now()}-${newEx[exIndex].sets.length}`,
-      reps: prevSet ? prevSet.reps : 0,
-      weight: prevSet ? prevSet.weight : 0,
-      type: 'Normal',
-      completed: false
-    });
-    setExerciseList(newEx);
-  };
-
-  const removeSet = (setIndex: number) => {
-    const newEx = [...exerciseList];
-    newEx[exIndex].sets.splice(setIndex, 1);
-    setExerciseList(newEx);
-  };
-
-  const cycleSetType = (setIndex: number, currentType: string) => {
-    const types: Array<'Normal' | 'Warmup' | 'Drop' | 'Failure'> = ['Normal', 'Warmup', 'Drop', 'Failure'];
-    const nextIndex = (types.indexOf(currentType as 'Normal' | 'Warmup' | 'Drop' | 'Failure') + 1) % types.length;
-    updateSet(setIndex, 'type', types[nextIndex]);
-  };
-
-  const toggleSetComplete = (setIndex: number) => {
-    if (isPreset) return;
-    const newEx = [...exerciseList];
-    const isNowCompleted = !newEx[exIndex].sets[setIndex].completed;
-    newEx[exIndex].sets[setIndex].completed = isNowCompleted;
-    setExerciseList(newEx);
-    if (isNowCompleted && setLastCompletedSetTime) {
-      setLastCompletedSetTime(Date.now());
-    }
-  };
-
-  return (
-    <Reorder.Item 
-      value={exercise}
-      dragListener={false}
-      dragControls={controls}
-      className="bg-tactical-900 border-b border-tactical-700/50 p-2 sm:p-3 mb-2 relative"
-    >
-      <div className="flex justify-between items-center mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <div 
-            className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-white p-2 flex items-center justify-center -ml-2"
-            onPointerDown={(e) => controls.start(e)}
-            style={{ touchAction: "none" }}
-          >
-            <GripVertical className="w-6 h-6" />
-          </div>
-          <button 
-            onClick={() => openLibrary(exIndex, isPreset ? 'preset' : 'active')}
-            className="text-neon-blue hover:text-[#00f0ff] transition-colors font-rajdhani font-bold text-xl uppercase tracking-wider text-left"
-          >
-            {exercise.name || 'Select Exercise...'}
-          </button>
-        </div>
-        <button 
-          onClick={() => {
-            const newEx = [...exerciseList];
-            newEx.splice(exIndex, 1);
-            setExerciseList(newEx);
-          }}
-          className="text-gray-500 hover:text-neon-red transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      
-      <div>
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-1 sm:gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-1 px-0 sm:px-1">
-          <div className="col-span-2 sm:col-span-1 text-center">Set</div>
-          <div className="col-span-3 sm:col-span-3 text-center">Previous</div>
-          <div className="col-span-2 sm:col-span-2 text-center">Lbs</div>
-          <div className="col-span-2 sm:col-span-2 text-center">Reps</div>
-          <div className="col-span-3 sm:col-span-4 text-center"></div>
-        </div>
-
-        <Reorder.Group 
-          axis="y" 
-          values={exercise.sets} 
-          onReorder={(newSets) => {
-            const newEx = [...exerciseList];
-            newEx[exIndex].sets = newSets;
-            setExerciseList(newEx);
-          }}
-          className="space-y-0"
-        >
-          {exercise.sets.map((set, setIndex) => {
-            const prevData = getPreviousSetData(exercise.name, setIndex);
-            return (
-              <Reorder.Item 
-                key={set.id} 
-                value={set}
-                className={clsx(
-                  "grid grid-cols-12 gap-1 sm:gap-2 items-center py-1 px-0 sm:px-1 rounded-sm transition-colors",
-                  set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800/50"
-                )}
-              >
-                {/* Set Number / Type Toggle */}
-                <div className="col-span-2 sm:col-span-1 flex justify-center">
-                  <button
-                    onClick={() => cycleSetType(setIndex, set.type)}
-                    className={clsx(
-                      "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
-                      set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
-                      set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
-                      set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
-                      "bg-tactical-700 text-white"
-                    )}
-                  >
-                    {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
-                  </button>
-                </div>
-                
-                {/* Previous Data */}
-                <div className="col-span-3 sm:col-span-3 flex items-center justify-center">
-                  <span className="text-gray-500 font-inter text-[10px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
-                    {prevData ? `${prevData.weight}x${prevData.reps}` : '-'}
-                  </span>
-                </div>
-
-                {/* Weight */}
-                <div className="col-span-2 sm:col-span-2">
-                  <input 
-                    type="number" 
-                    value={set.weight || ''}
-                    onChange={(e) => updateSet(setIndex, 'weight', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
-                    placeholder="0"
-                  />
-                </div>
-
-                {/* Reps */}
-                <div className="col-span-2 sm:col-span-2">
-                  <input 
-                    type="number" 
-                    value={set.reps || ''}
-                    onChange={(e) => updateSet(setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
-                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
-                    placeholder="0"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-3 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
-                  {!isPreset && (
-                    <button 
-                      onClick={() => toggleSetComplete(setIndex)}
-                      className={clsx(
-                        "w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center transition-all",
-                        set.completed 
-                          ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
-                          : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
-                      )}
-                    >
-                      <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => removeSet(setIndex)}
-                    className="w-7 h-7 sm:w-8 sm:h-8 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
-                    title="Delete Set"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <div className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-gray-400 p-1 flex items-center justify-center">
-                    <GripVertical className="w-5 h-5" />
-                  </div>
-                </div>
-              </Reorder.Item>
-            );
-          })}
-        </Reorder.Group>
-        
-        <button
-          onClick={addSet}
-          className="mt-2 w-full py-2 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded transition-colors font-rajdhani font-bold text-sm uppercase flex justify-center items-center"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Add Set
-        </button>
-      </div>
-    </Reorder.Item>
-  );
-};
 
   const renderExerciseTable = (
     exerciseList: ActiveExercise[],
