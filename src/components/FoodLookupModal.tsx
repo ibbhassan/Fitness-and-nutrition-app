@@ -22,7 +22,8 @@ export const FoodLookupModal: React.FC<FoodLookupModalProps> = ({ onClose, onSel
       setIsSearching(true);
       setLogError('');
       try {
-        const res = await fetch(`/api/food/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchQuery)}&pageSize=20`);
+        const baseUrl = import.meta.env.PROD ? 'https://api.nal.usda.gov' : '/api/food';
+      const res = await fetch(`${baseUrl}/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(searchQuery)}&pageSize=20`);
         if (!res.ok) {
           throw new Error(`HTTP Error: ${res.status}`);
         }
