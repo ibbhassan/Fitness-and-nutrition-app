@@ -43,7 +43,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
           }
           await qrCode.start(
             cameraId,
-            { fps: 10 },
+            { fps: 15, qrbox: { width: 300, height: 150 }, aspectRatio: 1.0 },
             async (decodedText) => {
               if (qrCode.isScanning) qrCode.pause(true);
               await handleBarcodeMatch(decodedText, qrCode);
@@ -58,7 +58,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         try {
           await qrCode.start(
             { facingMode: "environment" },
-            { fps: 10 },
+            { fps: 15, qrbox: { width: 300, height: 150 }, aspectRatio: 1.0 },
             async (decodedText) => {
               if (qrCode.isScanning) qrCode.pause(true);
               await handleBarcodeMatch(decodedText, qrCode);
