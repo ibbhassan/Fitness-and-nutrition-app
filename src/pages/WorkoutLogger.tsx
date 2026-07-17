@@ -165,8 +165,9 @@ const ExerciseCard = ({
                 <div className="col-span-2 sm:col-span-2">
                   <input 
                     type="number" 
-                    value={set.weight || ''}
-                    onChange={(e) => updateSet(setIndex, 'weight', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                    step="any"
+                    value={set.weight === 0 ? '' : set.weight}
+                    onChange={(e) => updateSet(setIndex, 'weight', e.target.value)}
                     className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
                     placeholder="0"
                   />
@@ -176,8 +177,9 @@ const ExerciseCard = ({
                 <div className="col-span-2 sm:col-span-2">
                   <input 
                     type="number" 
-                    value={set.reps || ''}
-                    onChange={(e) => updateSet(setIndex, 'reps', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                    step="any"
+                    value={set.reps === 0 ? '' : set.reps}
+                    onChange={(e) => updateSet(setIndex, 'reps', e.target.value)}
                     className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
                     placeholder="0"
                   />
