@@ -29,30 +29,54 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
     });
     scannerRef.current = qrCode;
 
-    const timeoutId = setTimeout(() => {
+    const startScanner = async () => {
       if (isCleanedUp) return;
-      qrCode.start(
-        { facingMode: "environment" },
-        { fps: 10 },
-        async (decodedText) => {
-          if (qrCode.isScanning) {
-            qrCode.pause(true);
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          let cameraId = devices[devices.length - 1].id;
+          for (const device of devices) {
+            if (device.label.toLowerCase().includes('back')) {
+              cameraId = device.id;
+              break;
+            }
           }
-          await handleBarcodeMatch(decodedText, qrCode);
-        },
-        () => {
-          // ignore continuous scan errors
+          await qrCode.start(
+            cameraId,
+            { fps: 10 },
+            async (decodedText) => {
+              if (qrCode.isScanning) qrCode.pause(true);
+              await handleBarcodeMatch(decodedText, qrCode);
+            },
+            () => {}
+          );
+        } else {
+          throw new Error('No cameras found');
         }
-      ).catch(() => {
-        if (!isCleanedUp) {
-          setError("Failed to start camera. Please ensure you have granted camera permissions.");
+      } catch (err) {
+        // Fallback to environment
+        try {
+          await qrCode.start(
+            { facingMode: "environment" },
+            { fps: 10 },
+            async (decodedText) => {
+              if (qrCode.isScanning) qrCode.pause(true);
+              await handleBarcodeMatch(decodedText, qrCode);
+            },
+            () => {}
+          );
+        } catch (err2) {
+          if (!isCleanedUp) {
+            setError("Failed to start camera. Please ensure you have granted camera permissions in your browser settings.");
+          }
         }
-      });
-    }, 50);
+      }
+    };
+    
+    startScanner();
 
     return () => {
       isCleanedUp = true;
-      clearTimeout(timeoutId);
       if (qrCode.isScanning) {
         qrCode.stop().then(() => qrCode.clear()).catch(console.error);
       } else {
