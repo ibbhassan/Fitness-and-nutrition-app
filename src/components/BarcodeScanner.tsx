@@ -18,14 +18,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
     let isCleanedUp = false;
     const qrCode = new Html5Qrcode("reader", {
       verbose: false,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39
-      ]
+      useBarCodeDetectorIfSupported: true // Use native iOS scanner if available
     });
     scannerRef.current = qrCode;
 
@@ -43,7 +36,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
           }
           await qrCode.start(
             cameraId,
-            { fps: 15, qrbox: { width: 300, height: 150 }, aspectRatio: 1.0 },
+            { fps: 15, qrbox: { width: 300, height: 150 } }, // removed aspectRatio to prevent squashing
             async (decodedText) => {
               if (qrCode.isScanning) qrCode.pause(true);
               await handleBarcodeMatch(decodedText, qrCode);
@@ -58,7 +51,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         try {
           await qrCode.start(
             { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 300, height: 150 }, aspectRatio: 1.0 },
+            { fps: 15, qrbox: { width: 300, height: 150 } },
             async (decodedText) => {
               if (qrCode.isScanning) qrCode.pause(true);
               await handleBarcodeMatch(decodedText, qrCode);
