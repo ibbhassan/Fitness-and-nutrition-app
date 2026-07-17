@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { X, Loader2, Camera } from 'lucide-react';
 import type { FoodItem } from '../types';
 
@@ -12,73 +12,62 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
     let isCleanedUp = false;
-    const qrCode = new Html5Qrcode("reader", {
-      verbose: false,
-      useBarCodeDetectorIfSupported: true // Use native iOS scanner if available
-    });
-    scannerRef.current = qrCode;
+    const codeReader = new BrowserMultiFormatReader();
+    codeReaderRef.current = codeReader;
 
     const startScanner = async () => {
-      if (isCleanedUp) return;
       try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          let cameraId = devices[devices.length - 1].id;
-          for (const device of devices) {
-            if (device.label.toLowerCase().includes('back')) {
-              cameraId = device.id;
+        const videoInputDevices = await codeReader.listVideoInputDevices();
+        if (videoInputDevices.length > 0) {
+          // Try to find the back camera
+          let selectedDeviceId = videoInputDevices[0].deviceId;
+          for (const device of videoInputDevices) {
+            if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')) {
+              selectedDeviceId = device.deviceId;
               break;
             }
           }
-          await qrCode.start(
-            cameraId,
-            { fps: 15, qrbox: { width: 300, height: 150 } }, // removed aspectRatio to prevent squashing
-            async (decodedText) => {
-              if (qrCode.isScanning) qrCode.pause(true);
-              await handleBarcodeMatch(decodedText, qrCode);
-            },
-            () => {}
-          );
+
+          if (!isCleanedUp && videoRef.current) {
+            codeReader.decodeFromVideoDevice(selectedDeviceId, videoRef.current, async (result, err) => {
+              if (result) {
+                // Successfully decoded
+                if (codeReaderRef.current) {
+                  codeReaderRef.current.reset(); // Stop scanning
+                }
+                await handleBarcodeMatch(result.getText());
+              }
+              if (err && !(err instanceof NotFoundException)) {
+                console.error(err);
+              }
+            });
+          }
         } else {
-          throw new Error('No cameras found');
+          setError('No cameras found.');
         }
       } catch (err) {
-        // Fallback to environment
-        try {
-          await qrCode.start(
-            { facingMode: "environment" },
-            { fps: 15, qrbox: { width: 300, height: 150 } },
-            async (decodedText) => {
-              if (qrCode.isScanning) qrCode.pause(true);
-              await handleBarcodeMatch(decodedText, qrCode);
-            },
-            () => {}
-          );
-        } catch (err2) {
-          if (!isCleanedUp) {
-            setError("Failed to start camera. Please ensure you have granted camera permissions in your browser settings.");
-          }
+        if (!isCleanedUp) {
+          setError("Failed to start camera. Please check permissions.");
         }
       }
     };
-    
+
     startScanner();
 
     return () => {
       isCleanedUp = true;
-      if (qrCode.isScanning) {
-        qrCode.stop().then(() => qrCode.clear()).catch(console.error);
-      } else {
-        qrCode.clear();
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
       }
     };
   }, []);
 
-  const handleBarcodeMatch = async (barcode: string, qrCode: Html5Qrcode) => {
+  const handleBarcodeMatch = async (barcode: string) => {
     setIsLoading(true);
     try {
       let res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
@@ -121,40 +110,34 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
           }
         };
 
-        if (qrCode.isScanning) await qrCode.stop();
         onScanSuccess(foodItem);
       } else {
         setError('Product not found. Please try again or enter manually.');
-        if (qrCode.isScanning) qrCode.resume();
         setIsLoading(false);
+        // Restart scanner if product not found
+        if (codeReaderRef.current) {
+             // Let user try again manually instead of auto restarting to avoid loop
+        }
       }
     } catch (err) {
       setError('Network error checking database.');
-      if (qrCode.isScanning) qrCode.resume();
       setIsLoading(false);
     }
   };
 
-  const handleClose = async () => {
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop().catch(console.error);
+  const handleClose = () => {
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
     }
     onClose();
   };
 
   const submitManualBarcode = async () => {
     if (!manualBarcode.trim()) return;
-    if (scannerRef.current?.isScanning) {
-      scannerRef.current.pause(true);
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
     }
-    await handleBarcodeMatch(manualBarcode.trim(), scannerRef.current!);
-  };
-
-  const handleManual = async () => {
-    if (scannerRef.current?.isScanning) {
-      await scannerRef.current.stop().catch(console.error);
-    }
-    onScanSuccess({});
+    await handleBarcodeMatch(manualBarcode.trim());
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,15 +145,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
       const file = e.target.files[0];
       try {
         setIsLoading(true);
-        if (scannerRef.current) {
-          if (scannerRef.current.isScanning) {
-            await scannerRef.current.stop().catch(() => {});
-          }
-          // Note: Html5Qrcode.scanFile is a static-like method on the instance for some versions,
-          // or we can just instantiate a new one. But scanFile is available on the instance.
-          const decodedText = await scannerRef.current.scanFile(file, true);
-          await handleBarcodeMatch(decodedText, scannerRef.current);
+        if (codeReaderRef.current) {
+           codeReaderRef.current.reset(); // stop video
         }
+        const imgUrl = URL.createObjectURL(file);
+        
+        const tempReader = new BrowserMultiFormatReader();
+        const result = await tempReader.decodeFromImageUrl(imgUrl);
+        await handleBarcodeMatch(result.getText());
       } catch (err) {
         setError("Could not find a barcode in that image. Make sure it's clear and well-lit.");
         setIsLoading(false);
@@ -186,11 +168,21 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         </button>
       </div>
 
-      <div className="w-full max-w-md bg-tactical-800 p-4 rounded-xl border border-tactical-600">
+      <div className="w-full max-w-md bg-tactical-800 p-4 rounded-xl border border-tactical-600 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
         <h3 className="esports-heading text-xl text-white mb-4 text-center">Scan Barcode</h3>
         
-        <div id="reader" className="w-full bg-black rounded-lg overflow-hidden min-h-[250px] relative">
-          {/* html5-qrcode mounts here */}
+        <div className="w-full bg-black rounded-lg overflow-hidden min-h-[250px] relative border-2 border-tactical-700">
+          <video 
+            ref={videoRef} 
+            className="w-full h-full object-cover" 
+            style={{ minHeight: '250px' }} 
+            muted 
+            playsInline
+          />
+          {/* Targeting Box Overlay */}
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="w-[80%] h-[150px] border-2 border-neon-blue rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"></div>
+          </div>
         </div>
 
         {isLoading && (
@@ -201,7 +193,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         )}
 
         {error && (
-          <div className="mt-4 p-3 bg-red-900/50 border border-neon-red rounded-lg text-red-200 text-sm text-center">
+          <div className="mt-4 p-3 bg-red-900/50 border border-neon-red rounded-lg text-red-200 text-sm text-center font-inter">
             {error}
           </div>
         )}
@@ -209,7 +201,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         <div className="mt-4">
           <label className="w-full bg-tactical-700 hover:bg-tactical-600 border border-tactical-500 text-white rounded-lg p-3 flex justify-center items-center gap-2 cursor-pointer transition-colors">
             <Camera className="w-5 h-5" />
-            <span className="font-rajdhani uppercase tracking-wider">Take Photo of Barcode</span>
+            <span className="font-rajdhani uppercase tracking-wider text-sm sm:text-base">Take Photo of Barcode</span>
             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
           </label>
         </div>
@@ -220,27 +212,18 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
             <input 
               type="text" 
               value={manualBarcode}
-              onChange={e => setManualBarcode(e.target.value)}
-              placeholder="e.g. 0635985500049"
-              className="flex-1 bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white outline-none text-sm"
+              onChange={(e) => setManualBarcode(e.target.value)}
+              className="flex-1 bg-tactical-900 border border-tactical-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-blue font-inter"
+              placeholder="e.g. 01234567890"
+              onKeyDown={(e) => e.key === 'Enter' && submitManualBarcode()}
             />
             <button 
               onClick={submitManualBarcode}
-              disabled={!manualBarcode.trim() || isLoading}
-              className="bg-neon-blue text-tactical-900 px-4 py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+              className="bg-neon-blue text-black px-4 py-2 rounded-lg font-rajdhani uppercase tracking-wider font-bold hover:bg-blue-400 transition-colors"
             >
-              Lookup
+              Search
             </button>
           </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <button 
-            onClick={handleManual}
-            className="text-neon-blue text-sm hover:underline"
-          >
-            Enter manually instead
-          </button>
         </div>
       </div>
     </div>
