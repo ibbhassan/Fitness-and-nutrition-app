@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Camera } from 'lucide-react';
 import type { FoodItem } from '../types';
 
 interface BarcodeScannerProps {
@@ -164,6 +164,27 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
     onScanSuccess({});
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      try {
+        setIsLoading(true);
+        if (scannerRef.current) {
+          if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop().catch(() => {});
+          }
+          // Note: Html5Qrcode.scanFile is a static-like method on the instance for some versions,
+          // or we can just instantiate a new one. But scanFile is available on the instance.
+          const decodedText = await scannerRef.current.scanFile(file, true);
+          await handleBarcodeMatch(decodedText, scannerRef.current);
+        }
+      } catch (err) {
+        setError("Could not find a barcode in that image. Make sure it's clear and well-lit.");
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[60] px-4 fade-in">
       <div className="absolute top-6 right-6">
@@ -191,6 +212,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
             {error}
           </div>
         )}
+
+        <div className="mt-4">
+          <label className="w-full bg-tactical-700 hover:bg-tactical-600 border border-tactical-500 text-white rounded-lg p-3 flex justify-center items-center gap-2 cursor-pointer transition-colors">
+            <Camera className="w-5 h-5" />
+            <span className="font-rajdhani uppercase tracking-wider">Take Photo of Barcode</span>
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} />
+          </label>
+        </div>
 
         <div className="mt-4 pt-4 border-t border-tactical-700">
           <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-2 text-center">Camera not reading it? Type Barcode:</p>
