@@ -331,11 +331,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         newLp = 0;
       }
       
-      if (newLevel < 10) newRank = 'Bronze';
-      else if (newLevel < 20) newRank = 'Silver';
-      else if (newLevel < 30) newRank = 'Gold';
-      else if (newLevel < 40) newRank = 'Platinum';
-      else if (newLevel < 50) newRank = 'Diamond';
+      if (newLevel <= 3) newRank = 'Bronze';
+      else if (newLevel <= 6) newRank = 'Silver';
+      else if (newLevel <= 9) newRank = 'Gold';
+      else if (newLevel <= 12) newRank = 'Platinum';
+      else if (newLevel <= 15) newRank = 'Diamond';
       else newRank = 'Masters';
       
       return { ...prev, lp: newLp, level: newLevel, rank: newRank };
@@ -367,6 +367,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logWorkout = (log: WorkoutLog) => {
     setWorkoutHistory(prev => [...prev, log]);
+    if (log.epChange) {
+      addEp(log.epChange);
+    }
     
     // Analyze workout to update stats
     let strengthGain = 0;

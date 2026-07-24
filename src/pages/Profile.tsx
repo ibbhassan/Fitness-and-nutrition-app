@@ -7,6 +7,14 @@ import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
 
 export const Profile: React.FC = () => {
+  const getDivision = (level: number, tier: string) => {
+    if (tier === 'Masters') return '';
+    const remainder = level % 3;
+    if (remainder === 1) return 'III';
+    if (remainder === 2) return 'II';
+    if (remainder === 0) return 'I';
+    return '';
+  };
   const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, healthSyncEnabled, toggleHealthSync } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -97,7 +105,7 @@ export const Profile: React.FC = () => {
             <div className="w-full max-w-sm mt-4 bg-tactical-900 rounded-lg p-4 border border-tactical-700">
               <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Combat Effectiveness</h3>
               <div className="flex justify-between items-end mb-2">
-                <span className="font-rajdhani font-bold text-white uppercase">{profile?.rank || 'Bronze'} Tier</span>
+                <span className="font-rajdhani font-bold text-white uppercase">{profile?.rank || 'Bronze'} {profile ? getDivision(profile.level, profile.rank) : 'III'} Tier</span>
                 <span className="text-neon-blue font-bold text-sm">{profile?.lp || 0} / 100 EP</span>
               </div>
               <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">

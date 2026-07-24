@@ -8,6 +8,15 @@ interface RankDisplayProps {
 }
 
 export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
+  const getDivision = (level: number, tier: string) => {
+    if (tier === 'Masters') return '';
+    const remainder = level % 3;
+    if (remainder === 1) return 'III';
+    if (remainder === 2) return 'II';
+    if (remainder === 0) return 'I';
+    return '';
+  };
+
   return (
     <div className="esports-panel p-6 relative overflow-hidden">
       {/* Background decoration */}
@@ -25,7 +34,7 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
         <div className="flex-1 w-full">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <h1 className="text-3xl font-rajdhani font-bold text-white uppercase tracking-wider">{profile.rank} Tier</h1>
+              <h1 className="text-3xl font-rajdhani font-bold text-white uppercase tracking-wider">{profile.rank} {getDivision(profile.level, profile.rank)} Tier</h1>
               <p className="text-gray-400 font-inter">Level {profile.level} • {profile.currentMode} Mode</p>
             </div>
             <div className="text-right">
