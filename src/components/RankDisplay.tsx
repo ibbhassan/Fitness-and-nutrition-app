@@ -26,7 +26,7 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
           <img 
             src={crestUrl} 
             alt={`${tier} Rank`} 
-            className="w-full h-full object-contain mix-blend-screen hover:scale-105 transition-transform duration-500" 
+            className="w-full h-full object-contain hover:scale-105 transition-transform duration-500" 
           />
         </div>
 

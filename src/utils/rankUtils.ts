@@ -49,7 +49,7 @@ export const getRankInfo = (level: number): { tier: RankTier; division: string; 
   }
 
   const tier = tiers[tierIndex];
-  const crestUrl = `/images/ranks/${tier.toLowerCase()}.jpg`;
+  const crestUrl = `/images/ranks/${tier.toLowerCase()}.png`;
 
   return { tier, division, crestUrl, color: colors[tier] };
 };
