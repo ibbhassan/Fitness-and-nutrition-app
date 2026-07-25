@@ -49,7 +49,7 @@ export const getRankInfo = (level: number): { tier: RankTier; division: string; 
   }
 
   const tier = tiers[tierIndex];
-  const crestUrl = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/${tier.toLowerCase()}.png`;
+  const crestUrl = `/images/ranks/${tier.toLowerCase()}.png`;
 
   return { tier, division, crestUrl, color: colors[tier] };
 };
