@@ -36,12 +36,12 @@ export const Nutrition: React.FC = () => {
 
   const getMealLogs = (meal: MealType) => viewedLogs.filter(log => log.mealType === meal);
 
-  const MacroCircle = ({ label, current, target, colorClass }: any) => {
+  const renderMacroCircle = (label: string, current: number, target: number, colorClass: string) => {
     const percent = Math.min((current / target) * 100, 100);
     return (
       <div className="flex flex-col items-center">
-        <div className="text-white font-bold text-lg leading-none">{Math.round(current)}</div>
-        <div className="text-[10px] text-gray-400 font-rajdhani uppercase tracking-wider mb-2">{label}</div>
+        <div className="text-xl font-rajdhani font-bold text-white">{Math.round(current)}</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{label}</div>
         <div className="w-full bg-tactical-800 h-1.5 rounded-full overflow-hidden">
           <div className={clsx("h-full rounded-full", colorClass)} style={{ width: `${percent}%` }} />
         </div>
@@ -50,7 +50,7 @@ export const Nutrition: React.FC = () => {
     );
   };
 
-  const MealCard = ({ title, icon: Icon, colorClass }: { title: MealType; icon: any; colorClass: string }) => {
+  const renderMealCard = (title: MealType, Icon: any, colorClass: string) => {
     const macros = getMealMacros(title);
     const logs = getMealLogs(title);
     
@@ -248,18 +248,18 @@ export const Nutrition: React.FC = () => {
 
         {/* Macros Breakdown */}
         <div className="grid grid-cols-3 gap-6">
-          <MacroCircle label="Protein" current={protein.current} target={protein.target} colorClass="bg-neon-blue" />
-          <MacroCircle label="Carbs" current={carbs.current} target={carbs.target} colorClass="bg-neon-gold" />
-          <MacroCircle label="Fat" current={fat.current} target={fat.target} colorClass="bg-neon-purple" />
+          {renderMacroCircle("Protein", protein.current, protein.target, "bg-neon-blue")}
+          {renderMacroCircle("Carbs", carbs.current, carbs.target, "bg-neon-gold")}
+          {renderMacroCircle("Fat", fat.current, fat.target, "bg-neon-purple")}
         </div>
       </div>
 
       {/* Meal Cards */}
       <div className="space-y-4">
-        <MealCard title="Breakfast" icon={Coffee} colorClass="text-neon-blue" />
-        <MealCard title="Lunch" icon={Sun} colorClass="text-neon-gold" />
-        <MealCard title="Dinner" icon={Moon} colorClass="text-neon-purple" />
-        <MealCard title="Snack" icon={Apple} colorClass="text-neon-red" />
+        {renderMealCard('Breakfast', Coffee, "text-neon-blue")}
+        {renderMealCard('Lunch', Sun, "text-neon-gold")}
+        {renderMealCard('Dinner', Moon, "text-neon-purple")}
+        {renderMealCard('Snack', Apple, "text-neon-red")}
       </div>
       </motion.div>
 

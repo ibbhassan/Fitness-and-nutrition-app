@@ -236,7 +236,7 @@ export const WorkoutLogger: React.FC = () => {
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
-  const [newPresetExercises, setNewPresetExercises] = useState<ActiveExercise[]>([
+  const [newPresetExercises, setNewPresetExercises] = useState<ActiveExercise[]>(() => [
     { 
       id: String(Date.now()), 
       name: '', 
