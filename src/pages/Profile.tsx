@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Medal, Shield, Target, Flame, Activity, X } from 'lucide-react';
+import { Settings, Medal, Star, Target, Flame, Activity, X } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { StatHexagon } from '../components/StatHexagon';
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
@@ -91,7 +91,7 @@ export const Profile: React.FC = () => {
               <div>
                 <h1 className="esports-heading text-3xl text-white tracking-widest">{user?.username || 'AGENT'}</h1>
                 <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Level {profile?.level || 1} Operative
+                  <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1} Operative
                 </p>
               </div>
             </div>
@@ -211,7 +211,7 @@ export const Profile: React.FC = () => {
               <div className="bg-tactical-900 border border-neon-gold/50 p-4 rounded-xl flex flex-col items-center justify-center text-center relative group overflow-hidden">
                 <div className="absolute inset-0 bg-neon-gold/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="w-12 h-12 rounded-full bg-neon-gold/20 flex items-center justify-center mb-3 border border-neon-gold">
-                  <Shield className="w-6 h-6 text-neon-gold" />
+                  <Star className="w-6 h-6 text-neon-gold" />
                 </div>
                 <h4 className="font-rajdhani font-bold text-white uppercase tracking-wider text-sm">Rookie Deployed</h4>
                 <p className="text-xs text-gray-400 mt-1">Completed Onboarding</p>

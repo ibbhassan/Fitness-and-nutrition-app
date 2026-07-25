@@ -17,7 +17,7 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
     <div className="esports-panel p-6 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute -right-10 -top-10 opacity-5">
-        <Shield className="w-64 h-64" />
+        <img src={crestUrl} className="w-64 h-64 opacity-20 grayscale" alt="" />
       </div>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">

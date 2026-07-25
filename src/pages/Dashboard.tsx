@@ -91,8 +91,8 @@ export const Dashboard: React.FC = () => {
     const today = new Date();
     const todayStr = formatLocalDate(today);
     
-    let isTodayLogged = workoutHistory.some(w => formatLocalDate(w.date) === todayStr);
-    let d = new Date(today);
+    const isTodayLogged = workoutHistory.some(w => formatLocalDate(w.date) === todayStr);
+    const d = new Date(today);
     if (!isTodayLogged) {
        d.setDate(d.getDate() - 1);
     }
