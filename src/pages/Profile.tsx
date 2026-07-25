@@ -100,11 +100,11 @@ export const Profile: React.FC = () => {
               <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Combat Effectiveness</h3>
               <div className="flex justify-between items-end mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 flex items-center justify-center">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-md overflow-hidden border border-tactical-700/50 relative">
                     <img 
                       src={profile ? getRankInfo(profile.level).crestUrl : getRankInfo(1).crestUrl} 
                       alt="Rank Crest" 
-                      className="w-full h-full object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]" 
+                      className="absolute inset-0 w-full h-full object-cover scale-110 drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]" 
                     />
                   </div>
                   <span className={clsx("font-rajdhani font-bold uppercase", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>

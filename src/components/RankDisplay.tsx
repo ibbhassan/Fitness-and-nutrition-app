@@ -21,9 +21,19 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
       </div>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-        {/* Rank Icon */}
-        <div className="w-32 h-32 flex items-center justify-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-          <img src={crestUrl} alt={`${tier} Rank`} className="w-full h-full object-contain" />
+        {/* Rank Icon with Dynamic Overlay */}
+        <div className="relative w-32 h-32 flex items-center justify-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] rounded-xl overflow-hidden bg-tactical-800 border-2 border-tactical-700/50 group">
+          <img src={crestUrl} alt={`${tier} Rank`} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          
+          {/* Bottom gradient cover to hide baked-in text */}
+          <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-tactical-900 via-tactical-900/95 to-transparent z-10"></div>
+          
+          {/* Dynamic text overlaid */}
+          <div className="absolute bottom-1 inset-x-0 z-20 flex justify-center">
+            <span className={clsx("font-rajdhani font-black text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]", color)}>
+              {tier} {division}
+            </span>
+          </div>
         </div>
 
         {/* Rank Info */}
