@@ -104,7 +104,7 @@ export const Profile: React.FC = () => {
                     <img 
                       src={profile ? getRankInfo(profile.level).crestUrl : getRankInfo(1).crestUrl} 
                       alt="Rank Crest" 
-                      className="w-full h-full object-contain mix-blend-screen drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]" 
+                      className="w-full h-full object-contain mix-blend-screen" 
                     />
                   </div>
                   <span className={clsx("font-rajdhani font-bold uppercase", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>

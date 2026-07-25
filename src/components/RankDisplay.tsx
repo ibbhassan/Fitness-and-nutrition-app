@@ -22,7 +22,7 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
         {/* Rank Icon */}
-        <div className="w-32 h-32 flex items-center justify-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+        <div className="w-32 h-32 flex items-center justify-center">
           <img 
             src={crestUrl} 
             alt={`${tier} Rank`} 
