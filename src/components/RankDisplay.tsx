@@ -1,6 +1,6 @@
 import React from 'react';
 import type { UserProfile } from '../types';
-import { Shield } from 'lucide-react';
+
 import { clsx } from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
