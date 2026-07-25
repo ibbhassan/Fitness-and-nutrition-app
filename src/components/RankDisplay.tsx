@@ -2,20 +2,16 @@ import React from 'react';
 import type { UserProfile } from '../types';
 import { Shield } from 'lucide-react';
 import { clsx } from 'clsx';
+import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
 interface RankDisplayProps {
   profile: UserProfile;
 }
 
 export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
-  const getDivision = (level: number, tier: string) => {
-    if (tier === 'Masters') return '';
-    const remainder = level % 3;
-    if (remainder === 1) return 'III';
-    if (remainder === 2) return 'II';
-    if (remainder === 0) return 'I';
-    return '';
-  };
+  const { tier, division, crestUrl, color } = getRankInfo(profile.level);
+  const requiredEp = getRequiredEpForLevel(profile.level);
+  const progressPercent = Math.min(100, Math.round((profile.lp / requiredEp) * 100));
 
   return (
     <div className="esports-panel p-6 relative overflow-hidden">
@@ -25,29 +21,31 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
       </div>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-        {/* Rank Icon (Placeholder) */}
-        <div className="w-32 h-32 rounded-full border-4 border-neon-gold flex items-center justify-center bg-tactical-900 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
-          <Shield className="w-16 h-16 text-neon-gold" />
+        {/* Rank Icon */}
+        <div className="w-32 h-32 flex items-center justify-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+          <img src={crestUrl} alt={`${tier} Rank`} className="w-full h-full object-contain" />
         </div>
 
         {/* Rank Info */}
         <div className="flex-1 w-full">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <h1 className="text-3xl font-rajdhani font-bold text-white uppercase tracking-wider">{profile.rank} {getDivision(profile.level, profile.rank)} Tier</h1>
+              <h1 className={clsx("text-3xl font-rajdhani font-bold uppercase tracking-wider", color)}>
+                {tier} {division}
+              </h1>
               <p className="text-gray-400 font-inter">Level {profile.level} • {profile.currentMode} Mode</p>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-rajdhani font-bold text-neon-blue">{profile.lp}</span>
-              <span className="text-gray-400 font-rajdhani ml-1">/ 100 EP</span>
+              <span className={clsx("text-2xl font-rajdhani font-bold", color)}>{Math.floor(profile.lp)}</span>
+              <span className="text-gray-400 font-rajdhani ml-1">/ {requiredEp} EP</span>
             </div>
           </div>
 
           {/* LP Progress Bar */}
           <div className="h-4 w-full bg-tactical-900 rounded-full overflow-hidden border border-tactical-700 relative">
             <div 
-              className="h-full bg-neon-blue relative"
-              style={{ width: `${profile.lp}%` }}
+              className={clsx("h-full relative", color.replace('text-', 'bg-'))}
+              style={{ width: `${progressPercent}%` }}
             >
               {/* Glow effect on the bar */}
               <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/50 to-transparent" />

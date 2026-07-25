@@ -1,7 +1,8 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, DailyNutrition, Biometrics, WeightEntry, WorkoutPreset, AvatarConfig, WorkoutLog, ActiveExercise, LoggedSet, FoodItem, FoodLogEntry, Meal, ExerciseDefinition } from '../types';
+import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, FoodItem, FoodLogEntry, Meal } from '../types';
+import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 
 interface UserContextType {
@@ -314,16 +315,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProfile(prev => {
       let newLp = prev.lp + amount;
       let newLevel = prev.level;
-      let newRank = prev.rank;
       
-      while (newLp >= 100) {
-        newLp -= 100;
+      // Level up
+      while (newLp >= getRequiredEpForLevel(newLevel)) {
+        newLp -= getRequiredEpForLevel(newLevel);
         newLevel += 1;
       }
       
-      while (newLp < 0) {
-        newLp += 100;
+      // Level down (only if negative, rarely happens but safety)
+      while (newLp < 0 && newLevel > 1) {
         newLevel -= 1;
+        newLp += getRequiredEpForLevel(newLevel);
       }
       
       if (newLevel < 1) {
@@ -331,14 +333,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         newLp = 0;
       }
       
-      if (newLevel <= 3) newRank = 'Bronze';
-      else if (newLevel <= 6) newRank = 'Silver';
-      else if (newLevel <= 9) newRank = 'Gold';
-      else if (newLevel <= 12) newRank = 'Platinum';
-      else if (newLevel <= 15) newRank = 'Diamond';
-      else newRank = 'Masters';
+      const { tier } = getRankInfo(newLevel);
       
-      return { ...prev, lp: newLp, level: newLevel, rank: newRank };
+      return { ...prev, lp: newLp, level: newLevel, rank: tier };
     });
   };
 
