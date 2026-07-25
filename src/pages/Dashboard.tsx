@@ -5,6 +5,7 @@ import { StatHexagon } from '../components/StatHexagon';
 import { seedSteps } from '../utils/seedData';
 import { useUser } from '../context/UserContext';
 import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown } from 'lucide-react';
+import { getWeekString } from '../utils/dateUtils';
 
 export const Dashboard: React.FC = () => {
   const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
@@ -111,8 +112,16 @@ export const Dashboard: React.FC = () => {
 
   const currentStreak = calculateStreak();
   
-  const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions['weekly-workouts'];
-  const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions['daily-steps'];
+  const todayStr = formatLocalDate(new Date());
+  const weekStr = getWeekString(new Date());
+
+  const dailyStepsKey = `daily-steps-${todayStr}`;
+  const weeklyWorkoutsKey = `weekly-workouts-${weekStr}`;
+  const weeklyPrKey = `weekly-pr-${weekStr}`;
+  const weeklyNutritionKey = `weekly-nutrition-${weekStr}`;
+
+  const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
+  const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions[dailyStepsKey];
   
   const last7DaysStrings = Array.from({ length: 7 }).map((_, i) => {
      const d = new Date();
@@ -121,24 +130,24 @@ export const Dashboard: React.FC = () => {
   });
   const prsThisWeek = workoutHistory.some(w => w.isPr && last7DaysStrings.includes(formatLocalDate(w.date)));
   
-  const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions['weekly-pr'];
-  const isWeeklyNutritionComplete = !!manualQuestCompletions['weekly-nutrition'];
+  const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions[weeklyPrKey];
+  const isWeeklyNutritionComplete = !!manualQuestCompletions[weeklyNutritionKey];
 
   React.useEffect(() => {
-    if (workoutsThisWeek >= targetWorkoutsPerWeek && !manualQuestCompletions['weekly-workouts']) {
-      toggleManualQuest('weekly-workouts', 100);
+    if (workoutsThisWeek >= targetWorkoutsPerWeek && !manualQuestCompletions[weeklyWorkoutsKey]) {
+      toggleManualQuest(weeklyWorkoutsKey, 100);
     }
   }, [workoutsThisWeek, targetWorkoutsPerWeek]);
 
   React.useEffect(() => {
-    if (dailySteps >= seedSteps.target && !manualQuestCompletions['daily-steps']) {
-      toggleManualQuest('daily-steps', 10);
+    if (dailySteps >= seedSteps.target && !manualQuestCompletions[dailyStepsKey]) {
+      toggleManualQuest(dailyStepsKey, 10);
     }
   }, [dailySteps, seedSteps.target]);
 
   React.useEffect(() => {
-    if (prsThisWeek && !manualQuestCompletions['weekly-pr']) {
-      toggleManualQuest('weekly-pr', 50);
+    if (prsThisWeek && !manualQuestCompletions[weeklyPrKey]) {
+      toggleManualQuest(weeklyPrKey, 50);
     }
   }, [prsThisWeek]);
 
@@ -203,7 +212,7 @@ export const Dashboard: React.FC = () => {
             <div className="space-y-3">
               {/* Daily Quest */}
               <button 
-                onClick={() => toggleManualQuest('daily-steps', 10)}
+                onClick={() => toggleManualQuest(dailyStepsKey, 10)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-gold/50 cursor-pointer", isDailyStepsComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-gold" />
@@ -222,7 +231,7 @@ export const Dashboard: React.FC = () => {
 
               {/* Weekly Quests */}
               <button 
-                onClick={() => toggleManualQuest('weekly-workouts', 100)}
+                onClick={() => toggleManualQuest(weeklyWorkoutsKey, 100)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyQuestComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
@@ -240,7 +249,7 @@ export const Dashboard: React.FC = () => {
               </button>
 
               <button 
-                onClick={() => toggleManualQuest('weekly-pr', 50)}
+                onClick={() => toggleManualQuest(weeklyPrKey, 50)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyPrComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
@@ -258,7 +267,7 @@ export const Dashboard: React.FC = () => {
               </button>
 
               <button 
-                onClick={() => toggleManualQuest('weekly-nutrition', 50)}
+                onClick={() => toggleManualQuest(weeklyNutritionKey, 50)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyNutritionComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
