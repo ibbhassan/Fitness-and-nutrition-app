@@ -11,6 +11,10 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        clientsClaim: true,
+        skipWaiting: true
+      },
       includeAssets: ['apple-touch-icon-v3.png'],
       manifest: {
         name: 'Evoke Fitness & Nutrition',
