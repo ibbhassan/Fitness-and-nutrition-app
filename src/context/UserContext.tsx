@@ -430,36 +430,30 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
 
-        // Handle backwards compatibility for old PresetExercise (where sets was a string)
-        if (typeof ex.sets === 'string') {
-          const numSets = parseInt(ex.sets as string) || 3;
-          const sets: LoggedSet[] = Array.from({ length: numSets }).map((_, i) => ({
-            id: `${Date.now()}-${ex.id}-${i}`,
-            reps: previousSets && previousSets[i] ? previousSets[i].reps : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].reps : 0),
-            weight: previousSets && previousSets[i] ? previousSets[i].weight : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].weight : 0),
-            type: previousSets && previousSets[i] ? previousSets[i].type : 'Normal',
-            completed: false
-          }));
+        let baseNumSets = typeof ex.sets === 'string' ? (parseInt(ex.sets as string) || 3) : ex.sets.length;
+        const targetSetsCount = previousSets ? Math.max(baseNumSets, previousSets.length) : baseNumSets;
+
+        const sets: LoggedSet[] = Array.from({ length: targetSetsCount }).map((_, i) => {
+          let presetSet: Partial<LoggedSet> = {};
+          if (typeof ex.sets !== 'string' && i < ex.sets.length) {
+            presetSet = ex.sets[i];
+          }
+
+          const lastPrev = previousSets && previousSets[previousSets.length - 1];
+
           return {
-            id: String(ex.id),
-            name: ex.name,
-            sets
+            id: `${Date.now()}-${ex.id}-${i}`,
+            reps: (previousSets && previousSets[i]) ? previousSets[i].reps : (lastPrev ? lastPrev.reps : presetSet.reps || 0),
+            weight: (previousSets && previousSets[i]) ? previousSets[i].weight : (lastPrev ? lastPrev.weight : presetSet.weight || 0),
+            type: (previousSets && previousSets[i]) ? previousSets[i].type : presetSet.type || 'Normal',
+            completed: false
           };
-        }
-        
-        // New format: already an ActiveExercise shape
+        });
+
         return {
           id: String(ex.id),
           name: ex.name,
-          // Deep clone the sets to reset completion status and ensure unique IDs
-          sets: (ex.sets as LoggedSet[]).map((set, i) => ({
-            ...set,
-            id: `${Date.now()}-${ex.id}-${i}`,
-            reps: previousSets && previousSets[i] ? previousSets[i].reps : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].reps : set.reps || 0),
-            weight: previousSets && previousSets[i] ? previousSets[i].weight : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].weight : set.weight || 0),
-            type: previousSets && previousSets[i] ? previousSets[i].type : set.type || 'Normal',
-            completed: false
-          }))
+          sets
         };
       });
       setActiveExercises(mappedExercises);
