@@ -72,12 +72,12 @@ export const Analytics: React.FC = () => {
   const radarData = useMemo(() => {
     if (!profile.stats) return [];
     return [
-      { subject: 'STR', A: profile.stats.strength, fullMark: 100 },
-      { subject: 'HYP', A: profile.stats.hypertrophy, fullMark: 100 },
-      { subject: 'END', A: profile.stats.endurance, fullMark: 100 },
-      { subject: 'VOL', A: profile.stats.volume, fullMark: 100 },
-      { subject: 'POW', A: profile.stats.power, fullMark: 100 },
-      { subject: 'CON', A: profile.stats.consistency, fullMark: 100 },
+      { subject: 'Strength', A: profile.stats.strength, fullMark: 100 },
+      { subject: 'Hypertrophy', A: profile.stats.hypertrophy, fullMark: 100 },
+      { subject: 'Endurance', A: profile.stats.endurance, fullMark: 100 },
+      { subject: 'Volume', A: profile.stats.volume, fullMark: 100 },
+      { subject: 'Power', A: profile.stats.power, fullMark: 100 },
+      { subject: 'Consistency', A: profile.stats.consistency, fullMark: 100 },
     ];
   }, [profile.stats]);
 
