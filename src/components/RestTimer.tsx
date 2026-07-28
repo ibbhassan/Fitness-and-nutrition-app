@@ -26,7 +26,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
   const wakeLockRef = React.useRef<any>(null); // Type any since WakeLockSentinel might not be in TS lib
 
   useEffect(() => {
-    audioRef.current = new Audio();
     return () => {
       audioRef.current?.pause();
       releaseWakeLock();
@@ -50,13 +49,20 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
     }
   };
 
-
-  const playBellAudio = () => {
-    if (audioRef.current && soundEnabled) {
-      audioRef.current.src = '/true-boxing-bell.mp3';
-      audioRef.current.loop = false;
-      audioRef.current.volume = 1;
-      audioRef.current.play().catch(() => {});
+  const playBellAudio = async () => {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const response = await fetch('/true-boxing-bell.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch (err) {
+      console.error('Failed to play bell audio', err);
     }
   };
 
