@@ -15,9 +15,9 @@ export const exerciseLibrary: ExerciseDefinition[] = [
   { id: 'bk-2', name: 'Pull-ups', muscleGroup: 'Back', imagePath: '/images/anatomy_pullups_1780847385190.png' },
   { id: 'bk-3', name: 'Lat Pulldown', muscleGroup: 'Back', imagePath: '/images/anatomy_lat_pulldown_1780847395878.png' },
   { id: 'bk-4', name: 'Barbell Row', muscleGroup: 'Back', imagePath: '/images/anatomy_barbell_row_1780847405830.png' },
-  { id: 'bk-5', name: 'Seated Cable Row', muscleGroup: 'Back', imagePath: '/images/anatomy_seated_cable_row_1781365638552.png' },
-  { id: 'bk-6', name: 'Dumbbell Row', muscleGroup: 'Back', imagePath: '/images/anatomy_dumbbell_row_1781365646392.png' },
-  { id: 'bk-7', name: 'T-Bar Row', muscleGroup: 'Back', imagePath: '/images/anatomy_t_bar_row_1781365708605.png' },
+  { id: 'bk-5', name: 'Seated Cable Row', muscleGroup: 'Back', imagePath: '/images/anatomy_seated_cable_row_v2_1785266887631.jpg' },
+  { id: 'bk-6', name: 'Dumbbell Row', muscleGroup: 'Back', imagePath: '/images/anatomy_dumbbell_row_v2_1785266896504.jpg' },
+  { id: 'bk-7', name: 'T-Bar Row', muscleGroup: 'Back', imagePath: '/images/anatomy_t_bar_row_v2_1785266905763.jpg' },
   { id: 'bk-8', name: 'Face Pulls', muscleGroup: 'Back', imagePath: '/images/anatomy_face_pulls_1781365717245.png' },
 
   // Legs
@@ -35,19 +35,19 @@ export const exerciseLibrary: ExerciseDefinition[] = [
   { id: 'sh-2', name: 'Lateral Raises', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_lateral_raises_1781365788971.png' },
   { id: 'sh-3', name: 'Dumbbell Shoulder Press', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_dumbbell_shoulder_press_1781365799380.png' },
   { id: 'sh-4', name: 'Front Raises', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_front_raises_1781365880098.png' },
-  { id: 'sh-5', name: 'Reverse Pec Deck', muscleGroup: 'Shoulders', imagePath: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=800' },
-  { id: 'sh-6', name: 'Arnold Press', muscleGroup: 'Shoulders', imagePath: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800' },
-  { id: 'sh-7', name: 'Upright Row', muscleGroup: 'Shoulders', imagePath: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=800' },
+  { id: 'sh-5', name: 'Reverse Pec Deck', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_reverse_pec_deck_1785266913063.jpg' },
+  { id: 'sh-6', name: 'Arnold Press', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_arnold_press_1785266920824.jpg' },
+  { id: 'sh-7', name: 'Upright Row', muscleGroup: 'Shoulders', imagePath: '/images/anatomy_upright_row_1785266928616.jpg' },
 
   // Arms
   { id: 'ar-1', name: 'Barbell Bicep Curls', muscleGroup: 'Arms', imagePath: '/images/anatomy_barbell_bicep_curls_1781365683915.png' },
-  { id: 'ar-2', name: 'Tricep Pushdowns', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1530822847156-5df684ec5ee1?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-3', name: 'Hammer Curls', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1581009137042-c552e485697a?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-4', name: 'Skull Crushers', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-5', name: 'Preacher Curls', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-6', name: 'Overhead Tricep Extension', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-7', name: 'Concentration Curls', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1530822847156-5df684ec5ee1?auto=format&fit=crop&q=80&w=800' },
-  { id: 'ar-8', name: 'Tricep Dips', muscleGroup: 'Arms', imagePath: 'https://images.unsplash.com/photo-1581009137042-c552e485697a?auto=format&fit=crop&q=80&w=800' },
+  { id: 'ar-2', name: 'Tricep Pushdowns', muscleGroup: 'Arms', imagePath: '/images/anatomy_tricep_pushdowns_1785266951117.jpg' },
+  { id: 'ar-3', name: 'Hammer Curls', muscleGroup: 'Arms', imagePath: '/images/anatomy_hammer_curls_1785266960008.jpg' },
+  { id: 'ar-4', name: 'Skull Crushers', muscleGroup: 'Arms', imagePath: '/images/anatomy_skull_crushers_1785266971136.jpg' },
+  { id: 'ar-5', name: 'Preacher Curls', muscleGroup: 'Arms', imagePath: '/images/anatomy_preacher_curls_1785266979289.jpg' },
+  { id: 'ar-6', name: 'Overhead Tricep Extension', muscleGroup: 'Arms', imagePath: '/images/anatomy_overhead_tricep_extension_1785266987133.jpg' },
+  { id: 'ar-7', name: 'Concentration Curls', muscleGroup: 'Arms', imagePath: '/images/anatomy_concentration_curls_1785266994354.jpg' },
+  { id: 'ar-8', name: 'Tricep Dips', muscleGroup: 'Arms', imagePath: '/images/anatomy_tricep_dips_1785267030578.jpg' },
 
   // Core
   { id: 'co-1', name: 'Crunches', muscleGroup: 'Core', imagePath: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=800' },
