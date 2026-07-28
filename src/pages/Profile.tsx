@@ -91,13 +91,13 @@ export const Profile: React.FC = () => {
               <div>
                 <h1 className="esports-heading text-3xl text-white tracking-widest">{user?.username || 'AGENT'}</h1>
                 <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2">
-                  <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1} Operative
+                  <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1}
                 </p>
               </div>
             </div>
 
             <div className="w-full max-w-sm mt-4 bg-tactical-900 rounded-lg p-4 border border-tactical-700">
-              <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Combat Effectiveness</h3>
+              <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Current Rank</h3>
               <div className="flex justify-between items-end mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 flex items-center justify-center">
