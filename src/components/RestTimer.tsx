@@ -40,14 +40,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
     }
   };
 
-  const playSilentAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-      audioRef.current.loop = true;
-      audioRef.current.volume = 1;
-      audioRef.current.play().catch(() => {});
-    }
-  };
 
   const playBellAudio = () => {
     if (audioRef.current) {
@@ -67,7 +59,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
       setTargetTime(Date.now() + lastDuration * 1000);
       setTimeLeft(lastDuration);
       setIsActive(true);
-      playSilentAudio();
       requestWakeLock();
     }
   }, [lastCompletedSetTime]);
@@ -110,7 +101,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
     setTargetTime(Date.now() + seconds * 1000);
     setTimeLeft(seconds);
     setIsActive(true);
-    playSilentAudio();
     requestWakeLock();
   };
 
@@ -129,7 +119,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
     } else if (timeLeft > 0) {
       setTargetTime(Date.now() + timeLeft * 1000);
       setIsActive(true);
-      playSilentAudio();
     }
   };
 
