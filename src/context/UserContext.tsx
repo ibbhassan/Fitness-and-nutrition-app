@@ -1,7 +1,7 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, FoodItem, FoodLogEntry, Meal } from '../types';
+import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal } from '../types';
 import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 
@@ -22,6 +22,8 @@ interface UserContextType {
   biometrics: Biometrics | null;
   weightHistory: WeightEntry[];
   logWeight: (weightLbs: number, dateStr?: string) => void;
+  bodyFatHistory: BodyFatEntry[];
+  logBodyFat: (bodyFatPercent: number, dateStr?: string) => void;
   updateNutrition: (macros: DailyNutrition) => void;
   addNutritionMacros: (macros: { calories: number; protein: number; carbs: number; fat: number; }) => void;
   customPresets: WorkoutPreset[];
@@ -83,6 +85,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       nutrition: seedNutrition,
       biometrics: null,
       weightHistory: [] as WeightEntry[],
+      bodyFatHistory: [] as BodyFatEntry[],
       customPresets: [] as WorkoutPreset[],
       workoutHistory: [] as WorkoutLog[],
       manualQuestCompletions: {} as Record<string, boolean>,
@@ -106,6 +109,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [nutrition, setNutrition] = useState<DailyNutrition>(initialState.nutrition);
   const [biometrics, setBiometrics] = useState<Biometrics | null>(initialState.biometrics);
   const [weightHistory, setWeightHistory] = useState<WeightEntry[]>(initialState.weightHistory);
+  const [bodyFatHistory, setBodyFatHistory] = useState<BodyFatEntry[]>(initialState.bodyFatHistory || []);
   const [customPresets, setCustomPresets] = useState<WorkoutPreset[]>(initialState.customPresets || []);
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutLog[]>(initialState.workoutHistory || []);
   const [manualQuestCompletions, setManualQuestCompletions] = useState<Record<string, boolean>>(initialState.manualQuestCompletions || {});
@@ -167,6 +171,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       nutrition,
       biometrics,
       weightHistory,
+      bodyFatHistory,
       customPresets,
       workoutHistory,
       manualQuestCompletions,
@@ -182,7 +187,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savedMeals
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
   const login = (username: string) => {
     setUser({ username });
@@ -240,6 +245,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setBiometrics(b => b ? { ...b, weightLbs } : null);
       }
       
+      return next;
+    });
+  };
+
+  const logBodyFat = (bodyFatPercent: number, dateStr?: string) => {
+    const targetDate = dateStr || getLocalDateString();
+    setBodyFatHistory(prev => {
+      let next = [...prev];
+      const existing = next.findIndex(entry => entry.date === targetDate);
+      if (existing !== -1) {
+        next[existing] = { date: targetDate, bodyFatPercent };
+      } else {
+        next.push({ date: targetDate, bodyFatPercent });
+        next.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      }
+      setBiometrics(b => b ? { ...b, bodyFat: bodyFatPercent } : null);
       return next;
     });
   };
@@ -544,6 +565,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       biometrics,
       weightHistory,
       logWeight,
+      bodyFatHistory,
+      logBodyFat,
       updateNutrition,
       addNutritionMacros: () => {},
       customPresets,

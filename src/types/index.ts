@@ -60,11 +60,17 @@ export interface Biometrics {
   heightFeet: number;
   heightInches: number;
   weightLbs: number;
+  bodyFat?: number;
 }
 
 export interface WeightEntry {
   date: string; // YYYY-MM-DD
   weightLbs: number;
+}
+
+export interface BodyFatEntry {
+  date: string; // YYYY-MM-DD
+  bodyFatPercent: number;
 }
 
 export interface FoodItem {
