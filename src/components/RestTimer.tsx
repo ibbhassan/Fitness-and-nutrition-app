@@ -172,10 +172,10 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
         </div>
 
         {/* Center: Quick Select Presets */}
-        <div className="flex gap-2 w-full sm:w-auto sm:flex-1 justify-center order-3 sm:order-2">
-          <button onClick={() => startTimer(60)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">1M</button>
-          <button onClick={() => startTimer(120)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">2M</button>
-          <button onClick={() => startTimer(180)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">3M</button>
+        <div className="flex gap-1.5 sm:gap-2 w-full sm:w-auto sm:flex-1 justify-center order-3 sm:order-2 px-1 sm:px-0">
+          <button onClick={() => startTimer(60)} className="flex-1 sm:flex-none px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">1M</button>
+          <button onClick={() => startTimer(120)} className="flex-1 sm:flex-none px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">2M</button>
+          <button onClick={() => startTimer(180)} className="flex-1 sm:flex-none px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">3M</button>
         </div>
 
         {/* Right side: Controls */}
