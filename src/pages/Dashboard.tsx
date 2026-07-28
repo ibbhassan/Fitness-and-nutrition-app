@@ -1,7 +1,6 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { RankDisplay } from '../components/RankDisplay';
-import { StatHexagon } from '../components/StatHexagon';
 import { seedSteps } from '../utils/seedData';
 import { useUser } from '../context/UserContext';
 import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown } from 'lucide-react';
@@ -182,10 +181,7 @@ export const Dashboard: React.FC = () => {
         
         {/* Left Column (Stats & Upcoming Workout) */}
         <div className="lg:col-span-1 space-y-6 flex flex-col">
-          <div className="flex-1">
-            <StatHexagon stats={profile.stats} />
-          </div>
-          
+
           <div className="esports-panel p-6 shrink-0">
             <h2 className="esports-heading text-xl text-white mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-neon-gold" /> Upcoming Workout
