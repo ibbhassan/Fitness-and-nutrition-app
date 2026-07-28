@@ -12,6 +12,7 @@ interface UserContextType {
   hasCompletedOnboarding: boolean;
   completeOnboarding: (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => void;
   resetOnboarding: () => void;
+  cancelRecalibration: () => void;
   markPatchNotesSeen: (version: string) => void;
   profile: UserProfile;
   nutrition: DailyNutrition;
@@ -203,6 +204,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetOnboarding = () => {
     setHasCompletedOnboarding(false);
+  };
+
+  const cancelRecalibration = () => {
+    setHasCompletedOnboarding(true);
   };
 
   const updateNutrition = (macros: DailyNutrition) => {
@@ -529,6 +534,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       hasCompletedOnboarding,
       completeOnboarding,
       resetOnboarding,
+      cancelRecalibration,
       markPatchNotesSeen,
       profile,
       nutrition: computedNutrition,

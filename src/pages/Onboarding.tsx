@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Target, Flame, ChevronRight, ChevronLeft, Activity, Zap, Droplet, Wheat } from 'lucide-react';
+import { Target, Flame, ChevronRight, ChevronLeft, Activity, Zap, Droplet, Wheat, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { DailyNutrition, Biometrics } from '../types';
 
 export const Onboarding: React.FC = () => {
-  const { completeOnboarding } = useUser();
+  const { completeOnboarding, profile, cancelRecalibration } = useUser();
   const [step, setStep] = useState(1);
 
   const [goal, setGoal] = useState<'Cut' | 'Bulk' | 'Maintenance' | null>(null);
@@ -96,12 +96,20 @@ export const Onboarding: React.FC = () => {
   return (
     <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-6 text-white font-inter">
       <div className="max-w-md w-full esports-panel p-8 fade-in relative">
+        {profile && (
+          <button 
+            onClick={cancelRecalibration}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 p-2 rounded-full transition-colors z-20"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
         {step > 1 && (
           <button 
             onClick={() => setStep(prev => prev === 5 ? 3 : prev - 1)}
-            className="absolute top-8 left-8 text-gray-400 hover:text-white transition-colors"
+            className="absolute top-4 left-4 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 p-2 rounded-full transition-colors z-20"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
         <div className="flex justify-center mb-8">
