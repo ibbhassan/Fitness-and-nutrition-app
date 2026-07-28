@@ -152,64 +152,64 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[60] bg-tactical-900 border-t border-neon-blue shadow-[0_-5px_30px_rgba(0,240,255,0.15)] pb-safe-area">
-      <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-nowrap items-center justify-between gap-1 sm:gap-3 overflow-x-auto hide-scrollbar">
         {/* Left side: Icon & Timer */}
-        <div className="flex items-center gap-4">
-          <Timer className={clsx("w-6 h-6", isActive ? "text-neon-blue animate-pulse" : "text-gray-500")} />
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <Timer className={clsx("w-5 h-5 hidden sm:block", isActive ? "text-neon-blue animate-pulse" : "text-gray-500")} />
           <div 
-            className="text-3xl font-rajdhani font-bold text-white tabular-nums tracking-wider w-20" 
+            className="text-2xl sm:text-3xl font-rajdhani font-bold text-white tabular-nums tracking-wider w-[60px] sm:w-20" 
             style={{ textShadow: isActive ? '0 0 15px rgba(0, 240, 255, 0.4)' : 'none' }}
           >
             {formatTime(timeLeft)}
           </div>
           <button 
             onClick={toggleSound}
-            className="p-1.5 bg-tactical-800 text-gray-400 hover:text-white rounded border border-tactical-600 transition-colors ml-1"
+            className="p-1 sm:p-1.5 bg-tactical-800 text-gray-400 hover:text-white rounded border border-tactical-600 transition-colors"
             title="Toggle Timer Sound"
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-400" />}
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />}
           </button>
         </div>
 
         {/* Center: Quick Select Presets */}
-        <div className="flex gap-2 flex-1 justify-center order-3 sm:order-2 w-full sm:w-auto mt-2 sm:mt-0">
-          <button onClick={() => startTimer(60)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">1M</button>
-          <button onClick={() => startTimer(120)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">2M</button>
-          <button onClick={() => startTimer(180)} className="flex-1 sm:flex-none px-4 py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">3M</button>
+        <div className="flex gap-1 sm:gap-2 shrink-0">
+          <button onClick={() => startTimer(60)} className="px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">1M</button>
+          <button onClick={() => startTimer(120)} className="px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">2M</button>
+          <button onClick={() => startTimer(180)} className="px-2 sm:px-4 py-1 sm:py-1.5 bg-tactical-800 hover:bg-tactical-700 text-white font-rajdhani text-xs sm:text-sm font-bold tracking-wider rounded border border-tactical-600 transition-colors">3M</button>
         </div>
 
         {/* Right side: Controls */}
-        <div className="flex items-center gap-2 order-2 sm:order-3">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button 
             onClick={toggleTimer}
-            className="p-2 bg-neon-blue text-black rounded hover:bg-neon-blue/80 transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] mr-2 sm:mr-4"
+            className="p-1.5 sm:p-2 bg-neon-blue text-black rounded hover:bg-neon-blue/80 transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)] mr-1 sm:mr-4"
           >
-            {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+            {isActive ? <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />}
           </button>
 
-          <div className="flex items-center bg-tactical-800 rounded border border-tactical-600">
-            <button onClick={() => addTime(-increment)} className="px-3 py-2 hover:bg-tactical-700 text-white rounded-l transition-colors">
-              <Minus className="w-4 h-4" />
+          <div className="flex items-center bg-tactical-800 rounded border border-tactical-600 shrink-0">
+            <button onClick={() => addTime(-increment)} className="px-1.5 sm:px-3 py-1 sm:py-2 hover:bg-tactical-700 text-white rounded-l transition-colors">
+              <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             
             <button 
               onClick={() => setIncrement(increment === 10 ? 15 : increment === 15 ? 30 : 10)}
-              className="px-3 py-2 min-w-[46px] text-center text-neon-blue font-rajdhani text-sm font-bold hover:bg-tactical-700 transition-colors border-x border-tactical-600/50"
+              className="px-1 sm:px-3 py-1 sm:py-2 min-w-[36px] sm:min-w-[46px] text-center text-neon-blue font-rajdhani text-xs sm:text-sm font-bold hover:bg-tactical-700 transition-colors border-x border-tactical-600/50"
               title="Change Increment Amount"
             >
               {increment}s
             </button>
 
-            <button onClick={() => addTime(increment)} className="px-3 py-2 hover:bg-tactical-700 text-white rounded-r transition-colors">
-              <Plus className="w-4 h-4" />
+            <button onClick={() => addTime(increment)} className="px-1.5 sm:px-3 py-1 sm:py-2 hover:bg-tactical-700 text-white rounded-r transition-colors">
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           <button 
             onClick={cancelTimer}
-            className="p-2 bg-tactical-800 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded border border-tactical-600 transition-colors ml-1"
+            className="p-1.5 sm:p-2 bg-tactical-800 hover:bg-red-500/20 text-gray-400 hover:text-red-500 rounded border border-tactical-600 transition-colors ml-0 sm:ml-1"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
