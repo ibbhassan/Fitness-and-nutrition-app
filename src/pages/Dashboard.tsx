@@ -78,7 +78,7 @@ export const Dashboard: React.FC = () => {
       return {
         day: days[d.getDay()],
         status,
-        grade: loggedWorkout ? 'A' : '-'
+        grade: loggedWorkout ? (loggedWorkout.grade || 'A') : '-'
       };
     });
   };
