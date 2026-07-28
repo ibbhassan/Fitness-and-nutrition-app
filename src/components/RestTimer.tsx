@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Plus, Minus, Timer, X } from 'lucide-react';
+import { Play, Pause, Plus, Minus, Timer, X, Volume2, VolumeX } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface RestTimerProps {
@@ -12,6 +12,16 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
   const [lastDuration, setLastDuration] = useState(120);
   const [targetTime, setTargetTime] = useState<number | null>(null);
   const [increment, setIncrement] = useState(15);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('agy_timer_sound_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const toggleSound = () => {
+    const newState = !soundEnabled;
+    setSoundEnabled(newState);
+    localStorage.setItem('agy_timer_sound_enabled', JSON.stringify(newState));
+  };
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const wakeLockRef = React.useRef<any>(null); // Type any since WakeLockSentinel might not be in TS lib
 
@@ -42,7 +52,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
 
 
   const playBellAudio = () => {
-    if (audioRef.current) {
+    if (audioRef.current && soundEnabled) {
       audioRef.current.src = '/true-boxing-bell.mp3';
       audioRef.current.loop = false;
       audioRef.current.volume = 1;
@@ -152,6 +162,13 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
           >
             {formatTime(timeLeft)}
           </div>
+          <button 
+            onClick={toggleSound}
+            className="p-1.5 bg-tactical-800 text-gray-400 hover:text-white rounded border border-tactical-600 transition-colors ml-1"
+            title="Toggle Timer Sound"
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-400" />}
+          </button>
         </div>
 
         {/* Center: Quick Select Presets */}
