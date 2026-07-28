@@ -67,5 +67,6 @@ export const exerciseLibrary: ExerciseDefinition[] = [
   { id: 'co-6', name: 'Ab Wheel Rollouts', muscleGroup: 'Core' }
 ].map(ex => ({
   ...ex,
+  muscleGroup: ex.muscleGroup as ExerciseDefinition['muscleGroup'],
   imagePath: MUSCLE_GROUP_IMAGES[ex.muscleGroup as keyof typeof MUSCLE_GROUP_IMAGES]
-}));
+})) as ExerciseDefinition[];
