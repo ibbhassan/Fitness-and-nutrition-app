@@ -479,10 +479,14 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                             removeFavoriteFood(food.name); // Swipe left = unfavorite
                           }
                         }}
-                        className="relative z-10 bg-tactical-900 border border-tactical-700 p-3 rounded-lg flex items-center justify-between"
+                        onClick={() => {
+                          setScannedFood(food);
+                          setShowManual(true);
+                        }}
+                        className="relative z-10 bg-tactical-900 border border-tactical-700 p-3 rounded-lg flex items-center justify-between cursor-pointer hover:border-neon-blue transition-colors group/item"
                       >
                         <div>
-                          <div className="font-bold text-white text-sm flex items-center gap-2">
+                          <div className="font-bold text-white text-sm flex items-center gap-2 group-hover/item:text-neon-blue transition-colors">
                             {food.name} {isFav && <Star className="w-3 h-3 text-neon-gold fill-current" />}
                           </div>
                           <div className="text-xs text-gray-400">
@@ -490,7 +494,11 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                           </div>
                         </div>
                         <button 
-                          onClick={() => handleSaveFood(food)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setScannedFood(food);
+                            setShowManual(true);
+                          }}
                           className="bg-tactical-800 hover:bg-neon-blue/20 text-neon-blue p-2 rounded-lg transition-colors"
                         >
                           <Plus className="w-4 h-4" />
