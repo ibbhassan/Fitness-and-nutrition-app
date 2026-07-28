@@ -18,8 +18,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
   const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [prevLevel, setPrevLevel] = useState(profile.level);
+  const [prevRank, setPrevRank] = useState(profile.rank);
   const [showLevelUp, setShowLevelUp] = useState(false);
-
+  const [rankUpData, setRankUpData] = useState<{ oldRank: string, newRank: string } | null>(null);
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [quickLogMode, setQuickLogMode] = useState<'menu' | 'nutrition' | 'mealEditor' | 'steps' | 'weight' | 'workout'>('menu');
   const [activeMealType, setActiveMealType] = useState<string>('Lunch');
@@ -60,14 +61,22 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
+
+
   useEffect(() => {
     if (profile.level > prevLevel) {
-      setShowLevelUp(true);
+      if (profile.rank !== prevRank) {
+        setRankUpData({ oldRank: prevRank, newRank: profile.rank });
+      } else {
+        setShowLevelUp(true);
+      }
       setPrevLevel(profile.level);
+      setPrevRank(profile.rank);
     } else if (profile.level < prevLevel) {
       setPrevLevel(profile.level);
+      setPrevRank(profile.rank);
     }
-  }, [profile.level, prevLevel]);
+  }, [profile.level, profile.rank, prevLevel, prevRank]);
 
   useEffect(() => {
     if (showLevelUp) {
@@ -115,6 +124,53 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       frame();
     }
   }, [showLevelUp]);
+
+  useEffect(() => {
+    if (rankUpData) {
+      // Play level up sound
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+        audio.volume = 0.7;
+        audio.play().catch(() => {});
+      } catch (e) {
+        // Ignore audio errors
+      }
+
+      // Bigger explosion for rank up
+      confetti({
+        particleCount: 200,
+        spread: 180,
+        origin: { y: 0.5 },
+        colors: ['#00f0ff', '#ffd700', '#ffffff', '#ff003c', '#00ff00'],
+        gravity: 1.2,
+        scalar: 1.8,
+        ticks: 350
+      });
+      
+      // Continuous side cannons
+      const end = Date.now() + 3500;
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.8 },
+          colors: ['#00f0ff', '#ffd700']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.8 },
+          colors: ['#00f0ff', '#ffd700']
+        });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    }
+  }, [rankUpData]);
   
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
@@ -345,6 +401,81 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                 Claim Power
               </motion.button>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Rank Up Overlay */}
+      <AnimatePresence>
+        {rankUpData && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.5 } }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 backdrop-blur-xl px-4"
+          >
+            <motion.div 
+              animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+              transition={{ rotate: { duration: 20, repeat: Infinity, ease: "linear" }, scale: { duration: 2, repeat: Infinity } }}
+              className="absolute w-[200vw] h-[200vw] sm:w-[150vw] sm:h-[150vw] rounded-full border-[10vw] border-dashed border-neon-blue/20 opacity-50 pointer-events-none"
+            />
+
+            <div className="text-center relative max-w-sm w-full">
+              <motion.h2 
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, type: "spring" }}
+                className="text-6xl font-rajdhani font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 uppercase tracking-widest mb-12 drop-shadow-2xl"
+              >
+                Rank Up!
+              </motion.h2>
+
+              <div className="relative w-64 h-64 mx-auto mb-8">
+                {/* Old Rank Image dissolving */}
+                <motion.img 
+                  src={`/images/ranks/${rankUpData.oldRank.toLowerCase()}.png`}
+                  alt={rankUpData.oldRank}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  initial={{ scale: 1, opacity: 1, filter: "brightness(1) blur(0px)" }}
+                  animate={{ 
+                    scale: 0.2, 
+                    opacity: 0, 
+                    filter: "brightness(5) blur(10px)",
+                    rotate: -180
+                  }}
+                  transition={{ duration: 1.5, ease: "easeIn" }}
+                />
+                
+                {/* New Rank Image emerging */}
+                <motion.img 
+                  src={`/images/ranks/${rankUpData.newRank.toLowerCase()}.png`}
+                  alt={rankUpData.newRank}
+                  className="absolute inset-0 w-full h-full object-contain drop-shadow-[0_0_30px_rgba(0,240,255,0.8)]"
+                  initial={{ scale: 0, opacity: 0, rotate: 180 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{ delay: 1.5, duration: 1, type: "spring", bounce: 0.5 }}
+                />
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.5 }}
+              >
+                <div className="text-gray-400 text-lg font-rajdhani uppercase tracking-widest mb-1">Promoted to</div>
+                <div className="text-5xl font-rajdhani font-bold text-neon-blue uppercase tracking-widest">{rankUpData.newRank}</div>
+              </motion.div>
+              
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 3 }}
+                onClick={() => setRankUpData(null)}
+                className="mt-12 w-full py-4 bg-tactical-800 hover:bg-tactical-700 text-white rounded-xl font-rajdhani font-bold text-xl uppercase tracking-widest transition-colors border border-tactical-600 shadow-[0_0_30px_rgba(0,240,255,0.3)]"
+              >
+                Continue
+              </motion.button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
