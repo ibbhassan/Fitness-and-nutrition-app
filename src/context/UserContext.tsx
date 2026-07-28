@@ -419,14 +419,25 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now(), paused: false, accumulatedPauseMs: 0, lastPauseTime: null });
       
       const mappedExercises: ActiveExercise[] = preset.exercises.map(ex => {
+        // Find previous logs for this exercise to prefill weight and reps
+        let previousSets: LoggedSet[] | null = null;
+        for (let i = workoutHistory.length - 1; i >= 0; i--) {
+          const pastWorkout = workoutHistory[i];
+          const pastEx = pastWorkout.exercises?.find(e => e.name === ex.name);
+          if (pastEx && pastEx.sets && pastEx.sets.length > 0) {
+            previousSets = pastEx.sets;
+            break;
+          }
+        }
+
         // Handle backwards compatibility for old PresetExercise (where sets was a string)
         if (typeof ex.sets === 'string') {
           const numSets = parseInt(ex.sets as string) || 3;
           const sets: LoggedSet[] = Array.from({ length: numSets }).map((_, i) => ({
-            id: `${Date.now()}-${i}`,
-            reps: 0,
-            weight: 0,
-            type: 'Normal',
+            id: `${Date.now()}-${ex.id}-${i}`,
+            reps: previousSets && previousSets[i] ? previousSets[i].reps : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].reps : 0),
+            weight: previousSets && previousSets[i] ? previousSets[i].weight : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].weight : 0),
+            type: previousSets && previousSets[i] ? previousSets[i].type : 'Normal',
             completed: false
           }));
           return {
@@ -444,6 +455,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           sets: (ex.sets as LoggedSet[]).map((set, i) => ({
             ...set,
             id: `${Date.now()}-${ex.id}-${i}`,
+            reps: previousSets && previousSets[i] ? previousSets[i].reps : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].reps : set.reps || 0),
+            weight: previousSets && previousSets[i] ? previousSets[i].weight : (previousSets && previousSets[previousSets.length - 1] ? previousSets[previousSets.length - 1].weight : set.weight || 0),
+            type: previousSets && previousSets[i] ? previousSets[i].type : set.type || 'Normal',
             completed: false
           }))
         };
