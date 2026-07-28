@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical } from 'lucide-react';
+import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useUser } from '../context/UserContext';
+import { getLocalDateString } from '../utils/dateUtils';
+import { CalendarModal } from '../components/CalendarModal';
 import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
 import { RestTimer } from '../components/RestTimer';
@@ -232,6 +234,36 @@ export const WorkoutLogger: React.FC = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
+
+  const [viewDate, setViewDate] = useState(getLocalDateString());
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const shiftDate = (days: number) => {
+    const d = new Date(viewDate + 'T12:00:00');
+    d.setDate(d.getDate() + days);
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const newDate = new Date(d);
+    newDate.setHours(0,0,0,0);
+    if (newDate <= today) {
+      setViewDate(newDate.toISOString().split('T')[0]);
+    }
+  };
+
+  const todayStr = getLocalDateString();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  let displayDateStr = '';
+  if (viewDate === todayStr) displayDateStr = 'Today';
+  else if (viewDate === yesterdayStr) displayDateStr = 'Yesterday';
+  else {
+    const d = new Date(viewDate + 'T12:00:00');
+    displayDateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
   // Custom Preset Creator State
   const [isCreatingPreset, setIsCreatingPreset] = useState(false);
   const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
@@ -480,7 +512,7 @@ export const WorkoutLogger: React.FC = () => {
 
     logWorkout({
       id: `log-${Date.now()}`,
-      date: new Date(activeWorkout.startTime).toISOString(),
+      date: viewDate === getLocalDateString() ? new Date().toISOString() : new Date(viewDate + 'T12:00:00').toISOString(),
       name: activeWorkout.name,
       durationMinutes,
       exercises: exercises,
@@ -618,7 +650,50 @@ export const WorkoutLogger: React.FC = () => {
 
   if (!activeWorkout) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in pb-24 mt-4">
+        
+        {/* Date Navigator */}
+        <div className="flex items-center justify-between bg-tactical-900 border-b border-tactical-700 p-4 -mx-2 sm:-mx-4 mb-6 relative z-10">
+          <button onClick={() => shiftDate(-1)} className="p-2 hover:bg-tactical-800 rounded-full transition-colors text-gray-400 hover:text-white">
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <div 
+            className="text-center cursor-pointer group flex flex-col items-center justify-center"
+            onClick={() => setShowCalendar(true)}
+          >
+            <div className="flex items-center gap-2">
+              <h1 className="font-rajdhani font-bold text-2xl text-white tracking-widest uppercase group-hover:text-neon-blue transition-colors">
+                {displayDateStr}
+              </h1>
+              <Calendar className="w-4 h-4 text-gray-500 group-hover:text-neon-blue transition-colors" />
+            </div>
+            <p className="text-gray-400 text-xs">Log for this date.</p>
+          </div>
+          <button 
+            onClick={() => shiftDate(1)} 
+            disabled={viewDate === getLocalDateString()}
+            className={clsx("p-2 rounded-full transition-colors", viewDate === getLocalDateString() ? "text-tactical-700 cursor-not-allowed" : "hover:bg-tactical-800 text-gray-400 hover:text-white")}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+        </div>
+
+        {showCalendar && (
+          <CalendarModal
+            onClose={() => setShowCalendar(false)}
+            selectedDate={viewDate}
+            onSelectDate={(date) => {
+              const selected = new Date(date + 'T12:00:00');
+              const today = new Date();
+              today.setHours(0,0,0,0);
+              if (selected <= today) {
+                setViewDate(date);
+              }
+              setShowCalendar(false);
+            }}
+          />
+        )}
+
         <div className="flex flex-col items-center mb-8 gap-4">
           <h1 className="esports-heading text-2xl sm:text-3xl text-white text-center">Workout Library</h1>
           <button 
