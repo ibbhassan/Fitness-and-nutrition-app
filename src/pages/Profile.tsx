@@ -129,34 +129,6 @@ export const Profile: React.FC = () => {
               </div>
             </div>
 
-            <div className="w-full max-w-sm mt-4 bg-tactical-900 rounded-lg p-4 border border-tactical-700">
-              <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Current Rank</h3>
-              <div className="flex justify-between items-end mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <img 
-                      src={profile ? getRankInfo(profile.level).crestUrl : getRankInfo(1).crestUrl} 
-                      alt="Rank Crest" 
-                      className="w-full h-full object-contain" 
-                    />
-                  </div>
-                  <span className={clsx("font-rajdhani font-bold uppercase", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>
-                    {profile ? `${getRankInfo(profile.level).tier} ${getRankInfo(profile.level).division}` : 'Iron V'} Tier
-                  </span>
-                </div>
-                <span className={clsx("font-bold text-sm", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>
-                  {Math.floor(profile?.lp || 0)} / {getRequiredEpForLevel(profile?.level || 1)} EP
-                </span>
-              </div>
-              <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">
-                <div 
-                  className={clsx("h-full relative", (profile ? getRankInfo(profile.level).color : getRankInfo(1).color).replace('text-', 'bg-'))}
-                  style={{ width: `${Math.min(100, Math.round(((profile?.lp || 0) / getRequiredEpForLevel(profile?.level || 1)) * 100))}%` }}
-                >
-                  <div className="absolute top-0 right-0 bottom-0 w-4 bg-gradient-to-l from-white/50 to-transparent" />
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="flex items-center gap-4 md:gap-8 shrink-0 bg-tactical-900/50 rounded-xl border border-tactical-700 p-4 md:p-6 relative group mx-auto md:mx-0 md:ml-auto">
@@ -168,6 +140,37 @@ export const Profile: React.FC = () => {
           </div>
 
         </div>
+
+        {/* Full-width Rank Panel at bottom of banner */}
+        <div className="w-full mt-8 bg-tactical-900 rounded-lg p-4 border border-tactical-700 relative z-10">
+          <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Current Rank</h3>
+          <div className="flex justify-between items-end mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src={profile ? getRankInfo(profile.level).crestUrl : getRankInfo(1).crestUrl} 
+                  alt="Rank Crest" 
+                  className="w-full h-full object-contain" 
+                />
+              </div>
+              <span className={clsx("font-rajdhani font-bold uppercase", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>
+                {profile ? `${getRankInfo(profile.level).tier} ${getRankInfo(profile.level).division}` : 'Iron V'} Tier
+              </span>
+            </div>
+            <span className={clsx("font-bold text-sm", profile ? getRankInfo(profile.level).color : getRankInfo(1).color)}>
+              {Math.floor(profile?.lp || 0)} / {getRequiredEpForLevel(profile?.level || 1)} EP
+            </span>
+          </div>
+          <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">
+            <div 
+              className={clsx("h-full relative", (profile ? getRankInfo(profile.level).color : getRankInfo(1).color).replace('text-', 'bg-'))}
+              style={{ width: `${Math.min(100, Math.round(((profile?.lp || 0) / getRequiredEpForLevel(profile?.level || 1)) * 100))}%` }}
+            >
+              <div className="absolute top-0 right-0 bottom-0 w-4 bg-gradient-to-l from-white/50 to-transparent" />
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {showAvatarModal && <AvatarCustomizer onClose={() => setShowAvatarModal(false)} />}
