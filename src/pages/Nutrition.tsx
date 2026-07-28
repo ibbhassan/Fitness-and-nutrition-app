@@ -1,7 +1,7 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2, ChevronLeft, ChevronRight, Calendar, Star } from 'lucide-react';
+import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2, ChevronLeft, ChevronRight, Calendar, Star, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -11,12 +11,15 @@ import { CalendarModal } from '../components/CalendarModal';
 import type { MealType, FoodLogEntry } from '../types';
 
 export const Nutrition: React.FC = () => {
-  const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites } = useUser();
+  const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites, addFoodLog } = useUser();
   
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLogEntry | null>(null);
   const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [copyingMeal, setCopyingMeal] = useState<{ sourceLogs: FoodLogEntry[], sourceMeal: MealType } | null>(null);
+  const [copyTargetDate, setCopyTargetDate] = useState(getLocalDateString());
+  const [copyTargetMeal, setCopyTargetMeal] = useState<MealType>('Lunch');
 
   const dailyNutrition = getMacrosForDate(viewDate);
   const { calories, protein, carbs, fat } = dailyNutrition;
@@ -74,12 +77,26 @@ export const Nutrition: React.FC = () => {
               </div>
             </div>
           </div>
-          <button 
-            onClick={() => setActiveMeal(title)}
-            className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-white flex items-center justify-center transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {logs.length > 0 && (
+              <button 
+                onClick={() => {
+                  setCopyingMeal({ sourceLogs: logs, sourceMeal: title as MealType });
+                  setCopyTargetDate(viewDate);
+                  setCopyTargetMeal(title as MealType);
+                }}
+                className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-neon-blue flex items-center justify-center transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            )}
+            <button 
+              onClick={() => setActiveMeal(title as MealType)}
+              className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-white flex items-center justify-center transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {logs.length > 0 && (
@@ -297,6 +314,66 @@ export const Nutrition: React.FC = () => {
             setShowCalendar(false);
           }}
         />
+      )}
+
+      {copyingMeal && (
+        <div className="fixed inset-0 z-[100] bg-tactical-800 flex flex-col sm:items-center sm:justify-center sm:bg-black/80 sm:p-4">
+          <div className="w-full h-full sm:max-w-md sm:h-auto sm:rounded-2xl flex flex-col bg-tactical-900 border border-tactical-700 p-6 shadow-2xl relative">
+            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider mb-4">Copy {copyingMeal.sourceMeal}</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Target Date</label>
+                <input 
+                  type="date"
+                  value={copyTargetDate}
+                  onChange={e => setCopyTargetDate(e.target.value)}
+                  className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-rajdhani uppercase tracking-wider text-gray-400 mb-1">Target Meal</label>
+                <select 
+                  value={copyTargetMeal}
+                  onChange={e => setCopyTargetMeal(e.target.value as MealType)}
+                  className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
+                >
+                  <option value="Breakfast">Breakfast</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Dinner">Dinner</option>
+                  <option value="Snack">Snack</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-auto sm:mt-0">
+              <button 
+                onClick={() => setCopyingMeal(null)}
+                className="flex-1 bg-tactical-800 text-white font-bold font-rajdhani text-lg py-3 rounded-lg hover:bg-tactical-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  copyingMeal.sourceLogs.forEach(log => {
+                    addFoodLog({
+                      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      date: copyTargetDate,
+                      mealType: copyTargetMeal,
+                      food: { ...log.food }
+                    });
+                  });
+                  setCopyingMeal(null);
+                  setViewDate(copyTargetDate); // Navigate to target date
+                }}
+                className="flex-1 bg-neon-blue text-tactical-900 font-bold font-rajdhani text-lg py-3 rounded-lg hover:bg-[#00d0dd] transition-colors"
+              >
+                Copy Meal
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
