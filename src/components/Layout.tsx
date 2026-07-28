@@ -1,6 +1,7 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause } from 'lucide-react';
+import { playLevelUpSound } from '../utils/audioUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
@@ -127,14 +128,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
   useEffect(() => {
     if (rankUpData) {
-      // Play level up sound
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-        audio.volume = 0.7;
-        audio.play().catch(() => {});
-      } catch (e) {
-        // Ignore audio errors
-      }
+      // Play retro level up sound
+      playLevelUpSound();
 
       // Bigger explosion for rank up
       confetti({
