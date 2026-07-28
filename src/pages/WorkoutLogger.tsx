@@ -504,11 +504,6 @@ export const WorkoutLogger: React.FC = () => {
     else fDuration = `${m}:${s.toString().padStart(2, '0')}`;
     setFinalDuration(fDuration);
 
-    let calculatedEp = 15;
-    const workoutNameLower = activeWorkout.name.toLowerCase();
-    if (workoutNameLower.includes('leg') || workoutNameLower.includes('lower body')) {
-      calculatedEp = 25;
-    }
 
     // Grading Algorithm
     let grade: 'S+' | 'S' | 'A' | 'B' | 'C' = 'A';
@@ -576,6 +571,18 @@ export const WorkoutLogger: React.FC = () => {
         grade = 'S+';
       }
     }
+
+    let baseEp = 20;
+    if (grade === 'S+') baseEp = 50;
+    else if (grade === 'S') baseEp = 35;
+    else if (grade === 'A') baseEp = 25;
+    else if (grade === 'C') baseEp = 10;
+
+    const workoutNameLower = activeWorkout.name.toLowerCase();
+    if (workoutNameLower.includes('leg') || workoutNameLower.includes('lower body')) {
+      baseEp += 10;
+    }
+    const calculatedEp = baseEp;
 
     logWorkout({
       id: `log-${Date.now()}`,
