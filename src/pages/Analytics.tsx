@@ -11,8 +11,9 @@ import { TrendingUp, Activity, Hexagon, Calendar as CalendarIcon, Clock } from '
 import { clsx } from 'clsx';
 
 export const Analytics: React.FC = () => {
-  const { workoutHistory, profile } = useUser();
+  const { workoutHistory, profile, weightHistory } = useUser();
   const [selectedExercise, setSelectedExercise] = useState<string>('Bench Press');
+  const [graphRange, setGraphRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
 
   // 1. Volume Progression
   const volumeData = useMemo(() => {
@@ -136,6 +137,33 @@ export const Analytics: React.FC = () => {
     return weeks;
   }, [workoutHistory]);
 
+  // 6. Weight Trend Data
+  const weightGraphData = useMemo(() => {
+    const now = new Date();
+    let monthsAgo = 1;
+    if (graphRange === '3M') monthsAgo = 3;
+    if (graphRange === '6M') monthsAgo = 6;
+    if (graphRange === '1Y') monthsAgo = 12;
+    
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(now.getMonth() - monthsAgo);
+    
+    return weightHistory
+      .filter(w => new Date(w.date) >= cutoffDate)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(w => {
+        const d = new Date(w.date + 'T12:00:00');
+        return {
+          ...w,
+          displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+      });
+  }, [weightHistory, graphRange]);
+
+  const weightYMin = weightGraphData.length > 0 ? Math.floor(Math.min(...weightGraphData.map(d => d.weightLbs)) - 5) : 0;
+  const weightYMax = weightGraphData.length > 0 ? Math.ceil(Math.max(...weightGraphData.map(d => d.weightLbs)) + 5) : 100;
+
+
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 fade-in pb-24 overflow-x-hidden">
@@ -229,6 +257,74 @@ export const Analytics: React.FC = () => {
         <p className="text-xs text-gray-500 font-inter mt-2 text-right">
           Last 90 Days
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Weight Trend Graph */}
+        <div className="esports-panel p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="esports-heading text-xl text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-neon-blue" /> Weight Trend
+            </h1>
+            <div className="flex gap-2">
+              {['1M', '3M', '6M', '1Y'].map(range => (
+                <button
+                  key={range}
+                  onClick={() => setGraphRange(range as any)}
+                  className={clsx(
+                    "px-3 py-1 text-xs font-rajdhani font-bold rounded uppercase tracking-wider transition-colors",
+                    graphRange === range ? "bg-neon-blue text-tactical-900" : "bg-tactical-800 text-gray-400 hover:bg-tactical-700 hover:text-white"
+                  )}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="h-52 w-full">
+            {weightGraphData.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weightGraphData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" vertical={false} />
+                  <XAxis 
+                    dataKey="displayDate" 
+                    stroke="#718096" 
+                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                    minTickGap={20}
+                  />
+                  <YAxis 
+                    domain={[weightYMin, weightYMax]} 
+                    stroke="#718096" 
+                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1A202C', borderColor: '#00F0FF', color: '#fff', borderRadius: '8px' }}
+                    itemStyle={{ color: '#00F0FF', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#A0AEC0', marginBottom: '4px' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="weightLbs" 
+                    name="Weight (lbs)"
+                    stroke="#00F0FF" 
+                    strokeWidth={3} 
+                    dot={{ fill: '#1A202C', stroke: '#00F0FF', strokeWidth: 2, r: 4 }} 
+                    activeDot={{ r: 6, fill: '#00F0FF' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500 font-inter text-sm flex-col gap-2">
+                <span>Not enough data to display a trend.</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

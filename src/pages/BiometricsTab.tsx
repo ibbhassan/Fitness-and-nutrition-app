@@ -1,18 +1,15 @@
 import { getLocalDateString } from '../utils/dateUtils';
-import React, { useState, useMemo } from 'react';
-import { Scale, HeartPulse, TrendingDown, ChevronLeft, ChevronRight, Calendar, Activity, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Scale, HeartPulse, TrendingDown, ChevronLeft, ChevronRight, Calendar, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { CalendarModal } from '../components/CalendarModal';
 import { useUser } from '../context/UserContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { clsx } from 'clsx';
 
 export const BiometricsTab: React.FC = () => {
   const { weightHistory, logWeight, bodyFatHistory, logBodyFat, biometrics, dailySteps, setDailySteps } = useUser();
   const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
-  const [graphRange, setGraphRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
 
   const viewDateLog = weightHistory.find(w => w.date === viewDate);
   const viewDateBfLog = bodyFatHistory?.find(b => b.date === viewDate);
@@ -118,33 +115,6 @@ export const BiometricsTab: React.FC = () => {
   const lbm = (currentBF && currentWeight) ? (currentWeight * (1 - currentBF / 100)).toFixed(1) : null;
   const fatMass = (currentBF && currentWeight) ? (currentWeight * (currentBF / 100)).toFixed(1) : null;
 
-  // Prepare graph data
-  const graphData = useMemo(() => {
-    const now = new Date();
-    let monthsAgo = 1;
-    if (graphRange === '3M') monthsAgo = 3;
-    if (graphRange === '6M') monthsAgo = 6;
-    if (graphRange === '1Y') monthsAgo = 12;
-    
-    const cutoffDate = new Date();
-    cutoffDate.setMonth(now.getMonth() - monthsAgo);
-    
-    // Filter and format for chart
-    return weightHistory
-      .filter(w => new Date(w.date) >= cutoffDate)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map(w => {
-        const d = new Date(w.date + 'T12:00:00');
-        return {
-          ...w,
-          displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        };
-      });
-  }, [weightHistory, graphRange]);
-
-  // Determine min and max for the Y-axis to make the chart look nice and dynamic
-  const yAxisMin = graphData.length > 0 ? Math.floor(Math.min(...graphData.map(d => d.weightLbs)) - 5) : 0;
-  const yAxisMax = graphData.length > 0 ? Math.ceil(Math.max(...graphData.map(d => d.weightLbs)) + 5) : 100;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 fade-in pb-24 overflow-x-hidden">
@@ -183,73 +153,6 @@ export const BiometricsTab: React.FC = () => {
         onDragEnd={handleDragEnd}
         className="space-y-6"
       >
-        
-        {/* Weight Trend Graph */}
-        <div className="esports-panel p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="esports-heading text-2xl text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 text-neon-blue" /> Weight Trend
-            </h1>
-            <div className="flex gap-2">
-              {['1M', '3M', '6M', '1Y'].map(range => (
-                <button
-                  key={range}
-                  onClick={() => setGraphRange(range as any)}
-                  className={clsx(
-                    "px-3 py-1 text-xs font-rajdhani font-bold rounded uppercase tracking-wider transition-colors",
-                    graphRange === range ? "bg-neon-blue text-tactical-900" : "bg-tactical-800 text-gray-400 hover:bg-tactical-700 hover:text-white"
-                  )}
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="h-64 w-full">
-            {graphData.length > 1 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={graphData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" vertical={false} />
-                  <XAxis 
-                    dataKey="displayDate" 
-                    stroke="#718096" 
-                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
-                    axisLine={false} 
-                    tickLine={false}
-                    minTickGap={20}
-                  />
-                  <YAxis 
-                    domain={[yAxisMin, yAxisMax]} 
-                    stroke="#718096" 
-                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
-                    axisLine={false} 
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A202C', borderColor: '#00F0FF', color: '#fff', borderRadius: '8px' }}
-                    itemStyle={{ color: '#00F0FF', fontWeight: 'bold' }}
-                    labelStyle={{ color: '#A0AEC0', marginBottom: '4px' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weightLbs" 
-                    name="Weight (lbs)"
-                    stroke="#00F0FF" 
-                    strokeWidth={3} 
-                    dot={{ fill: '#1A202C', stroke: '#00F0FF', strokeWidth: 2, r: 4 }} 
-                    activeDot={{ r: 6, fill: '#00F0FF' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-500 font-inter text-sm flex-col gap-2">
-                <TrendingDown className="w-8 h-8 opacity-20" />
-                <span>Not enough data to display a trend. Log your weight on multiple days!</span>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Daily Logging section */}
         <div className="esports-panel p-6">
