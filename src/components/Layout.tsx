@@ -131,39 +131,46 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       // Play retro level up sound
       playLevelUpSound();
 
-      // Bigger explosion for rank up
-      confetti({
-        particleCount: 200,
-        spread: 180,
-        origin: { y: 0.5 },
-        colors: ['#00f0ff', '#ffd700', '#ffffff', '#ff003c', '#00ff00'],
-        gravity: 1.2,
-        scalar: 1.8,
-        ticks: 350
-      });
+      // Delay confetti to match the "slam" (1.2s)
+      const slamDelay = 1200;
       
-      // Continuous side cannons
-      const end = Date.now() + 3500;
-      const frame = () => {
+      const timer = setTimeout(() => {
+        // Bigger explosion for rank up
         confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 60,
-          origin: { x: 0, y: 0.8 },
-          colors: ['#00f0ff', '#ffd700']
+          particleCount: 200,
+          spread: 180,
+          origin: { y: 0.5 },
+          colors: ['#00f0ff', '#ffd700', '#ffffff', '#ff003c', '#00ff00'],
+          gravity: 1.2,
+          scalar: 1.8,
+          ticks: 350
         });
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 60,
-          origin: { x: 1, y: 0.8 },
-          colors: ['#00f0ff', '#ffd700']
-        });
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      };
-      frame();
+        
+        // Continuous side cannons
+        const end = Date.now() + 3500;
+        const frame = () => {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 60,
+            origin: { x: 0, y: 0.8 },
+            colors: ['#00f0ff', '#ffd700']
+          });
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 60,
+            origin: { x: 1, y: 0.8 },
+            colors: ['#00f0ff', '#ffd700']
+          });
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        };
+        frame();
+      }, slamDelay);
+      
+      return () => clearTimeout(timer);
     }
   }, [rankUpData]);
   
@@ -426,36 +433,54 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               </motion.h2>
 
               <div className="relative w-64 h-64 mx-auto mb-8">
-                {/* Old Rank Image dissolving */}
-                <motion.img 
-                  src={`/images/ranks/${rankUpData.oldRank.toLowerCase()}.png`}
-                  alt={rankUpData.oldRank}
-                  className="absolute inset-0 w-full h-full object-contain"
-                  initial={{ scale: 1, opacity: 1, filter: "brightness(1) blur(0px)" }}
-                  animate={{ 
-                    scale: 0.2, 
-                    opacity: 0, 
-                    filter: "brightness(5) blur(10px)",
-                    rotate: -180
-                  }}
-                  transition={{ duration: 1.5, ease: "easeIn" }}
-                />
+                {/* LoL Style Assembly Animation */}
                 
-                {/* New Rank Image emerging */}
+                {/* 1. The Shockwave (triggers at 1.2s) */}
+                <motion.div 
+                  className="absolute inset-0 rounded-full border-4 border-neon-blue shadow-[0_0_50px_rgba(0,240,255,1)]"
+                  initial={{ scale: 0.1, opacity: 0 }}
+                  animate={{ scale: [0.1, 3], opacity: [0, 1, 0] }}
+                  transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+                />
+
+                {/* 2. The 4 Shards flying in over 1.2s */}
+                {[
+                  { id: 1, clipPath: "polygon(0 0, 50% 50%, 100% 0)", x: 0, y: -200, rot: -45 }, // Top
+                  { id: 2, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)", x: 200, y: 0, rot: 45 }, // Right
+                  { id: 3, clipPath: "polygon(0 100%, 50% 50%, 100% 100%)", x: 0, y: 200, rot: 135 }, // Bottom
+                  { id: 4, clipPath: "polygon(0 0, 0 100%, 50% 50%)", x: -200, y: 0, rot: -135 } // Left
+                ].map(shard => (
+                  <motion.div
+                    key={shard.id}
+                    className="absolute inset-0 z-20"
+                    style={{ clipPath: shard.clipPath }}
+                    initial={{ x: shard.x, y: shard.y, rotate: shard.rot, scale: 2, filter: "brightness(5) blur(10px)", opacity: 0 }}
+                    animate={{ x: 0, y: 0, rotate: 0, scale: 1, filter: "brightness(1) blur(0px)", opacity: 1 }}
+                    transition={{ duration: 1.2, ease: "easeIn" }}
+                  >
+                    <img 
+                      src={`/images/ranks/${rankUpData.newRank.toLowerCase()}.png`}
+                      alt={rankUpData.newRank}
+                      className="w-full h-full object-contain"
+                    />
+                  </motion.div>
+                ))}
+
+                {/* 3. The Solid Image Flash at 1.2s */}
                 <motion.img 
                   src={`/images/ranks/${rankUpData.newRank.toLowerCase()}.png`}
                   alt={rankUpData.newRank}
-                  className="absolute inset-0 w-full h-full object-contain drop-shadow-[0_0_30px_rgba(0,240,255,0.8)]"
-                  initial={{ scale: 0, opacity: 0, rotate: 180 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  transition={{ delay: 1.5, duration: 1, type: "spring", bounce: 0.5 }}
+                  className="absolute inset-0 w-full h-full object-contain z-30 drop-shadow-[0_0_30px_rgba(0,240,255,0.8)]"
+                  initial={{ opacity: 0, filter: "brightness(10)" }}
+                  animate={{ opacity: 1, filter: "brightness(1)" }}
+                  transition={{ delay: 1.2, duration: 1, ease: "easeOut" }}
                 />
               </div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.5 }}
+                transition={{ delay: 2.0 }} // Delays text until after assembly
               >
                 <div className="text-gray-400 text-lg font-rajdhani uppercase tracking-widest mb-1">Promoted to</div>
                 <div className="text-5xl font-rajdhani font-bold text-neon-blue uppercase tracking-widest">{rankUpData.newRank}</div>

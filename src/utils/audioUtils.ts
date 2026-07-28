@@ -6,53 +6,68 @@ export const playLevelUpSound = () => {
     if (!AudioContext) return;
     
     const ctx = new AudioContext();
+    const now = ctx.currentTime;
     
-    // Play an epic arpeggio: C4, E4, G4, C5
-    const notes = [261.63, 329.63, 392.00, 523.25];
-    const duration = 0.15; // duration of each note
+    // 1. The Riser (Whoosh building up)
+    const riserDuration = 1.2;
+    const riserOsc = ctx.createOscillator();
+    const riserGain = ctx.createGain();
     
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      osc.type = 'square'; // 'square' or 'sawtooth' gives that retro 8-bit feel
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * duration));
-      
-      // Envelope
-      gainNode.gain.setValueAtTime(0, ctx.currentTime + (i * duration));
-      gainNode.gain.linearRampToValueAtTime(0.2, ctx.currentTime + (i * duration) + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (i * duration) + duration);
-      
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      osc.start(ctx.currentTime + (i * duration));
-      osc.stop(ctx.currentTime + (i * duration) + duration);
-    });
+    riserOsc.type = 'sawtooth';
+    // Frequency sweeps from low to high
+    riserOsc.frequency.setValueAtTime(50, now);
+    riserOsc.frequency.exponentialRampToValueAtTime(800, now + riserDuration);
+    
+    // Volume builds up then cuts off
+    riserGain.gain.setValueAtTime(0, now);
+    riserGain.gain.linearRampToValueAtTime(0.5, now + riserDuration - 0.1);
+    riserGain.gain.linearRampToValueAtTime(0, now + riserDuration);
+    
+    riserOsc.connect(riserGain);
+    riserGain.connect(ctx.destination);
+    
+    riserOsc.start(now);
+    riserOsc.stop(now + riserDuration);
+    
+    // 2. The Slam / Assembly (Heavy impact)
+    const slamStart = now + riserDuration;
+    const slamOsc = ctx.createOscillator();
+    const slamGain = ctx.createGain();
+    
+    slamOsc.type = 'sine'; // Deep sub bass
+    
+    // Pitch drop for the impact punch
+    slamOsc.frequency.setValueAtTime(150, slamStart);
+    slamOsc.frequency.exponentialRampToValueAtTime(30, slamStart + 0.3);
+    
+    // Volume spike and slow decay
+    slamGain.gain.setValueAtTime(0, slamStart);
+    slamGain.gain.linearRampToValueAtTime(1.0, slamStart + 0.05);
+    slamGain.gain.exponentialRampToValueAtTime(0.01, slamStart + 2.0);
+    
+    slamOsc.connect(slamGain);
+    slamGain.connect(ctx.destination);
+    
+    slamOsc.start(slamStart);
+    slamOsc.stop(slamStart + 2.0);
 
-    // Add a satisfying final "chord" or longer note at the end
-    const finalOsc1 = ctx.createOscillator();
-    const finalOsc2 = ctx.createOscillator();
-    const finalGain = ctx.createGain();
+    // 3. The Metallic Ring / Flash
+    const ringOsc = ctx.createOscillator();
+    const ringGain = ctx.createGain();
     
-    finalOsc1.type = 'square';
-    finalOsc2.type = 'sawtooth';
+    ringOsc.type = 'triangle';
+    ringOsc.frequency.setValueAtTime(1200, slamStart);
+    ringOsc.frequency.exponentialRampToValueAtTime(400, slamStart + 1.5);
     
-    finalOsc1.frequency.setValueAtTime(523.25, ctx.currentTime + (notes.length * duration)); // C5
-    finalOsc2.frequency.setValueAtTime(659.25, ctx.currentTime + (notes.length * duration)); // E5
+    ringGain.gain.setValueAtTime(0, slamStart);
+    ringGain.gain.linearRampToValueAtTime(0.3, slamStart + 0.02);
+    ringGain.gain.exponentialRampToValueAtTime(0.01, slamStart + 1.5);
     
-    finalGain.gain.setValueAtTime(0, ctx.currentTime + (notes.length * duration));
-    finalGain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + (notes.length * duration) + 0.1);
-    finalGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (notes.length * duration) + 1.0);
+    ringOsc.connect(ringGain);
+    ringGain.connect(ctx.destination);
     
-    finalOsc1.connect(finalGain);
-    finalOsc2.connect(finalGain);
-    finalGain.connect(ctx.destination);
-    
-    finalOsc1.start(ctx.currentTime + (notes.length * duration));
-    finalOsc2.start(ctx.currentTime + (notes.length * duration));
-    finalOsc1.stop(ctx.currentTime + (notes.length * duration) + 1.0);
-    finalOsc2.stop(ctx.currentTime + (notes.length * duration) + 1.0);
+    ringOsc.start(slamStart);
+    ringOsc.stop(slamStart + 1.5);
     
   } catch (e) {
     console.error('Audio playback failed', e);
