@@ -22,11 +22,11 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
         {/* Rank Icon */}
-        <div className="w-32 h-32 flex items-center justify-center">
+        <div className="w-48 h-48 flex items-center justify-center shrink-0">
           <img 
             src={crestUrl} 
             alt={`${tier} Rank`} 
-            className="w-full h-full object-contain hover:scale-105 transition-transform duration-500" 
+            className="w-full h-full object-contain hover:scale-105 transition-transform duration-500 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" 
           />
         </div>
 
