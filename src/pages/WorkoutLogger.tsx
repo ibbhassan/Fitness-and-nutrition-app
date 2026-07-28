@@ -230,7 +230,7 @@ const ExerciseCard = ({
 };
 
 export const WorkoutLogger: React.FC = () => {
-  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise } = useUser();
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
@@ -510,6 +510,73 @@ export const WorkoutLogger: React.FC = () => {
       calculatedEp = 25;
     }
 
+    // Grading Algorithm
+    let grade: 'S+' | 'S' | 'A' | 'B' | 'C' = 'A';
+    let isPr = false;
+
+    const completedExercises = exercises.filter(ex => ex.sets.some(s => s.completed));
+    if (durationMinutes < 15 && completedExercises.length < 3) {
+      grade = 'C';
+    } else {
+      grade = 'A';
+    }
+
+    // Historical Averages calculation
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentWorkouts = workoutHistory.filter(w => new Date(w.date) >= thirtyDaysAgo);
+
+    let targetVolume = 0;
+    exercises.forEach(ex => {
+      let totalExVolume = 0;
+      let count = 0;
+      let maxWeight = 0;
+      let maxReps = 0;
+
+      recentWorkouts.forEach(w => {
+        const histEx = w.exercises?.find(e => e.name === ex.name);
+        if (histEx) {
+          count++;
+          histEx.sets.forEach(s => {
+            if (s.completed) {
+              totalExVolume += (s.weight || 0) * (s.reps || 0);
+              if ((s.weight || 0) > maxWeight) maxWeight = s.weight || 0;
+              if ((s.reps || 0) > maxReps) maxReps = s.reps || 0;
+            }
+          });
+        }
+      });
+
+      if (count > 0) {
+        targetVolume += (totalExVolume / count);
+      }
+
+      // Check PRs
+      ex.sets.forEach(s => {
+        if (s.completed) {
+          if ((s.weight || 0) > maxWeight && (s.weight || 0) > 0) isPr = true;
+          if ((s.weight || 0) === maxWeight && (s.reps || 0) > maxReps && (s.weight || 0) > 0) isPr = true;
+        }
+      });
+    });
+
+    if (grade === 'A') {
+      if (targetVolume > 0 && totalVolume >= targetVolume * 0.9) {
+        grade = 'S';
+      } else if (completedExercises.length >= 4) {
+        grade = 'S';
+      }
+    }
+
+    if (grade === 'S' || grade === 'A') {
+      const macros = getMacrosForDate(viewDate);
+      const nutritionSynergy = macros.protein.current >= macros.protein.target && macros.calories.current <= macros.calories.target;
+      
+      if (isPr || (targetVolume > 0 && totalVolume > targetVolume * 1.05) || nutritionSynergy) {
+        grade = 'S+';
+      }
+    }
+
     logWorkout({
       id: `log-${Date.now()}`,
       date: viewDate === getLocalDateString() ? new Date().toISOString() : new Date(viewDate + 'T12:00:00').toISOString(),
@@ -517,9 +584,9 @@ export const WorkoutLogger: React.FC = () => {
       durationMinutes,
       exercises: exercises,
       volume: totalVolume,
-      grade: 'S+',
+      grade,
       epChange: calculatedEp,
-      isPr: true
+      isPr
     });
     
     setShowCelebration(true);
