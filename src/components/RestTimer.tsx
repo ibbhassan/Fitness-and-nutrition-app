@@ -2,6 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause, Plus, Minus, Timer, X, Volume2, VolumeX } from 'lucide-react';
 import { clsx } from 'clsx';
 
+let sharedAudioCtx: AudioContext | null = null;
+let bellAudioBuffer: AudioBuffer | null = null;
+
+const unlockAudio = async () => {
+  try {
+    if (!sharedAudioCtx) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      sharedAudioCtx = new AudioContextClass();
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+      await sharedAudioCtx.resume();
+    }
+    if (!bellAudioBuffer) {
+      const response = await fetch('/true-boxing-bell.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      bellAudioBuffer = await sharedAudioCtx.decodeAudioData(arrayBuffer);
+    }
+  } catch (err) {
+    console.log('Audio unlock failed:', err);
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', unlockAudio, { once: true });
+  window.addEventListener('touchstart', unlockAudio, { once: true });
+}
+
 interface RestTimerProps {
   lastCompletedSetTime: number; // Timestamp to trigger auto-start
 }
@@ -49,17 +76,15 @@ export const RestTimer: React.FC<RestTimerProps> = ({ lastCompletedSetTime }) =>
     }
   };
 
-  const playBellAudio = async () => {
-    if (!soundEnabled) return;
+  const playBellAudio = () => {
+    if (!soundEnabled || !sharedAudioCtx || !bellAudioBuffer) return;
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContext();
-      const response = await fetch('/true-boxing-bell.mp3');
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
+      if (sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume().catch(() => {});
+      }
+      const source = sharedAudioCtx.createBufferSource();
+      source.buffer = bellAudioBuffer;
+      source.connect(sharedAudioCtx.destination);
       source.start(0);
     } catch (err) {
       console.error('Failed to play bell audio', err);
