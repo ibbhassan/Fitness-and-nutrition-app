@@ -11,6 +11,7 @@ interface UserContextType {
   logout: () => void;
   hasCompletedOnboarding: boolean;
   completeOnboarding: (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => void;
+  resetOnboarding: () => void;
   markPatchNotesSeen: (version: string) => void;
   profile: UserProfile;
   nutrition: DailyNutrition;
@@ -20,6 +21,7 @@ interface UserContextType {
   biometrics: Biometrics | null;
   weightHistory: WeightEntry[];
   logWeight: (weightLbs: number, dateStr?: string) => void;
+  updateNutrition: (macros: DailyNutrition) => void;
   addNutritionMacros: (macros: { calories: number; protein: number; carbs: number; fat: number; }) => void;
   customPresets: WorkoutPreset[];
   saveCustomPreset: (preset: WorkoutPreset) => void;
@@ -199,16 +201,41 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setHasCompletedOnboarding(true);
   };
 
+  const resetOnboarding = () => {
+    setHasCompletedOnboarding(false);
+  };
+
+  const updateNutrition = (macros: DailyNutrition) => {
+    setNutrition(macros);
+  };
+
   const logWeight = (weightLbs: number, dateStr?: string) => {
     const targetDate = dateStr || getLocalDateString();
     setWeightHistory(prev => {
-      const existing = prev.findIndex(entry => entry.date === targetDate);
+      let next = [...prev];
+      const existing = next.findIndex(entry => entry.date === targetDate);
       if (existing !== -1) {
-        const next = [...prev];
         next[existing] = { date: targetDate, weightLbs };
-        return next;
+      } else {
+        next.push({ date: targetDate, weightLbs });
+        next.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       }
-      return [...prev, { date: targetDate, weightLbs }].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Calculate 7-day average and update biometrics
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const recentLogs = next.filter(entry => new Date(entry.date).getTime() >= sevenDaysAgo.getTime());
+      if (recentLogs.length > 0) {
+        const sum = recentLogs.reduce((acc, curr) => acc + curr.weightLbs, 0);
+        const avg = Math.round((sum / recentLogs.length) * 10) / 10;
+        setBiometrics(b => b ? { ...b, weightLbs: avg } : null);
+      } else {
+        setBiometrics(b => b ? { ...b, weightLbs } : null);
+      }
+      
+      return next;
     });
   };
 
@@ -501,6 +528,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       hasCompletedOnboarding,
       completeOnboarding,
+      resetOnboarding,
       markPatchNotesSeen,
       profile,
       nutrition: computedNutrition,
@@ -510,6 +538,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       biometrics,
       weightHistory,
       logWeight,
+      updateNutrition,
       addNutritionMacros: () => {},
       customPresets,
       saveCustomPreset,

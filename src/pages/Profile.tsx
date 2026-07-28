@@ -9,9 +9,19 @@ import clsx from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, healthSyncEnabled, toggleHealthSync } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [showMacroModal, setShowMacroModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  
+  const [newWeight, setNewWeight] = useState(biometrics?.weightLbs?.toString() || '');
+  const [customMacros, setCustomMacros] = useState({
+    calories: nutrition?.calories?.target?.toString() || '2000',
+    protein: nutrition?.protein?.target?.toString() || '150',
+    carbs: nutrition?.carbs?.target?.toString() || '200',
+    fat: nutrition?.fat?.target?.toString() || '60',
+  });
   const [selectedGoal, setSelectedGoal] = useState<'Cut' | 'Bulk' | 'Maintenance'>(profile?.currentMode || 'Maintenance');
   const [localSplit, setLocalSplit] = useState<Record<number, string>>(workoutSplit || {});
 
@@ -70,6 +80,29 @@ export const Profile: React.FC = () => {
     const newMacros = calculateNewMacros(selectedGoal);
     completeOnboarding(selectedGoal, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, newMacros, biometrics);
     setShowGoalModal(false);
+  };
+
+  const handleUpdateWeight = () => {
+    const val = parseFloat(newWeight);
+    if (!isNaN(val) && val > 0) {
+      logWeight(val);
+      setShowWeightModal(false);
+    }
+  };
+
+  const handleUpdateMacros = () => {
+    const cals = parseInt(customMacros.calories) || nutrition.calories.target;
+    const pro = parseInt(customMacros.protein) || nutrition.protein.target;
+    const carb = parseInt(customMacros.carbs) || nutrition.carbs.target;
+    const fat = parseInt(customMacros.fat) || nutrition.fat.target;
+
+    updateNutrition({
+      calories: { current: nutrition.calories.current, target: cals },
+      protein: { current: nutrition.protein.current, target: pro },
+      carbs: { current: nutrition.carbs.current, target: carb },
+      fat: { current: nutrition.fat.current, target: fat },
+    });
+    setShowMacroModal(false);
   };
 
   return (
@@ -139,6 +172,64 @@ export const Profile: React.FC = () => {
 
       {showAvatarModal && <AvatarCustomizer onClose={() => setShowAvatarModal(false)} />}
 
+      {/* Weight Modal */}
+      {showWeightModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-tactical-900 border border-tactical-700 p-6 rounded-xl w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4 border-b border-tactical-800 pb-3">
+              <h3 className="font-rajdhani font-bold text-xl uppercase tracking-wider">Update Weight</h3>
+              <button onClick={() => setShowWeightModal(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-gray-400 text-sm mb-4">Your current weight adjusts your 7-day rolling average.</p>
+            <input 
+              type="number" 
+              value={newWeight}
+              onChange={(e) => setNewWeight(e.target.value)}
+              className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-4 py-3 text-white font-bold mb-4 focus:outline-none focus:border-neon-blue"
+              placeholder="e.g. 165"
+            />
+            <button onClick={handleUpdateWeight} className="w-full bg-neon-blue text-black font-rajdhani font-bold text-lg uppercase tracking-wider py-3 rounded-lg hover:bg-neon-blue/80 transition-colors">
+              Log Weight
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Macro Modal */}
+      {showMacroModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-tactical-900 border border-tactical-700 p-6 rounded-xl w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4 border-b border-tactical-800 pb-3">
+              <h3 className="font-rajdhani font-bold text-xl uppercase tracking-wider">Custom Macros</h3>
+              <button onClick={() => setShowMacroModal(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Calories</label>
+                <input type="number" value={customMacros.calories} onChange={(e) => setCustomMacros(prev => ({...prev, calories: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-4 py-2 text-white font-bold focus:outline-none focus:border-neon-red" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Protein (g)</label>
+                  <input type="number" value={customMacros.protein} onChange={(e) => setCustomMacros(prev => ({...prev, protein: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-blue-400" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Carbs (g)</label>
+                  <input type="number" value={customMacros.carbs} onChange={(e) => setCustomMacros(prev => ({...prev, carbs: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-yellow-400" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Fat (g)</label>
+                  <input type="number" value={customMacros.fat} onChange={(e) => setCustomMacros(prev => ({...prev, fat: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-400" />
+                </div>
+              </div>
+            </div>
+            <button onClick={handleUpdateMacros} className="w-full bg-neon-red text-white font-rajdhani font-bold text-lg uppercase tracking-wider py-3 rounded-lg hover:bg-neon-red/80 transition-colors">
+              Save Plan
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Left Column: Directives & Biometrics */}
@@ -146,7 +237,7 @@ export const Profile: React.FC = () => {
           <div className="esports-panel p-6">
             <div className="flex justify-between items-center mb-6 border-b border-tactical-700 pb-4">
               <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Target className="w-5 h-5 text-neon-red" /> Current Directives
+                <Target className="w-5 h-5 text-neon-red" /> Current Plan
               </h2>
               <button 
                 onClick={() => setShowGoalModal(true)}
@@ -156,7 +247,7 @@ export const Profile: React.FC = () => {
               </button>
             </div>
 
-            <div className="bg-tactical-900 border-l-2 border-neon-red p-4 rounded-r-lg mb-6 flex justify-between items-center">
+            <div className="bg-tactical-900 border-l-2 border-neon-red p-4 rounded-r-lg mb-4 flex justify-between items-center">
               <div>
                 <p className="text-gray-400 text-xs uppercase tracking-wider font-rajdhani mb-1">Active Mission</p>
                 <p className="text-white font-bold text-lg">{profile?.currentMode === 'Cut' ? 'Operation: Shred' : profile?.currentMode === 'Bulk' ? 'Operation: Mass' : 'Operation: Maintain'}</p>
@@ -166,11 +257,23 @@ export const Profile: React.FC = () => {
               </div>
             </div>
 
+            <button 
+              onClick={resetOnboarding}
+              className="w-full mb-6 py-2 bg-tactical-800 hover:bg-tactical-700 border border-tactical-600 rounded-lg text-sm text-gray-300 font-rajdhani uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <Settings className="w-4 h-4" /> Recalibrate Full Plan
+            </button>
+
             <h3 className="text-sm font-rajdhani font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-tactical-700 pb-2">Biometric Loadout</h3>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-tactical-800 p-3 rounded-lg border border-tactical-700">
-                <p className="text-gray-500 text-xs uppercase tracking-wider">Current Weight</p>
+              <div className="bg-tactical-800 p-3 rounded-lg border border-tactical-700 relative group">
+                <div className="flex justify-between items-start">
+                  <p className="text-gray-500 text-xs uppercase tracking-wider">Current Weight</p>
+                  <button onClick={() => setShowWeightModal(true)} className="text-neon-blue opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Settings className="w-3 h-3" />
+                  </button>
+                </div>
                 <p className="text-white font-bold text-lg">{biometrics?.weightLbs || '--'} lbs</p>
               </div>
               <div className="bg-tactical-800 p-3 rounded-lg border border-tactical-700">
@@ -187,7 +290,15 @@ export const Profile: React.FC = () => {
               </div>
             </div>
             
-            <h3 className="text-sm font-rajdhani font-bold text-gray-400 uppercase tracking-wider mt-6 mb-4 border-b border-tactical-700 pb-2">Macro Targets</h3>
+            <div className="flex justify-between items-center mt-6 mb-4 border-b border-tactical-700 pb-2">
+              <h3 className="text-sm font-rajdhani font-bold text-gray-400 uppercase tracking-wider">Macro Targets</h3>
+              <button 
+                onClick={() => setShowMacroModal(true)}
+                className="text-xs font-rajdhani font-bold uppercase tracking-wider text-neon-blue hover:text-white transition-colors bg-neon-blue/10 hover:bg-neon-blue/30 px-3 py-1 rounded"
+              >
+                Edit Macros
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               <span className="bg-neon-red/10 text-neon-red px-3 py-1.5 rounded border border-neon-red/30 text-sm font-bold">{nutrition?.calories?.target || 0} kcal</span>
               <span className="bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded border border-blue-500/30 text-sm font-bold">{nutrition?.protein?.target || 0}g Protein</span>
