@@ -229,6 +229,24 @@ export const Dashboard: React.FC = () => {
                 </div>
               </button>
 
+              <button 
+                onClick={() => toggleManualQuest('dailyWater', 10)}
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-gold/50 cursor-pointer", manualQuestCompletions['dailyWater'] ? "opacity-50" : "")}
+              >
+                <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
+                <div className="flex justify-between items-start ml-2">
+                  <div>
+                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Daily Quest</span>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions['dailyWater'] ? "line-through" : "")}>Drink 1 Gallon of Water</h3>
+                  </div>
+                  {manualQuestCompletions['dailyWater'] ? (
+                    <CheckCircle className="w-4 h-4 text-neon-blue" />
+                  ) : (
+                    <span className="text-xs font-rajdhani font-bold text-neon-green">+10 EP</span>
+                  )}
+                </div>
+              </button>
+
               {/* Weekly Quests */}
               <button 
                 onClick={() => toggleManualQuest(weeklyWorkoutsKey, 100)}

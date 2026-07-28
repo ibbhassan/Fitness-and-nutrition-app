@@ -472,6 +472,12 @@ export const WorkoutLogger: React.FC = () => {
     else fDuration = `${m}:${s.toString().padStart(2, '0')}`;
     setFinalDuration(fDuration);
 
+    let calculatedEp = 15;
+    const workoutNameLower = activeWorkout.name.toLowerCase();
+    if (workoutNameLower.includes('leg') || workoutNameLower.includes('lower body')) {
+      calculatedEp = 25;
+    }
+
     logWorkout({
       id: `log-${Date.now()}`,
       date: new Date(activeWorkout.startTime).toISOString(),
@@ -480,7 +486,7 @@ export const WorkoutLogger: React.FC = () => {
       exercises: exercises,
       volume: totalVolume,
       grade: 'S+',
-      epChange: 18,
+      epChange: calculatedEp,
       isPr: true
     });
     
