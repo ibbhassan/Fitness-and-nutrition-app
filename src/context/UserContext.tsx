@@ -6,12 +6,13 @@ import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 
 interface UserContextType {
-  user: { username: string } | null;
+  user: { username: string, uid?: string } | null;
   login: (username: string) => void;
   logout: () => void;
+  updateUsername: (newUsername: string) => Promise<void>;
   hasCompletedOnboarding: boolean;
   completeOnboarding: (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => void;
   resetOnboarding: () => void;
@@ -250,6 +251,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     signOut(auth).then(() => setUser(null));
+  };
+
+  const updateUsername = async (newUsername: string) => {
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName: newUsername });
+      setUser(prev => prev ? { ...prev, username: newUsername } : null);
+    }
   };
 
   const completeOnboarding = (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => {
@@ -607,6 +615,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user,
       login,
       logout,
+      updateUsername,
       hasCompletedOnboarding,
       completeOnboarding,
       resetOnboarding,

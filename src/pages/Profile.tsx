@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Medal, Star, Target, Flame, Activity, X } from 'lucide-react';
+import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
@@ -9,11 +9,13 @@ import clsx from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync, updateUsername } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [newUsername, setNewUsername] = useState(user?.username || '');
   
   const [newWeight, setNewWeight] = useState(biometrics?.weightLbs?.toString() || '');
   const [customMacros, setCustomMacros] = useState({
@@ -82,6 +84,13 @@ export const Profile: React.FC = () => {
     setShowGoalModal(false);
   };
 
+  const handleUpdateUsername = () => {
+    if (newUsername.trim()) {
+      updateUsername(newUsername.trim());
+      setShowUsernameModal(false);
+    }
+  };
+
   const handleUpdateWeight = () => {
     const val = parseFloat(newWeight);
     if (!isNaN(val) && val > 0) {
@@ -122,7 +131,15 @@ export const Profile: React.FC = () => {
                 <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110" />
               </div>
               <div>
-                <h1 className="esports-heading text-3xl text-white tracking-widest">{user?.username || 'AGENT'}</h1>
+                <h1 className="esports-heading text-3xl text-white tracking-widest flex items-center gap-2">
+                  {user?.username || 'AGENT'}
+                  <button onClick={() => {
+                    setNewUsername(user?.username || '');
+                    setShowUsernameModal(true);
+                  }} className="text-gray-500 hover:text-neon-blue transition-colors focus:outline-none">
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                </h1>
                 <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2">
                   <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1}
                 </p>
@@ -456,6 +473,38 @@ export const Profile: React.FC = () => {
               className="w-full py-3 rounded-lg bg-neon-red text-tactical-900 font-rajdhani font-bold text-lg hover:bg-[#ff1a4d] transition-colors shadow-[0_0_15px_rgba(255,0,60,0.4)]"
             >
               Recalibrate Target
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Username Update Modal */}
+      {showUsernameModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+          <div className="bg-tactical-800 border border-tactical-600 p-6 rounded-xl w-full max-w-sm relative fade-in">
+            <button 
+              onClick={() => setShowUsernameModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider mb-4">Edit Username</h3>
+            
+            <input 
+              type="text"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+              className="w-full bg-tactical-900 border border-tactical-700 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all mb-6"
+              placeholder="operator_name"
+              autoFocus
+            />
+
+            <button
+              onClick={handleUpdateUsername}
+              className="w-full py-3 rounded-lg bg-neon-blue text-tactical-900 font-rajdhani font-bold text-lg hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+            >
+              Save Changes
             </button>
           </div>
         </div>
