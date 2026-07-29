@@ -45,6 +45,16 @@ export interface UserProfile {
   stats: UserStats;
   currentMode: 'Cut' | 'Bulk' | 'Maintenance';
   lastSeenPatchVersion?: string;
+  friends?: string[];
+}
+
+export interface FriendRequest {
+  id: string;
+  fromUid: string;
+  fromUsername: string;
+  toUid: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  timestamp: number;
 }
 
 export interface DailyNutrition {

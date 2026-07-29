@@ -9,6 +9,7 @@ import { Profile } from './pages/Profile';
 import { MatchHistory } from './components/MatchHistory';
 import { Onboarding } from './pages/Onboarding';
 import { Auth } from './pages/Auth';
+import { Social } from './pages/Social';
 import { UserProvider, useUser } from './context/UserContext';
 import { PatchNotesModal } from './components/PatchNotesModal';
 
@@ -39,6 +40,7 @@ const MainApp = () => {
           <MatchHistory />
         </div>
       )}
+      { activeTab === 'social' && <Social /> }
       {profile?.lastSeenPatchVersion !== CURRENT_VERSION && activeTab === 'dashboard' && (
         <PatchNotesModal 
           version={CURRENT_VERSION} 

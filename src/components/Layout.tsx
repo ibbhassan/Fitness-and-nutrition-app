@@ -1,6 +1,6 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause } from 'lucide-react';
+import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users } from 'lucide-react';
 import { playLevelUpSound } from '../utils/audioUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -181,6 +181,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     { id: 'biometrics', label: 'Body', icon: HeartPulse },
     { id: 'analytics', label: 'Stats', icon: TrendingUp },
     { id: 'history', label: 'History', icon: History },
+    { id: 'social', label: 'Social', icon: Users },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 

@@ -16,7 +16,8 @@ export const seedProfile: UserProfile = {
     power: 10,
     hypertrophy: 10,
     volume: 10,
-  }
+  },
+  friends: []
 };
 
 export const seedMatchHistory: MatchHistoryEntry[] = [];
