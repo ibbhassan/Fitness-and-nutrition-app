@@ -131,8 +131,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       // Play retro level up sound
       playLevelUpSound();
 
-      // Delay confetti to match the "slam" (1.2s)
-      const slamDelay = 1200;
+      // Delay confetti to match the "slam" (2.2s total delay now)
+      const slamDelay = 2200;
       
       const timer = setTimeout(() => {
         // Bigger explosion for rank up
@@ -433,17 +433,38 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
               </motion.h2>
 
               <div className="relative w-64 h-64 mx-auto mb-8">
-                {/* LoL Style Assembly Animation */}
-                
-                {/* 1. The Shockwave (triggers at 1.2s) */}
+                {/* 0. Old Rank Shattering Outwards (Starts at 1.0s) */}
+                {[
+                  { id: 1, clipPath: "polygon(0 0, 50% 50%, 100% 0)", x: 0, y: -100, rot: -20 }, // Top
+                  { id: 2, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)", x: 100, y: 0, rot: 20 }, // Right
+                  { id: 3, clipPath: "polygon(0 100%, 50% 50%, 100% 100%)", x: 0, y: 100, rot: 60 }, // Bottom
+                  { id: 4, clipPath: "polygon(0 0, 0 100%, 50% 50%)", x: -100, y: 0, rot: -60 } // Left
+                ].map(shard => (
+                  <motion.div
+                    key={`old-${shard.id}`}
+                    className="absolute inset-0 z-10"
+                    style={{ clipPath: shard.clipPath }}
+                    initial={{ x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 }}
+                    animate={{ x: shard.x, y: shard.y, rotate: shard.rot, scale: 0.5, opacity: 0, filter: "brightness(2) blur(5px)" }}
+                    transition={{ delay: 1.0, duration: 0.5, ease: "easeOut" }}
+                  >
+                    <img 
+                      src={`/images/ranks/${rankUpData.oldRank.toLowerCase()}.png`}
+                      alt={rankUpData.oldRank}
+                      className="w-full h-full object-contain"
+                    />
+                  </motion.div>
+                ))}
+
+                {/* 1. The Shockwave (triggers at 2.2s) */}
                 <motion.div 
                   className="absolute inset-0 rounded-full border-4 border-neon-blue shadow-[0_0_50px_rgba(0,240,255,1)]"
                   initial={{ scale: 0.1, opacity: 0 }}
                   animate={{ scale: [0.1, 3], opacity: [0, 1, 0] }}
-                  transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+                  transition={{ delay: 2.2, duration: 0.8, ease: "easeOut" }}
                 />
 
-                {/* 2. The 4 Shards flying in over 1.2s */}
+                {/* 2. The 4 Shards of NEW rank flying in over 1.2s (starts at 1.0s) */}
                 {[
                   { id: 1, clipPath: "polygon(0 0, 50% 50%, 100% 0)", x: 0, y: -200, rot: -45 }, // Top
                   { id: 2, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)", x: 200, y: 0, rot: 45 }, // Right
@@ -451,12 +472,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   { id: 4, clipPath: "polygon(0 0, 0 100%, 50% 50%)", x: -200, y: 0, rot: -135 } // Left
                 ].map(shard => (
                   <motion.div
-                    key={shard.id}
+                    key={`new-${shard.id}`}
                     className="absolute inset-0 z-20"
                     style={{ clipPath: shard.clipPath }}
                     initial={{ x: shard.x, y: shard.y, rotate: shard.rot, scale: 2, filter: "brightness(5) blur(10px)", opacity: 0 }}
                     animate={{ x: 0, y: 0, rotate: 0, scale: 1, filter: "brightness(1) blur(0px)", opacity: 1 }}
-                    transition={{ duration: 1.2, ease: "easeIn" }}
+                    transition={{ delay: 1.0, duration: 1.2, ease: "easeIn" }}
                   >
                     <img 
                       src={`/images/ranks/${rankUpData.newRank.toLowerCase()}.png`}
@@ -466,21 +487,21 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   </motion.div>
                 ))}
 
-                {/* 3. The Solid Image Flash at 1.2s */}
+                {/* 3. The Solid Image Flash at 2.2s */}
                 <motion.img 
                   src={`/images/ranks/${rankUpData.newRank.toLowerCase()}.png`}
                   alt={rankUpData.newRank}
                   className="absolute inset-0 w-full h-full object-contain z-30 drop-shadow-[0_0_30px_rgba(0,240,255,0.8)]"
                   initial={{ opacity: 0, filter: "brightness(10)" }}
                   animate={{ opacity: 1, filter: "brightness(1)" }}
-                  transition={{ delay: 1.2, duration: 1, ease: "easeOut" }}
+                  transition={{ delay: 2.2, duration: 1, ease: "easeOut" }}
                 />
               </div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.0 }} // Delays text until after assembly
+                transition={{ delay: 3.0 }} // Delays text until after assembly
               >
                 <div className="text-gray-400 text-lg font-rajdhani uppercase tracking-widest mb-1">Promoted to</div>
                 <div className="text-5xl font-rajdhani font-bold text-neon-blue uppercase tracking-widest">{rankUpData.newRank}</div>
