@@ -1,14 +1,11 @@
 import type { RankTier } from '../types';
 
 export const getRequiredEpForLevel = (level: number): number => {
-  // Base EP is 75. It increases by 8% every level.
-  // Level 1: 75 EP
-  // Level 5 (Bronze): ~440 cumulative EP (~1 month)
-  // Level 38 (Challenger): ~16,500 cumulative EP (~2.5 - 3 years)
-  const baseEp = 75;
-  const growthRate = 1.08;
-  const rawRequired = baseEp * Math.pow(growthRate, Math.max(1, level) - 1);
-  return Math.round(rawRequired / 5) * 5;
+  // Tier-based jumps: Base 100, +10 per level within a tier, +100 per new tier
+  const safeLevel = Math.max(1, level);
+  const tier = Math.floor((safeLevel - 1) / 5);
+  const rawRequired = 100 + (tier * 100) + ((safeLevel - 1) % 5) * 10;
+  return rawRequired;
 };
 
 export const getRankInfo = (level: number): { tier: RankTier; division: string; crestUrl: string; color: string } => {
