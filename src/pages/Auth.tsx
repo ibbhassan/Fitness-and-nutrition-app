@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Crosshair, Shield } from 'lucide-react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +22,13 @@ export const Auth: React.FC = () => {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        if (!username.trim()) {
+          setError("Username is required.");
+          setLoading(false);
+          return;
+        }
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCred.user, { displayName: username.trim() });
       }
       // Note: UserContext has an onAuthStateChanged listener that handles the actual login state update
     } catch (err: any) {
@@ -71,6 +78,20 @@ export const Auth: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+          {!isLogin && (
+            <div>
+              <label className="block text-xs font-rajdhani uppercase text-gray-400 tracking-wider mb-2">Username</label>
+              <input 
+                type="text" 
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all"
+                placeholder="operator_name"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-rajdhani uppercase text-gray-400 tracking-wider mb-2">Email</label>
             <input 

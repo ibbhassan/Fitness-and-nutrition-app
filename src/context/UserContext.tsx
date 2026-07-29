@@ -204,7 +204,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser({ username: firebaseUser.email?.split('@')[0] || 'User', uid: firebaseUser.uid });
+        setUser({ username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User', uid: firebaseUser.uid });
         try {
           const docRef = doc(db, 'users', firebaseUser.uid);
           const docSnap = await getDoc(docRef);
