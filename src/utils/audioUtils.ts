@@ -8,8 +8,8 @@ export const playLevelUpSound = () => {
     const ctx = new AudioContext();
     const now = ctx.currentTime;
     
-    // We delay the start of the sequence to match the "shatter" of the old rank at 1.0s
-    const sequenceStart = now + 1.0; 
+    // We delay the start of the sequence to match the "shatter" of the old rank at 1.5s
+    const sequenceStart = now + 1.5; 
     
     // 0. The Shatter (Glass breaking / White Noise burst)
     const bufferSize = ctx.sampleRate * 0.5; // 0.5 seconds of noise
