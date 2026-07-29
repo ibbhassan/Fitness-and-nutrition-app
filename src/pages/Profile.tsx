@@ -131,16 +131,16 @@ export const Profile: React.FC = () => {
                 <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110" />
               </div>
               <div>
-                <h1 className="esports-heading text-3xl text-white tracking-widest flex items-center gap-2">
+                <h1 className="esports-heading text-3xl text-white tracking-widest break-all">
                   {user?.username || 'AGENT'}
-                  <button onClick={() => {
-                    setNewUsername(user?.username || '');
-                    setShowUsernameModal(true);
-                  }} className="text-gray-500 hover:text-neon-blue transition-colors focus:outline-none">
-                    <Edit2 className="w-5 h-5" />
-                  </button>
                 </h1>
-                <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2">
+                <button onClick={() => {
+                  setNewUsername(user?.username || '');
+                  setShowUsernameModal(true);
+                }} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-gray-400 hover:text-neon-blue transition-colors focus:outline-none mt-2">
+                  <Edit2 className="w-3 h-3" /> Edit Username
+                </button>
+                <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2 mt-3">
                   <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1}
                 </p>
               </div>
