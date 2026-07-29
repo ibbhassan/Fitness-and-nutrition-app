@@ -1,18 +1,44 @@
 import React, { useState } from 'react';
-import { useUser } from '../context/UserContext';
 import { Crosshair, Shield } from 'lucide-react';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 export const Auth: React.FC = () => {
-  const { login } = useUser();
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      // For local storage, any non-empty username will "login" or "create" an account.
-      login(username);
+    if (!email.trim() || !password.trim()) return;
+
+    setLoading(true);
+    setError('');
+    
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+      // Note: UserContext has an onAuthStateChanged listener that handles the actual login state update
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      // Clean up Firebase error messages
+      const message = err.message || "Authentication failed";
+      if (message.includes("auth/invalid-credential")) {
+        setError("Invalid email or password.");
+      } else if (message.includes("auth/email-already-in-use")) {
+        setError("Email is already in use.");
+      } else if (message.includes("auth/weak-password")) {
+        setError("Password must be at least 6 characters.");
+      } else {
+        setError(message.replace("Firebase: ", ""));
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,16 +64,22 @@ export const Auth: React.FC = () => {
           {isLogin ? 'System Login' : 'Create Account'}
         </h2>
 
+        {error && (
+          <div className="relative z-10 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-6 font-rajdhani">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div>
-            <label className="block text-xs font-rajdhani uppercase text-gray-400 tracking-wider mb-2">Username</label>
+            <label className="block text-xs font-rajdhani uppercase text-gray-400 tracking-wider mb-2">Email</label>
             <input 
-              type="text" 
+              type="email" 
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all"
-              placeholder="Enter your username"
+              placeholder="operator@evoke.com"
             />
           </div>
 
@@ -77,9 +109,17 @@ export const Auth: React.FC = () => {
 
           <button 
             type="submit"
-            className="w-full bg-neon-blue text-tactical-900 py-4 rounded font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#00d0dd] transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] mt-4"
+            disabled={loading}
+            className="w-full bg-neon-blue text-tactical-900 py-4 rounded font-rajdhani font-bold text-lg uppercase tracking-widest hover:bg-[#00d0dd] transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLogin ? 'Initialize Session' : 'Register'}
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-tactical-900 border-t-transparent rounded-full animate-spin"></div>
+                Authenticating...
+              </>
+            ) : (
+              isLogin ? 'Initialize Session' : 'Register'
+            )}
           </button>
         </form>
 

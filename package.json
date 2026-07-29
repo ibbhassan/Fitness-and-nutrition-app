@@ -18,6 +18,7 @@
     "@zxing/library": "^0.23.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "firebase": "^12.16.0",
     "framer-motion": "^12.40.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.17.0",

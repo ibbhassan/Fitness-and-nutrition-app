@@ -4,6 +4,9 @@ import type { ReactNode } from 'react';
 import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal } from '../types';
 import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
+import { auth, db } from '../config/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 interface UserContextType {
   user: { username: string } | null;
@@ -100,7 +103,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const initialState = loadState();
 
-  const [user, setUser] = useState<{ username: string } | null>(initialState.user);
+  const [user, setUser] = useState<{ username: string, uid?: string } | null>(initialState.user);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(initialState.hasCompletedOnboarding);
   const [targetWorkoutsPerWeek, setTargetWorkoutsPerWeek] = useState(initialState.targetWorkoutsPerWeek);
   const [scheduledWorkoutDays, setScheduledWorkoutDays] = useState<number[]>(initialState.scheduledWorkoutDays || [1, 2, 4, 5]);
@@ -187,14 +190,66 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savedMeals
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+
+    if (user?.uid) {
+      const timeoutId = setTimeout(() => {
+        setDoc(doc(db, 'users', user.uid!), stateToSave, { merge: true }).catch(err => {
+          console.error("Failed to sync to Firestore:", err);
+        });
+      }, 2000);
+      return () => clearTimeout(timeoutId);
+    }
   }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({ username: firebaseUser.email?.split('@')[0] || 'User', uid: firebaseUser.uid });
+        try {
+          const docRef = doc(db, 'users', firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.hasCompletedOnboarding !== undefined) setHasCompletedOnboarding(data.hasCompletedOnboarding);
+            if (data.targetWorkoutsPerWeek !== undefined) setTargetWorkoutsPerWeek(data.targetWorkoutsPerWeek);
+            if (data.scheduledWorkoutDays !== undefined) setScheduledWorkoutDays(data.scheduledWorkoutDays);
+            if (data.workoutSplit !== undefined) setWorkoutSplit(data.workoutSplit);
+            if (data.profile !== undefined) setProfile(data.profile);
+            if (data.nutrition !== undefined) setNutrition(data.nutrition);
+            if (data.biometrics !== undefined) setBiometrics(data.biometrics);
+            if (data.weightHistory !== undefined) setWeightHistory(data.weightHistory);
+            if (data.bodyFatHistory !== undefined) setBodyFatHistory(data.bodyFatHistory);
+            if (data.customPresets !== undefined) setCustomPresets(data.customPresets);
+            if (data.workoutHistory !== undefined) setWorkoutHistory(data.workoutHistory);
+            if (data.manualQuestCompletions !== undefined) setManualQuestCompletions(data.manualQuestCompletions);
+            if (data.customExercises !== undefined) setCustomExercises(data.customExercises);
+            if (data.healthSyncEnabled !== undefined) setHealthSyncEnabled(data.healthSyncEnabled);
+            if (data.dailySteps !== undefined) setDailySteps(data.dailySteps);
+            if (data.lastStepDate !== undefined) setLastStepDate(data.lastStepDate);
+            if (data.activeWorkout !== undefined) setActiveWorkout(data.activeWorkout);
+            if (data.activeExercises !== undefined) setActiveExercises(data.activeExercises);
+            if (data.recentFoods !== undefined) setRecentFoods(data.recentFoods);
+            if (data.favoriteFoods !== undefined) setFavoriteFoods(data.favoriteFoods);
+            if (data.foodLogs !== undefined) setFoodLogs(data.foodLogs);
+            if (data.savedMeals !== undefined) setSavedMeals(data.savedMeals);
+          }
+        } catch (err) {
+          console.error("Error fetching user data from Firestore:", err);
+        }
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const login = (username: string) => {
+    // Left for local dev or backward compatibility before they hook up real Auth UI
     setUser({ username });
   };
 
   const logout = () => {
-    setUser(null);
+    signOut(auth).then(() => setUser(null));
   };
 
   const completeOnboarding = (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => {
