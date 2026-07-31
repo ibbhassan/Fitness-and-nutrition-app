@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Activity, Calendar as CalendarIcon, Clock, Dumbbell, UserMinus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getFriendFullProfile } from '../../services/socialService';
-import { getRankInfo } from '../../utils/rankUtils';
+import { getRankInfo, getRequiredEpForLevel } from '../../utils/rankUtils';
 import { clsx } from 'clsx';
 import type { WorkoutLog } from '../../types';
 
@@ -120,17 +120,13 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack,
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
           <div className="relative shrink-0">
             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.avatar?.seed || user.username}`} alt="Avatar" className="w-24 h-24 rounded-full bg-tactical-800 border-4 shadow-lg" style={{borderColor: rankInfo.color}} />
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded border border-tactical-900 flex items-center justify-center shadow-md whitespace-nowrap" style={{backgroundColor: rankInfo.color}}>
-              <span className="text-xs font-black text-black">LVL {profile.level || 1}</span>
-            </div>
           </div>
           
           <div className="text-center sm:text-left flex-1 mt-2 sm:mt-0">
             <h1 className="text-3xl font-rajdhani font-bold uppercase tracking-widest text-white drop-shadow-md">{user.username}</h1>
-            <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-              <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-8 h-8 object-contain drop-shadow-md" />
-              <p className="text-lg font-bold uppercase tracking-wider drop-shadow-md" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
-            </div>
+            <p className="font-rajdhani font-bold tracking-wider uppercase flex items-center justify-center sm:justify-start gap-2 mt-2" style={{color: rankInfo.color}}>
+              Level {profile.level || 1}
+            </p>
           </div>
           <div className="absolute top-0 right-0 sm:top-2 sm:right-2 z-30">
             <button 
@@ -140,6 +136,39 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack,
             >
               <UserMinus className="w-4 h-4 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Remove</span>
             </button>
+          </div>
+        </div>
+
+        {/* Full-width Rank Panel */}
+        <div className="w-full mt-6 bg-tactical-900/80 rounded-lg p-4 border border-tactical-700 relative z-10">
+          <h3 className="text-gray-400 text-xs font-rajdhani uppercase tracking-wider mb-3">Current Rank</h3>
+          <div className="flex justify-between items-end mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src={rankInfo.crestUrl} 
+                  alt="Rank Crest" 
+                  className="w-full h-full object-contain" 
+                />
+              </div>
+              <span className="font-rajdhani font-bold uppercase text-lg" style={{color: rankInfo.color}}>
+                {rankInfo.tier} {rankInfo.division}
+              </span>
+            </div>
+            <span className="font-bold text-sm" style={{color: rankInfo.color}}>
+              {Math.floor(profile?.lp || 0)} / {getRequiredEpForLevel(profile?.level || 1)} EP
+            </span>
+          </div>
+          <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">
+            <div 
+              className="h-full relative"
+              style={{ 
+                backgroundColor: rankInfo.color,
+                width: `${Math.min(100, Math.round(((profile?.lp || 0) / getRequiredEpForLevel(profile?.level || 1)) * 100))}%` 
+              }}
+            >
+              <div className="absolute top-0 right-0 bottom-0 w-4 bg-gradient-to-l from-white/50 to-transparent" />
+            </div>
           </div>
         </div>
       </div>
