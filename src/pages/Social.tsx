@@ -169,12 +169,12 @@ export const Social: React.FC = () => {
                       {/* Rank & Actions (Right side) */}
                       <div className="flex items-center gap-3 pr-3 relative z-30 shrink-0">
                         {/* Level and Rank */}
-                        <div className="flex items-center gap-2 sm:gap-3 bg-black/20 px-2 sm:px-3 py-1.5 rounded-lg border border-tactical-700">
-                          <span className="text-xs font-black text-white" style={{color: rankInfo.color}}>LVL {friend.level || 1}</span>
-                          <div className="w-px h-4 bg-tactical-600"></div>
-                          <div className="flex items-center gap-1.5">
-                            <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-5 h-5 object-contain drop-shadow-md" />
-                            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</span>
+                        <div className="flex items-center gap-2 sm:gap-4 bg-black/20 px-3 sm:px-4 py-2 rounded-lg border border-tactical-700">
+                          <span className="text-sm sm:text-base font-black text-white" style={{color: rankInfo.color}}>LVL {friend.level || 1}</span>
+                          <div className="w-px h-6 bg-tactical-600"></div>
+                          <div className="flex items-center gap-2">
+                            <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-md" />
+                            <span className="text-sm sm:text-base font-bold uppercase tracking-wider hidden sm:inline" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</span>
                           </div>
                         </div>
                       </div>
