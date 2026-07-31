@@ -121,9 +121,6 @@ export const Social: React.FC = () => {
       <div className="esports-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-neon-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-transparent pointer-events-none"></div>
         <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-xl bg-tactical-800 flex items-center justify-center border border-neon-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-            <Users className="w-6 h-6 text-neon-blue" />
-          </div>
           <div>
             <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Friends List</h1>
             <p className="text-gray-400 text-sm font-inter">Manage your roster, compare ranks, and dominate together.</p>
@@ -141,8 +138,8 @@ export const Social: React.FC = () => {
         {/* Left Column: Friends List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="esports-panel space-y-4">
-            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-tactical-700 pb-4">
-              <Users className="w-5 h-5 text-neon-blue" /> Your Friends
+            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider border-b border-tactical-700 pb-4">
+              Friends
             </h2>
             
             {friendsProfiles.length === 0 ? (
@@ -201,9 +198,7 @@ export const Social: React.FC = () => {
           {/* Friend Requests */}
           <div className="esports-panel space-y-4">
             <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center justify-between border-b border-tactical-700 pb-4">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-neon-gold" /> Requests
-              </div>
+              <span>Friend Requests</span>
               {pendingRequests.length > 0 && (
                 <span className="bg-neon-gold text-black font-bold text-xs px-2 py-0.5 rounded-full">{pendingRequests.length}</span>
               )}
