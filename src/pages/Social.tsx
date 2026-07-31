@@ -118,7 +118,7 @@ export const Social: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 fade-in pb-24">
-      <div className="esports-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-neon-blue relative overflow-hidden">
+      <div className="esports-panel p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-neon-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-transparent pointer-events-none"></div>
         <div className="flex items-center gap-4 relative z-10">
           <div>
@@ -137,7 +137,7 @@ export const Social: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Friends List */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="esports-panel space-y-4">
+          <div className="esports-panel p-6 space-y-4">
             <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider border-b border-tactical-700 pb-4">
               Friends
             </h2>
@@ -196,7 +196,7 @@ export const Social: React.FC = () => {
         <div className="space-y-6">
           
           {/* Friend Requests */}
-          <div className="esports-panel space-y-4">
+          <div className="esports-panel p-6 space-y-4">
             <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center justify-between border-b border-tactical-700 pb-4">
               <span>Friend Requests</span>
               {pendingRequests.length > 0 && (
