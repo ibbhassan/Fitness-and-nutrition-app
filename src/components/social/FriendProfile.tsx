@@ -132,14 +132,13 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack,
               <p className="text-lg font-bold uppercase tracking-wider drop-shadow-md" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
             </div>
           </div>
-          
-          <div className="absolute top-4 right-4 z-20">
+          <div className="absolute top-0 right-0 sm:top-2 sm:right-2 z-30">
             <button 
               onClick={onRemoveFriend} 
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-rajdhani font-bold uppercase tracking-wider text-gray-400 hover:text-neon-red bg-tactical-800 border border-tactical-600 hover:border-neon-red/50 rounded-lg transition-all shadow-md hover:bg-neon-red/10"
+              className="flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-rajdhani font-bold uppercase tracking-wider text-gray-500 hover:text-neon-red bg-tactical-900/80 backdrop-blur-sm border border-tactical-700 hover:border-neon-red/50 rounded-lg transition-all shadow-md hover:bg-neon-red/10"
               title="Remove Friend"
             >
-              <UserMinus className="w-4 h-4" /> Remove
+              <UserMinus className="w-4 h-4 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Remove</span>
             </button>
           </div>
         </div>
