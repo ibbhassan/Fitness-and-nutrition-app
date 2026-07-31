@@ -1,5 +1,5 @@
 import { db } from '../config/firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { FriendRequest } from '../types';
 
 export const searchUsersByUsername = async (username: string, currentUid: string) => {
@@ -100,4 +100,17 @@ export const getFriendsProfiles = async (friendUids: string[]) => {
     }
   }
   return profiles;
+};
+
+export const removeFriend = async (currentUid: string, targetUid: string) => {
+  const currentUserRef = doc(db, 'users', currentUid);
+  const targetUserRef = doc(db, 'users', targetUid);
+
+  await updateDoc(currentUserRef, {
+    'profile.friends': arrayRemove(targetUid)
+  });
+  
+  await updateDoc(targetUserRef, {
+    'profile.friends': arrayRemove(currentUid)
+  });
 };

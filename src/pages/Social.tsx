@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles } from '../services/socialService';
-import { Search, UserPlus, Check, X, Users, Dumbbell } from 'lucide-react';
+import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend } from '../services/socialService';
+import { Search, UserPlus, UserMinus, Check, X, Users, Dumbbell } from 'lucide-react';
 import type { FriendRequest } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import clsx from 'clsx';
@@ -70,6 +70,20 @@ export const Social: React.FC = () => {
       loadSocialData();
     } catch (err) {
       console.error('Failed to respond to request', err);
+    }
+  };
+
+  const handleRemoveFriend = async (targetUid: string, username: string) => {
+    if (!currentUid) return;
+    if (window.confirm(`Are you sure you want to remove ${username} from your friends?`)) {
+      try {
+        await removeFriend(currentUid, targetUid);
+        // Optimistically update the UI to avoid needing to wait for a context refresh
+        setFriendsProfiles(prev => prev.filter(f => f.uid !== targetUid));
+      } catch (err) {
+        console.error('Failed to remove friend', err);
+        alert('Failed to remove friend.');
+      }
     }
   };
 
@@ -142,6 +156,16 @@ export const Social: React.FC = () => {
                           </div>
                         </div>
                       )}
+                      
+                      <div className="relative z-10 ml-auto pl-4">
+                        <button 
+                          onClick={() => handleRemoveFriend(friend.uid, friend.username)} 
+                          className="p-2 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10"
+                          title="Remove Friend"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
