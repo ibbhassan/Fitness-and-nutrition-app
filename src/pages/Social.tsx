@@ -16,6 +16,7 @@ export const Social: React.FC = () => {
   const [friendsProfiles, setFriendsProfiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFriendUid, setSelectedFriendUid] = useState<string | null>(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const currentUid = user?.uid;
 
@@ -117,15 +118,23 @@ export const Social: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 fade-in pb-24">
-      <div className="esports-panel flex items-center gap-4 border-l-4 border-neon-blue relative overflow-hidden">
+      <div className="esports-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-neon-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-transparent pointer-events-none"></div>
-        <div className="w-12 h-12 rounded-xl bg-tactical-800 flex items-center justify-center border border-neon-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-          <Users className="w-6 h-6 text-neon-blue" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-xl bg-tactical-800 flex items-center justify-center border border-neon-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+            <Users className="w-6 h-6 text-neon-blue" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Friends List</h1>
+            <p className="text-gray-400 text-sm font-inter">Manage your roster, compare ranks, and dominate together.</p>
+          </div>
         </div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Friends List</h1>
-          <p className="text-gray-400 text-sm font-inter">Manage your roster, compare ranks, and dominate together.</p>
-        </div>
+        <button 
+          onClick={() => setShowSearchModal(true)}
+          className="relative z-10 bg-neon-blue text-black px-6 py-3 rounded-lg font-rajdhani font-bold uppercase tracking-wider hover:bg-white hover:text-black hover:shadow-[0_0_20px_rgba(0,240,255,0.6)] transition-all flex items-center justify-center gap-2"
+        >
+          <Search className="w-5 h-5" /> Find Friends
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -221,47 +230,70 @@ export const Social: React.FC = () => {
             )}
           </div>
 
-          {/* Search Users */}
-          <div className="esports-panel space-y-4">
-            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-tactical-700 pb-4">
-              <Search className="w-5 h-5 text-neon-blue" /> Search Agents
+          
+        </div>
+      </div>
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-tactical-900 border border-tactical-700 rounded-xl max-w-md w-full p-6 space-y-6 relative shadow-2xl">
+            <button 
+              onClick={() => setShowSearchModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <h2 className="text-2xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Search className="w-6 h-6 text-neon-blue" /> Search Agents
             </h2>
-            <form onSubmit={handleSearch} className="flex gap-2 mt-2">
+            
+            <form onSubmit={handleSearch} className="flex gap-2">
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Username" 
-                className="flex-1 bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] transition-all font-inter"
+                className="flex-1 bg-tactical-800 border border-tactical-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] transition-all font-inter text-lg"
+                autoFocus
               />
               <button type="submit" disabled={isSearching} className="bg-neon-blue text-black font-bold p-3 rounded-lg hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.6)] transition-all shadow-[0_0_10px_rgba(0,240,255,0.3)] flex items-center justify-center">
-                <Search className="w-5 h-5" />
+                <Search className="w-6 h-6" />
               </button>
             </form>
 
-            {searchResults.length > 0 && (
-              <div className="space-y-3 mt-4">
-                {searchResults.map(res => (
-                  <div key={res.uid} className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex items-center justify-between group hover:border-neon-blue/50 transition-colors">
+            <div className="max-h-[50vh] overflow-y-auto space-y-3 pr-2">
+              {isSearching && (
+                <div className="flex justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-neon-blue border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+              {!isSearching && searchResults.length === 0 && searchQuery && (
+                <p className="text-gray-500 text-center py-4">No agents found matching "{searchQuery}"</p>
+              )}
+              {searchResults.map(res => (
+                <div key={res.uid} className="bg-tactical-800 p-3 rounded-lg border border-tactical-600 flex items-center justify-between group hover:border-neon-blue/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${res.avatar?.seed || res.username}`} alt="Avatar" className="w-10 h-10 rounded-full bg-tactical-900 border border-tactical-700" />
                     <div>
-                      <h4 className="font-rajdhani font-bold text-sm tracking-wider uppercase text-white">{res.username}</h4>
+                      <h4 className="font-rajdhani font-bold text-base tracking-wider uppercase text-white">{res.username}</h4>
                       <p className="text-xs text-gray-400 font-inter">Level {res.level} • {res.rank}</p>
                     </div>
-                    {profile.friends?.includes(res.uid) ? (
-                      <span className="text-xs text-neon-green font-bold bg-neon-green/10 px-2 py-1 rounded border border-neon-green/30">FRIENDS</span>
-                    ) : (
-                      <button onClick={() => handleSendRequest(res.uid)} className="p-2 bg-tactical-800 border border-neon-blue/30 text-neon-blue rounded-lg transition-all hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]">
-                        <UserPlus className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                  {profile.friends?.includes(res.uid) ? (
+                    <span className="text-xs text-neon-green font-bold bg-neon-green/10 px-2 py-1 rounded border border-neon-green/30">FRIENDS</span>
+                  ) : (
+                    <button onClick={() => handleSendRequest(res.uid)} className="p-2.5 bg-tactical-900 border border-neon-blue/30 text-neon-blue rounded-lg transition-all hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]">
+                      <UserPlus className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          
         </div>
-      </div>
+      )}
     </div>
   );
 };
