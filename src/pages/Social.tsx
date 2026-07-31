@@ -155,7 +155,7 @@ export const Social: React.FC = () => {
             ) : (
               <div className="space-y-4 mt-2">
                 {friendsProfiles.map(friend => {
-                  const rankInfo = getRankInfo(friend.level);
+                  const rankInfo = getRankInfo(friend.profile?.level);
                   return (
                     <div 
                       key={friend.uid} 
@@ -168,7 +168,7 @@ export const Social: React.FC = () => {
                       <div className="flex items-center gap-3 pl-3 relative z-30 flex-1 min-w-0">
                         {/* Avatar */}
                         <div className="relative shrink-0">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.profile?.avatar?.seed || friend.username}`} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
                         </div>
                         
                         {/* Name */}
@@ -179,7 +179,7 @@ export const Social: React.FC = () => {
                       <div className="flex items-center gap-3 pr-3 relative z-30 shrink-0">
                         {/* Level and Rank */}
                         <div className="flex items-center gap-2 sm:gap-4 bg-black/20 px-3 sm:px-4 py-2 rounded-lg border border-tactical-700">
-                          <span className="text-sm sm:text-base font-black text-white" style={{color: rankInfo.color}}>LVL {friend.level || 1}</span>
+                          <span className="text-sm sm:text-base font-black text-white" style={{color: rankInfo.color}}>LVL {friend.profile?.level || 1}</span>
                           <div className="w-px h-6 bg-tactical-600"></div>
                           <div className="flex items-center gap-2">
                             <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-md" />
