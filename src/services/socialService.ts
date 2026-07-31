@@ -114,3 +114,12 @@ export const removeFriend = async (currentUid: string, targetUid: string) => {
     'profile.friends': arrayRemove(currentUid)
   });
 };
+
+export const getFriendFullProfile = async (friendUid: string) => {
+  const userRef = doc(db, 'users', friendUid);
+  const snap = await getDoc(userRef);
+  if (snap.exists()) {
+    return snap.data();
+  }
+  return null;
+};

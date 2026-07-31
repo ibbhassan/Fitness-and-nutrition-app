@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend } from '../services/socialService';
-import { Search, UserPlus, UserMinus, Check, X, Users, Dumbbell } from 'lucide-react';
+import { Search, UserPlus, UserMinus, Check, X, Users } from 'lucide-react';
 import type { FriendRequest } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
-import clsx from 'clsx';
+
+import { FriendProfile } from '../components/social/FriendProfile';
 
 export const Social: React.FC = () => {
   const { user, profile } = useUser();
@@ -14,6 +15,7 @@ export const Social: React.FC = () => {
   const [pendingRequests, setPendingRequests] = useState<FriendRequest[]>([]);
   const [friendsProfiles, setFriendsProfiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedFriendUid, setSelectedFriendUid] = useState<string | null>(null);
 
   const currentUid = user?.uid;
 
@@ -95,8 +97,16 @@ export const Social: React.FC = () => {
     );
   }
 
+  if (selectedFriendUid) {
+    return (
+      <div className="max-w-6xl mx-auto pb-24">
+        <FriendProfile friendUid={selectedFriendUid} onBack={() => setSelectedFriendUid(null)} />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 fade-in pb-24">
+    <div className="max-w-6xl mx-auto space-y-8 fade-in pb-24">
       <div className="esports-panel flex items-center gap-4 border-l-4 border-neon-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-transparent pointer-events-none"></div>
         <div className="w-12 h-12 rounded-xl bg-tactical-800 flex items-center justify-center border border-neon-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
@@ -128,68 +138,46 @@ export const Social: React.FC = () => {
                 {friendsProfiles.map(friend => {
                   const rankInfo = getRankInfo(friend.level);
                   return (
-                    <div key={friend.uid} className="bg-tactical-900 p-0 rounded-xl border border-tactical-700 flex flex-col sm:flex-row items-center gap-4 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,240,255,0.15)] transition-all relative overflow-hidden group">
-                      {/* Rank-colored left border & gradient background */}
-                      <div className="absolute left-0 top-0 bottom-0 w-2 z-20" style={{backgroundColor: rankInfo.color}}></div>
-                      <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 pointer-events-none" style={{ background: `linear-gradient(90deg, ${rankInfo.color}, transparent)` }}></div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"></div>
+                    <div 
+                      key={friend.uid} 
+                      onClick={() => setSelectedFriendUid(friend.uid)}
+                      className="bg-tactical-900 rounded-xl border border-tactical-700 flex items-center justify-between p-3 hover:-translate-y-1 hover:shadow-[0_4px_15px_rgba(0,240,255,0.15)] transition-all cursor-pointer group relative overflow-hidden"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 z-20" style={{backgroundColor: rankInfo.color}}></div>
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" style={{ background: `linear-gradient(90deg, ${rankInfo.color}, transparent)` }}></div>
                       
-                      <div className="flex items-center gap-4 p-4 pl-6 relative z-30 w-full sm:w-auto">
-                        {/* Avatar & Level Badge */}
+                      <div className="flex items-center gap-4 pl-4 relative z-30">
+                        {/* Avatar */}
                         <div className="relative shrink-0">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-16 h-16 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-lg" />
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded border border-tactical-900 flex items-center justify-center shadow-md whitespace-nowrap" style={{backgroundColor: rankInfo.color}}>
-                            <span className="text-[10px] font-black text-black">LVL {friend.level || 1}</span>
-                          </div>
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-12 h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
                         </div>
                         
-                        <div className="flex-1 text-left">
-                          <h3 className="font-rajdhani font-bold text-xl text-white uppercase tracking-wider drop-shadow-md">{friend.username}</h3>
-                          
-                          {/* Rank Display with Crest */}
-                          <div className="flex items-center gap-2 mt-1">
-                            <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-5 h-5 object-contain" />
-                            <p className="text-sm font-bold uppercase tracking-wider drop-shadow-md" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
-                          </div>
-                        </div>
+                        {/* Name */}
+                        <h3 className="font-rajdhani font-bold text-lg text-white uppercase tracking-wider drop-shadow-md">{friend.username}</h3>
                       </div>
 
-                      {/* Right Side Stats / Actions */}
-                      <div className="flex flex-col sm:flex-row items-center gap-3 p-4 sm:ml-auto relative z-30 w-full sm:w-auto border-t sm:border-t-0 border-tactical-700 bg-black/20">
-                        {friend.recentWorkout ? (
-                          <div className="flex items-center gap-3 text-xs">
-                            <div className="w-10 h-10 rounded-lg bg-tactical-800 border border-tactical-600 flex items-center justify-center">
-                              <Dumbbell className="w-5 h-5 text-gray-400" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-400 font-inter text-[10px] uppercase tracking-wider">Last Mission</span>
-                              <span className="text-white font-rajdhani font-bold truncate max-w-[120px]">{friend.recentWorkout.name}</span>
-                              <span className={clsx("font-black font-rajdhani text-sm tracking-widest", friend.recentWorkout.grade?.includes('S') ? "text-neon-gold drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" : "text-neon-blue")}>
-                                {friend.recentWorkout.grade || 'N/A'}
-                              </span>
-                            </div>
+                      {/* Rank & Actions (Right side) */}
+                      <div className="flex items-center gap-4 pr-2 relative z-30">
+                        {/* Level and Rank */}
+                        <div className="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-lg border border-tactical-700">
+                          <span className="text-xs font-black text-white" style={{color: rankInfo.color}}>LVL {friend.level || 1}</span>
+                          <div className="w-px h-4 bg-tactical-600"></div>
+                          <div className="flex items-center gap-1.5">
+                            <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-5 h-5 object-contain drop-shadow-md" />
+                            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-3 text-xs opacity-50">
-                            <div className="w-10 h-10 rounded-lg bg-tactical-800 border border-tactical-600 flex items-center justify-center">
-                              <Dumbbell className="w-5 h-5 text-gray-600" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500 font-inter text-[10px] uppercase tracking-wider">Last Mission</span>
-                              <span className="text-gray-400 font-rajdhani font-bold">No Intel</span>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="sm:ml-4 sm:pl-4 sm:border-l border-tactical-700">
-                          <button 
-                            onClick={() => handleRemoveFriend(friend.uid, friend.username)} 
-                            className="p-2.5 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10 group-hover:shadow-[0_0_10px_rgba(255,0,0,0.1)]"
-                            title="Remove Friend"
-                          >
-                            <UserMinus className="w-4 h-4" />
-                          </button>
                         </div>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the card click
+                            handleRemoveFriend(friend.uid, friend.username);
+                          }} 
+                          className="p-2 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10"
+                          title="Remove Friend"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   );

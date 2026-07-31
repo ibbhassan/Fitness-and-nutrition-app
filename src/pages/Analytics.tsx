@@ -13,6 +13,7 @@ import { clsx } from 'clsx';
 export const Analytics: React.FC = () => {
   const { workoutHistory, profile, weightHistory } = useUser();
   const [selectedExercise, setSelectedExercise] = useState<string>('Bench Press');
+  const [statType, setStatType] = useState<'1rm' | 'max_weight'>('1rm');
   const [graphRange, setGraphRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
 
   // 1. Volume Progression
@@ -25,10 +26,11 @@ export const Analytics: React.FC = () => {
     }));
   }, [workoutHistory]);
 
-  // 2. 1RM Tracking
-  const { allExercises, oneRepMaxData } = useMemo(() => {
+  // 2. 1RM & Max Weight Tracking
+  const { allExercises, oneRepMaxData, maxWeightData } = useMemo(() => {
     const exercises = new Set<string>();
     const rmData: Record<string, { date: string, rm: number }[]> = {};
+    const maxData: Record<string, { date: string, weight: number }[]> = {};
 
     const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -38,11 +40,16 @@ export const Analytics: React.FC = () => {
         exercises.add(ex.name);
         
         let dailyMax1RM = 0;
+        let dailyMaxWeight = 0;
+        
         ex.sets.forEach(set => {
           if (set.completed && set.reps > 0 && set.weight > 0) {
             // Brzycki formula
             const est1RM = set.weight * (36 / (37 - set.reps));
             if (est1RM > dailyMax1RM) dailyMax1RM = est1RM;
+            
+            // Raw Max Weight
+            if (set.weight > dailyMaxWeight) dailyMaxWeight = set.weight;
           }
         });
 
@@ -50,11 +57,15 @@ export const Analytics: React.FC = () => {
           if (!rmData[ex.name]) rmData[ex.name] = [];
           rmData[ex.name].push({ date: dateStr, rm: Math.round(dailyMax1RM) });
         }
+        if (dailyMaxWeight > 0) {
+          if (!maxData[ex.name]) maxData[ex.name] = [];
+          maxData[ex.name].push({ date: dateStr, weight: dailyMaxWeight });
+        }
       });
     });
 
     const exList = Array.from(exercises).sort();
-    return { allExercises: exList, oneRepMaxData: rmData };
+    return { allExercises: exList, oneRepMaxData: rmData, maxWeightData: maxData };
   }, [workoutHistory]);
 
   // Handle default selection if 'Bench Press' is not in history
@@ -64,9 +75,12 @@ export const Analytics: React.FC = () => {
     }
   }, [allExercises, selectedExercise]);
 
-  const selectedRmData = oneRepMaxData[selectedExercise] || [];
-  const rmYMin = selectedRmData.length > 0 ? Math.floor(Math.min(...selectedRmData.map(d => d.rm)) * 0.9) : 0;
-  const rmYMax = selectedRmData.length > 0 ? Math.ceil(Math.max(...selectedRmData.map(d => d.rm)) * 1.1) : 100;
+  const selectedChartData = statType === '1rm' ? (oneRepMaxData[selectedExercise] || []) : (maxWeightData[selectedExercise] || []);
+  const yDataKey = statType === '1rm' ? 'rm' : 'weight';
+  const yAxisLabel = statType === '1rm' ? 'Est. 1RM (lbs)' : 'Max Weight (lbs)';
+
+  const rmYMin = selectedChartData.length > 0 ? Math.floor(Math.min(...selectedChartData.map((d: any) => d[yDataKey])) * 0.9) : 0;
+  const rmYMax = selectedChartData.length > 0 ? Math.ceil(Math.max(...selectedChartData.map((d: any) => d[yDataKey])) * 1.1) : 100;
 
   // 3. Stat Hexagon Breakdown (Radar)
   const radarData = useMemo(() => {
@@ -197,34 +211,45 @@ export const Analytics: React.FC = () => {
             <h2 className="esports-heading text-xl text-white flex items-center gap-2">
               <Activity className="w-5 h-5 text-neon-gold" /> 1RM Tracker
             </h2>
-            <select 
-              value={selectedExercise}
-              onChange={(e) => setSelectedExercise(e.target.value)}
-              className="bg-tactical-800 border border-tactical-700 text-white p-2 rounded text-sm font-rajdhani uppercase tracking-wider outline-none focus:border-neon-gold max-w-[200px]"
-            >
-              {allExercises.length === 0 ? <option>No Data</option> : null}
-              {allExercises.map(ex => (
-                <option key={ex} value={ex}>{ex}</option>
-              ))}
-            </select>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <select 
+                value={statType}
+                onChange={(e) => setStatType(e.target.value as '1rm' | 'max_weight')}
+                className="bg-tactical-800 border border-tactical-700 text-white p-2 rounded text-sm font-rajdhani uppercase tracking-wider outline-none focus:border-neon-gold"
+              >
+                <option value="1rm">Est. 1 Rep Max</option>
+                <option value="max_weight">Highest Weight Lifted</option>
+              </select>
+              <select 
+                value={selectedExercise}
+                onChange={(e) => setSelectedExercise(e.target.value)}
+                className="bg-tactical-800 border border-tactical-700 text-white p-2 rounded text-sm font-rajdhani uppercase tracking-wider outline-none focus:border-neon-gold max-w-[200px]"
+              >
+                {allExercises.length === 0 ? <option>No Data</option> : null}
+                {allExercises.map(ex => (
+                  <option key={ex} value={ex}>{ex}</option>
+                ))}
+              </select>
+            </div>
           </div>
           
           <div className="h-52 w-full">
-            {selectedRmData.length < 2 ? (
+            {selectedChartData.length < 2 ? (
               <div className="h-full flex items-center justify-center text-gray-500 font-inter text-sm text-center px-4">
                 Need at least 2 sessions of {selectedExercise} to show progression.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={selectedRmData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <LineChart data={selectedChartData as any[]} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" vertical={false} />
                   <XAxis dataKey="date" stroke="#718096" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis domain={[rmYMin, rmYMax]} stroke="#718096" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#1A202C', borderColor: '#ffd700', borderRadius: '8px' }}
                     itemStyle={{ color: '#ffd700', fontWeight: 'bold' }}
+                    formatter={(value: any) => [`${value} lbs`, yAxisLabel]}
                   />
-                  <Line type="monotone" dataKey="rm" name="Est. 1RM (lbs)" stroke="#ffd700" strokeWidth={3} dot={{ fill: '#1A202C', stroke: '#ffd700', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#ffd700' }} />
+                  <Line type="monotone" dataKey={yDataKey} name={yAxisLabel} stroke="#ffd700" strokeWidth={3} dot={{ fill: '#1A202C', stroke: '#ffd700', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#ffd700' }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
