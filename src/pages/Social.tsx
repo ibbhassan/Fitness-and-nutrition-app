@@ -83,14 +83,14 @@ export const Social: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 fade-in pb-24">
-      {/* Header */}
-      <div className="esports-panel flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-neon-blue/20 flex items-center justify-center border border-neon-blue/50">
+      <div className="esports-panel flex items-center gap-4 border-l-4 border-neon-blue relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/10 to-transparent pointer-events-none"></div>
+        <div className="w-12 h-12 rounded-xl bg-tactical-800 flex items-center justify-center border border-neon-blue/30 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
           <Users className="w-6 h-6 text-neon-blue" />
         </div>
-        <div>
-          <h1 className="text-2xl font-black italic tracking-tight text-white uppercase">Social</h1>
-          <p className="text-gray-400 text-sm">Find friends, compare ranks, and dominate together.</p>
+        <div className="relative z-10">
+          <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Social Hub</h1>
+          <p className="text-gray-400 text-sm font-inter">Find friends, compare ranks, and dominate together.</p>
         </div>
       </div>
 
@@ -98,34 +98,45 @@ export const Social: React.FC = () => {
         {/* Left Column: Friends List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="esports-panel space-y-4">
-            <h2 className="text-xl font-bold uppercase tracking-wider">Your Friends</h2>
+            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-tactical-700 pb-4">
+              <Users className="w-5 h-5 text-neon-blue" /> Your Friends
+            </h2>
             
             {friendsProfiles.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-12 text-gray-400 bg-tactical-900 border border-tactical-700 rounded-xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-neon-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                <p>No friends yet. Search for agents to add!</p>
+                <p className="font-rajdhani uppercase tracking-wider text-sm">No friends yet</p>
+                <p className="text-xs mt-1 text-gray-500">Search for agents to add to your roster!</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4 mt-2">
                 {friendsProfiles.map(friend => {
                   const rankInfo = getRankInfo(friend.level);
                   return (
-                    <div key={friend.uid} className="bg-dark-bg p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-4">
+                    <div key={friend.uid} className="bg-tactical-900 p-4 rounded-xl border border-tactical-700 flex flex-col sm:flex-row items-center gap-4 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,240,255,0.15)] transition-all relative overflow-hidden group border-l-4" style={{borderLeftColor: rankInfo.color}}>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                      
                       {friend.avatar && (
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar.seed}`} alt="Avatar" className="w-12 h-12 rounded-full bg-gray-800" />
+                        <div className="relative">
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar.seed}`} alt="Avatar" className="w-14 h-14 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md relative z-10" />
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-tactical-900 flex items-center justify-center z-20" style={{backgroundColor: rankInfo.color}}>
+                            <span className="text-[10px] font-bold text-black">{friend.level}</span>
+                          </div>
+                        </div>
                       )}
                       
-                      <div className="flex-1 text-center sm:text-left">
-                        <h3 className="font-bold text-lg">{friend.username}</h3>
-                        <p className="text-sm text-gray-400">Level {friend.level} • {rankInfo.tier} {rankInfo.division}</p>
+                      <div className="flex-1 text-center sm:text-left relative z-10">
+                        <h3 className="font-rajdhani font-bold text-lg text-white uppercase tracking-wider">{friend.username}</h3>
+                        <p className="text-sm font-medium" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
                       </div>
 
                       {friend.recentWorkout && (
-                        <div className="flex items-center gap-2 text-xs bg-black/40 px-3 py-2 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-2 text-xs bg-tactical-800 px-4 py-2.5 rounded-lg border border-tactical-600 relative z-10 shadow-inner">
                           <Dumbbell className="w-4 h-4 text-gray-400" />
                           <div className="flex flex-col">
-                            <span className="text-gray-400 truncate max-w-[120px]">{friend.recentWorkout.name}</span>
-                            <span className={clsx("font-bold", friend.recentWorkout.grade?.includes('S') ? "text-yellow-400" : "text-neon-blue")}>
+                            <span className="text-gray-400 font-inter truncate max-w-[120px]">{friend.recentWorkout.name}</span>
+                            <span className={clsx("font-bold", friend.recentWorkout.grade?.includes('S') ? "text-neon-gold drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" : "text-neon-blue")}>
                               Grade: {friend.recentWorkout.grade || 'N/A'}
                             </span>
                           </div>
@@ -144,25 +155,27 @@ export const Social: React.FC = () => {
           
           {/* Friend Requests */}
           <div className="esports-panel space-y-4">
-            <h2 className="text-xl font-bold uppercase tracking-wider flex items-center justify-between">
-              Requests
+            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center justify-between border-b border-tactical-700 pb-4">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-neon-gold" /> Requests
+              </div>
               {pendingRequests.length > 0 && (
-                <span className="bg-neon-red text-white text-xs px-2 py-1 rounded-full">{pendingRequests.length}</span>
+                <span className="bg-neon-gold text-black font-bold text-xs px-2 py-0.5 rounded-full">{pendingRequests.length}</span>
               )}
             </h2>
             
             {pendingRequests.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No pending requests</p>
+              <p className="text-sm text-gray-500 text-center py-4 font-inter">No pending requests</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 mt-2">
                 {pendingRequests.map(req => (
-                  <div key={req.id} className="bg-dark-bg p-3 rounded-lg border border-white/5 flex items-center justify-between">
-                    <span className="font-bold text-sm truncate max-w-[100px]">{req.fromUsername}</span>
+                  <div key={req.id} className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex items-center justify-between">
+                    <span className="font-rajdhani font-bold text-sm tracking-wider uppercase truncate max-w-[100px]">{req.fromUsername}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => handleRespond(req.id, req.fromUid, true)} className="p-2 bg-neon-green/20 hover:bg-neon-green/40 text-neon-green rounded-lg transition-colors">
+                      <button onClick={() => handleRespond(req.id, req.fromUid, true)} className="p-2 bg-tactical-800 border border-neon-green/30 hover:bg-neon-green/20 hover:border-neon-green text-neon-green rounded-lg transition-all shadow-[0_0_10px_rgba(0,255,100,0.1)] hover:shadow-[0_0_15px_rgba(0,255,100,0.3)]">
                         <Check className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleRespond(req.id, req.fromUid, false)} className="p-2 bg-neon-red/20 hover:bg-neon-red/40 text-neon-red rounded-lg transition-colors">
+                      <button onClick={() => handleRespond(req.id, req.fromUid, false)} className="p-2 bg-tactical-800 border border-neon-red/30 hover:bg-neon-red/20 hover:border-neon-red text-neon-red rounded-lg transition-all shadow-[0_0_10px_rgba(255,0,60,0.1)] hover:shadow-[0_0_15px_rgba(255,0,60,0.3)]">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -174,16 +187,18 @@ export const Social: React.FC = () => {
 
           {/* Search Users */}
           <div className="esports-panel space-y-4">
-            <h2 className="text-xl font-bold uppercase tracking-wider">Search Agents</h2>
-            <form onSubmit={handleSearch} className="flex gap-2">
+            <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-tactical-700 pb-4">
+              <Search className="w-5 h-5 text-neon-blue" /> Search Agents
+            </h2>
+            <form onSubmit={handleSearch} className="flex gap-2 mt-2">
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Username" 
-                className="esports-input flex-1"
+                className="flex-1 bg-tactical-900 border border-tactical-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] transition-all font-inter"
               />
-              <button type="submit" disabled={isSearching} className="esports-button flex items-center justify-center p-3">
+              <button type="submit" disabled={isSearching} className="bg-neon-blue text-black font-bold p-3 rounded-lg hover:bg-white hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.6)] transition-all shadow-[0_0_10px_rgba(0,240,255,0.3)] flex items-center justify-center">
                 <Search className="w-5 h-5" />
               </button>
             </form>
@@ -191,15 +206,15 @@ export const Social: React.FC = () => {
             {searchResults.length > 0 && (
               <div className="space-y-3 mt-4">
                 {searchResults.map(res => (
-                  <div key={res.uid} className="bg-dark-bg p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                  <div key={res.uid} className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex items-center justify-between group hover:border-neon-blue/50 transition-colors">
                     <div>
-                      <h4 className="font-bold text-sm">{res.username}</h4>
-                      <p className="text-xs text-gray-400">Level {res.level} {res.rank}</p>
+                      <h4 className="font-rajdhani font-bold text-sm tracking-wider uppercase text-white">{res.username}</h4>
+                      <p className="text-xs text-gray-400 font-inter">Level {res.level} • {res.rank}</p>
                     </div>
                     {profile.friends?.includes(res.uid) ? (
-                      <span className="text-xs text-gray-500 italic">Friends</span>
+                      <span className="text-xs text-neon-green font-bold bg-neon-green/10 px-2 py-1 rounded border border-neon-green/30">FRIENDS</span>
                     ) : (
-                      <button onClick={() => handleSendRequest(res.uid)} className="p-2 bg-neon-blue/20 hover:bg-neon-blue/40 text-neon-blue rounded-lg transition-colors">
+                      <button onClick={() => handleSendRequest(res.uid)} className="p-2 bg-tactical-800 border border-neon-blue/30 text-neon-blue rounded-lg transition-all hover:bg-neon-blue hover:text-black hover:shadow-[0_0_15px_rgba(0,240,255,0.5)]">
                         <UserPlus className="w-4 h-4" />
                       </button>
                     )}
