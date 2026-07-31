@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Activity, Calendar as CalendarIcon, Clock, Dumbbell } from 'lucide-react';
+import { ArrowLeft, Activity, Calendar as CalendarIcon, Clock, Dumbbell, UserMinus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getFriendFullProfile } from '../../services/socialService';
 import { getRankInfo } from '../../utils/rankUtils';
@@ -9,9 +9,10 @@ import type { WorkoutLog } from '../../types';
 interface FriendProfileProps {
   friendUid: string;
   onBack: () => void;
+  onRemoveFriend: () => void;
 }
 
-export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack }) => {
+export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack, onRemoveFriend }) => {
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
   const [friendData, setFriendData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -130,6 +131,16 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack 
               <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-8 h-8 object-contain drop-shadow-md" />
               <p className="text-lg font-bold uppercase tracking-wider drop-shadow-md" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
             </div>
+          </div>
+          
+          <div className="absolute top-4 right-4 z-20">
+            <button 
+              onClick={onRemoveFriend} 
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-rajdhani font-bold uppercase tracking-wider text-gray-400 hover:text-neon-red bg-tactical-800 border border-tactical-600 hover:border-neon-red/50 rounded-lg transition-all shadow-md hover:bg-neon-red/10"
+              title="Remove Friend"
+            >
+              <UserMinus className="w-4 h-4" /> Remove
+            </button>
           </div>
         </div>
       </div>

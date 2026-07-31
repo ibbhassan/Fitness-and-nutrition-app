@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend } from '../services/socialService';
-import { Search, UserPlus, UserMinus, Check, X, Users } from 'lucide-react';
+import { Search, UserPlus, Check, X, Users } from 'lucide-react';
 import type { FriendRequest } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 
@@ -100,7 +100,17 @@ export const Social: React.FC = () => {
   if (selectedFriendUid) {
     return (
       <div className="max-w-6xl mx-auto pb-24">
-        <FriendProfile friendUid={selectedFriendUid} onBack={() => setSelectedFriendUid(null)} />
+        <FriendProfile 
+          friendUid={selectedFriendUid} 
+          onBack={() => setSelectedFriendUid(null)} 
+          onRemoveFriend={() => {
+            const friend = friendsProfiles.find(f => f.uid === selectedFriendUid);
+            if (friend) {
+              handleRemoveFriend(selectedFriendUid, friend.username);
+              setSelectedFriendUid(null);
+            }
+          }}
+        />
       </div>
     );
   }
@@ -146,20 +156,20 @@ export const Social: React.FC = () => {
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 z-20" style={{backgroundColor: rankInfo.color}}></div>
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" style={{ background: `linear-gradient(90deg, ${rankInfo.color}, transparent)` }}></div>
                       
-                      <div className="flex items-center gap-4 pl-4 relative z-30">
+                      <div className="flex items-center gap-3 pl-3 relative z-30 flex-1 min-w-0">
                         {/* Avatar */}
                         <div className="relative shrink-0">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-12 h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
                         </div>
                         
                         {/* Name */}
-                        <h3 className="font-rajdhani font-bold text-lg text-white uppercase tracking-wider drop-shadow-md">{friend.username}</h3>
+                        <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md truncate">{friend.username}</h3>
                       </div>
 
                       {/* Rank & Actions (Right side) */}
-                      <div className="flex items-center gap-4 pr-2 relative z-30">
+                      <div className="flex items-center gap-3 pr-3 relative z-30 shrink-0">
                         {/* Level and Rank */}
-                        <div className="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-lg border border-tactical-700">
+                        <div className="flex items-center gap-2 sm:gap-3 bg-black/20 px-2 sm:px-3 py-1.5 rounded-lg border border-tactical-700">
                           <span className="text-xs font-black text-white" style={{color: rankInfo.color}}>LVL {friend.level || 1}</span>
                           <div className="w-px h-4 bg-tactical-600"></div>
                           <div className="flex items-center gap-1.5">
@@ -167,17 +177,6 @@ export const Social: React.FC = () => {
                             <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</span>
                           </div>
                         </div>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering the card click
-                            handleRemoveFriend(friend.uid, friend.username);
-                          }} 
-                          className="p-2 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10"
-                          title="Remove Friend"
-                        >
-                          <UserMinus className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   );
