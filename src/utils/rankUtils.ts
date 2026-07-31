@@ -30,21 +30,23 @@ export const getRankInfo = (level: number): { tier: RankTier; division: string; 
   let tierIndex = 0;
   let division = '';
 
-  if (level <= 35) {
+  const safeLevel = Math.max(1, level || 1);
+
+  if (safeLevel <= 35) {
     // 1-35
-    tierIndex = Math.floor((level - 1) / 5);
-    const divNumber = ((level - 1) % 5); 
+    tierIndex = Math.floor((safeLevel - 1) / 5);
+    const divNumber = ((safeLevel - 1) % 5); 
     const divisions = ['V', 'IV', 'III', 'II', 'I'];
     division = divisions[divNumber];
-  } else if (level === 36) {
+  } else if (safeLevel === 36) {
     tierIndex = 7; // Master
-  } else if (level === 37) {
+  } else if (safeLevel === 37) {
     tierIndex = 8; // Grandmaster
   } else {
     tierIndex = 9; // Challenger
   }
 
-  const tier = tiers[tierIndex];
+  const tier = tiers[tierIndex] || 'Iron';
   const crestUrl = `/images/ranks/${tier.toLowerCase()}.png`;
 
   return { tier, division, crestUrl, color: colors[tier] };
