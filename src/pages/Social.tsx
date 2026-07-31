@@ -103,8 +103,8 @@ export const Social: React.FC = () => {
           <Users className="w-6 h-6 text-neon-blue" />
         </div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Social Hub</h1>
-          <p className="text-gray-400 text-sm font-inter">Find friends, compare ranks, and dominate together.</p>
+          <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Friends List</h1>
+          <p className="text-gray-400 text-sm font-inter">Manage your roster, compare ranks, and dominate together.</p>
         </div>
       </div>
 
@@ -128,43 +128,68 @@ export const Social: React.FC = () => {
                 {friendsProfiles.map(friend => {
                   const rankInfo = getRankInfo(friend.level);
                   return (
-                    <div key={friend.uid} className="bg-tactical-900 p-4 rounded-xl border border-tactical-700 flex flex-col sm:flex-row items-center gap-4 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,240,255,0.15)] transition-all relative overflow-hidden group border-l-4" style={{borderLeftColor: rankInfo.color}}>
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    <div key={friend.uid} className="bg-tactical-900 p-0 rounded-xl border border-tactical-700 flex flex-col sm:flex-row items-center gap-4 hover:-translate-y-1 hover:shadow-[0_4px_20px_rgba(0,240,255,0.15)] transition-all relative overflow-hidden group">
+                      {/* Rank-colored left border & gradient background */}
+                      <div className="absolute left-0 top-0 bottom-0 w-2 z-20" style={{backgroundColor: rankInfo.color}}></div>
+                      <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20 pointer-events-none" style={{ background: `linear-gradient(90deg, ${rankInfo.color}, transparent)` }}></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"></div>
                       
-                      {friend.avatar && (
-                        <div className="relative">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar.seed}`} alt="Avatar" className="w-14 h-14 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md relative z-10" />
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-tactical-900 flex items-center justify-center z-20" style={{backgroundColor: rankInfo.color}}>
-                            <span className="text-[10px] font-bold text-black">{friend.level}</span>
+                      <div className="flex items-center gap-4 p-4 pl-6 relative z-30 w-full sm:w-auto">
+                        {/* Avatar & Level Badge */}
+                        <div className="relative shrink-0">
+                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.avatar?.seed || friend.username}`} alt="Avatar" className="w-16 h-16 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-lg" />
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded border border-tactical-900 flex items-center justify-center shadow-md whitespace-nowrap" style={{backgroundColor: rankInfo.color}}>
+                            <span className="text-[10px] font-black text-black">LVL {friend.level || 1}</span>
                           </div>
                         </div>
-                      )}
-                      
-                      <div className="flex-1 text-center sm:text-left relative z-10">
-                        <h3 className="font-rajdhani font-bold text-lg text-white uppercase tracking-wider">{friend.username}</h3>
-                        <p className="text-sm font-medium" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
+                        
+                        <div className="flex-1 text-left">
+                          <h3 className="font-rajdhani font-bold text-xl text-white uppercase tracking-wider drop-shadow-md">{friend.username}</h3>
+                          
+                          {/* Rank Display with Crest */}
+                          <div className="flex items-center gap-2 mt-1">
+                            <img src={rankInfo.crestUrl} alt={rankInfo.tier} className="w-5 h-5 object-contain" />
+                            <p className="text-sm font-bold uppercase tracking-wider drop-shadow-md" style={{color: rankInfo.color}}>{rankInfo.tier} {rankInfo.division}</p>
+                          </div>
+                        </div>
                       </div>
 
-                      {friend.recentWorkout && (
-                        <div className="flex items-center gap-2 text-xs bg-tactical-800 px-4 py-2.5 rounded-lg border border-tactical-600 relative z-10 shadow-inner">
-                          <Dumbbell className="w-4 h-4 text-gray-400" />
-                          <div className="flex flex-col">
-                            <span className="text-gray-400 font-inter truncate max-w-[120px]">{friend.recentWorkout.name}</span>
-                            <span className={clsx("font-bold", friend.recentWorkout.grade?.includes('S') ? "text-neon-gold drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" : "text-neon-blue")}>
-                              Grade: {friend.recentWorkout.grade || 'N/A'}
-                            </span>
+                      {/* Right Side Stats / Actions */}
+                      <div className="flex flex-col sm:flex-row items-center gap-3 p-4 sm:ml-auto relative z-30 w-full sm:w-auto border-t sm:border-t-0 border-tactical-700 bg-black/20">
+                        {friend.recentWorkout ? (
+                          <div className="flex items-center gap-3 text-xs">
+                            <div className="w-10 h-10 rounded-lg bg-tactical-800 border border-tactical-600 flex items-center justify-center">
+                              <Dumbbell className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-400 font-inter text-[10px] uppercase tracking-wider">Last Mission</span>
+                              <span className="text-white font-rajdhani font-bold truncate max-w-[120px]">{friend.recentWorkout.name}</span>
+                              <span className={clsx("font-black font-rajdhani text-sm tracking-widest", friend.recentWorkout.grade?.includes('S') ? "text-neon-gold drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" : "text-neon-blue")}>
+                                {friend.recentWorkout.grade || 'N/A'}
+                              </span>
+                            </div>
                           </div>
+                        ) : (
+                          <div className="flex items-center gap-3 text-xs opacity-50">
+                            <div className="w-10 h-10 rounded-lg bg-tactical-800 border border-tactical-600 flex items-center justify-center">
+                              <Dumbbell className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-inter text-[10px] uppercase tracking-wider">Last Mission</span>
+                              <span className="text-gray-400 font-rajdhani font-bold">No Intel</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="sm:ml-4 sm:pl-4 sm:border-l border-tactical-700">
+                          <button 
+                            onClick={() => handleRemoveFriend(friend.uid, friend.username)} 
+                            className="p-2.5 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10 group-hover:shadow-[0_0_10px_rgba(255,0,0,0.1)]"
+                            title="Remove Friend"
+                          >
+                            <UserMinus className="w-4 h-4" />
+                          </button>
                         </div>
-                      )}
-                      
-                      <div className="relative z-10 ml-auto pl-4">
-                        <button 
-                          onClick={() => handleRemoveFriend(friend.uid, friend.username)} 
-                          className="p-2 text-gray-500 hover:text-neon-red bg-tactical-800 border border-transparent hover:border-neon-red/30 rounded-lg transition-all hover:bg-neon-red/10"
-                          title="Remove Friend"
-                        >
-                          <UserMinus className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
                   );
