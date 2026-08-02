@@ -46,9 +46,9 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
           </div>
 
           {/* LP Progress Bar */}
-          <div className="h-4 w-full bg-tactical-900 rounded-full overflow-hidden border border-tactical-700 relative">
+          <div className="h-4 w-full bg-tactical-800 shadow-inner rounded-full overflow-hidden border border-tactical-700 relative">
             <div 
-              className={clsx("h-full relative", color.replace('text-', 'bg-'))}
+              className={clsx("h-full relative shadow-[0_0_10px_rgba(255,255,255,0.2)]", color.replace('text-', 'bg-'))}
               style={{ width: `${progressPercent}%` }}
             >
               {/* Glow effect on the bar */}
