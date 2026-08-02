@@ -22,19 +22,11 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
 
     const startScanner = async () => {
       try {
-        const videoInputDevices = await codeReader.listVideoInputDevices();
-        if (videoInputDevices.length > 0) {
-          // Try to find the back camera
-          let selectedDeviceId = videoInputDevices[0].deviceId;
-          for (const device of videoInputDevices) {
-            if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('environment')) {
-              selectedDeviceId = device.deviceId;
-              break;
-            }
-          }
-
-          if (!isCleanedUp && videoRef.current) {
-            codeReader.decodeFromVideoDevice(selectedDeviceId, videoRef.current, async (result, err) => {
+        if (!isCleanedUp && videoRef.current) {
+          codeReader.decodeFromConstraints(
+            { video: { facingMode: 'environment' } },
+            videoRef.current,
+            async (result, err) => {
               if (result) {
                 // Successfully decoded
                 if (codeReaderRef.current) {
@@ -45,10 +37,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
               if (err && !(err instanceof NotFoundException)) {
                 console.error(err);
               }
-            });
-          }
-        } else {
-          setError('No cameras found.');
+            }
+          );
         }
       } catch (err) {
         if (!isCleanedUp) {
