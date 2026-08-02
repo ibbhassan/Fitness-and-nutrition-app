@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
@@ -232,6 +232,7 @@ const ExerciseCard = ({
 export const WorkoutLogger: React.FC = () => {
   const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
+  const isFinishingRef = useRef(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
 
@@ -477,6 +478,8 @@ export const WorkoutLogger: React.FC = () => {
 
   const handleFinishWorkout = () => {
     if (!activeWorkout) return;
+    if (isFinishingRef.current) return;
+    isFinishingRef.current = true;
     
     // Calculate volume
     let totalVolume = 0;
@@ -601,6 +604,7 @@ export const WorkoutLogger: React.FC = () => {
 
   const closeCelebration = () => {
     setShowCelebration(false);
+    isFinishingRef.current = false;
     abortWorkout();
   };
 
