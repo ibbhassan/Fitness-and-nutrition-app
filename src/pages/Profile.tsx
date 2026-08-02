@@ -283,8 +283,8 @@ export const Profile: React.FC = () => {
               <div className="bg-tactical-800 p-3 rounded-lg border border-tactical-700 relative group">
                 <div className="flex justify-between items-start">
                   <p className="text-gray-500 text-xs uppercase tracking-wider">Current Weight</p>
-                  <button onClick={() => setShowWeightModal(true)} className="text-neon-blue hover:text-white transition-colors bg-neon-blue/10 hover:bg-neon-blue/30 p-1 rounded">
-                    <Settings className="w-3.5 h-3.5" />
+                  <button onClick={() => setShowWeightModal(true)} className="text-neon-blue hover:text-white transition-colors bg-neon-blue/10 hover:bg-neon-blue/40 p-1.5 rounded flex items-center justify-center">
+                    <Settings className="w-4 h-4" />
                   </button>
                 </div>
                 <p className="text-white font-bold text-lg">{biometrics?.weightLbs || '--'} lbs</p>
