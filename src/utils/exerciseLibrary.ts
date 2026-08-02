@@ -1,12 +1,12 @@
 import type { ExerciseDefinition } from '../types';
 
 const MUSCLE_GROUP_IMAGES = {
-  Chest: '/images/anatomy_bench_1780847028088.png',
-  Back: '/images/anatomy_t_bar_row_v2_1785266905763.jpg',
-  Legs: '/images/anatomy_squat_1780847015192.png',
-  Shoulders: '/images/anatomy_arnold_press_1785266920824.jpg',
-  Arms: '/images/anatomy_hammer_curls_1785266960008.jpg',
-  Core: '/images/anatomy_pushups_1780847311252.png'
+  Chest: '/images/anatomy/3d_chest.jpg',
+  Back: '/images/anatomy/3d_back.jpg',
+  Legs: '/images/anatomy/3d_legs.jpg',
+  Shoulders: '/images/anatomy/3d_shoulders.jpg',
+  Arms: '/images/anatomy/3d_arms.jpg',
+  Core: '/images/anatomy/3d_core.jpg'
 };
 
 export const exerciseLibrary: ExerciseDefinition[] = [
