@@ -159,11 +159,10 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack,
               {Math.floor(profile?.lp || 0)} / {getRequiredEpForLevel(profile?.level || 1)} EP
             </span>
           </div>
-          <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">
+          <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-tactical-600 shadow-inner">
             <div 
-              className="h-full relative"
+              className="h-full relative bg-neon-blue shadow-[0_0_10px_rgba(0,240,255,0.8)]"
               style={{ 
-                backgroundColor: rankInfo.color,
                 width: `${Math.min(100, Math.round(((profile?.lp || 0) / getRequiredEpForLevel(profile?.level || 1)) * 100))}%` 
               }}
             >

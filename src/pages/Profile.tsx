@@ -171,9 +171,9 @@ export const Profile: React.FC = () => {
               {Math.floor(profile?.lp || 0)} / {getRequiredEpForLevel(profile?.level || 1)} EP
             </span>
           </div>
-          <div className="h-2 w-full bg-tactical-800 rounded-full overflow-hidden border border-tactical-600">
+          <div className="h-2 w-full bg-black/60 rounded-full overflow-hidden border border-tactical-600 shadow-inner">
             <div 
-              className={clsx("h-full relative", (profile ? getRankInfo(profile.level).color : getRankInfo(1).color).replace('text-', 'bg-'))}
+              className="h-full relative bg-neon-blue shadow-[0_0_10px_rgba(0,240,255,0.8)]"
               style={{ width: `${Math.min(100, Math.round(((profile?.lp || 0) / getRequiredEpForLevel(profile?.level || 1)) * 100))}%` }}
             >
               <div className="absolute top-0 right-0 bottom-0 w-4 bg-gradient-to-l from-white/50 to-transparent" />
