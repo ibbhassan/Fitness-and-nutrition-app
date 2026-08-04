@@ -152,19 +152,31 @@ export const Dashboard: React.FC = () => {
 
   const getUpcomingWorkout = () => {
     if (!scheduledWorkoutDays || scheduledWorkoutDays.length === 0) return { title: 'No Workouts Scheduled', subtitle: 'Update your schedule in settings' };
+    
     const today = new Date().getDay();
+    const formatTitle = (splitName: string | undefined) => {
+      const name = splitName || 'Workout';
+      return name.toLowerCase().includes('day') || name.toLowerCase().includes('workout') || name.toLowerCase() === 'rest' 
+        ? name 
+        : `${name} Day`;
+    };
+
     if (scheduledWorkoutDays.includes(today)) {
-      return { title: workoutSplit[today] || 'Workout', subtitle: 'Scheduled for Today' };
+      return { title: formatTitle(workoutSplit[today]), subtitle: 'Today' };
     }
+    
     // Find next scheduled day
     let nextDay = today + 1;
+    let daysAway = 1;
     for (let i = 0; i < 7; i++) {
       if (nextDay > 6) nextDay = 0;
       if (scheduledWorkoutDays.includes(nextDay)) {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return { title: workoutSplit[nextDay] || 'Workout', subtitle: `Upcoming on ${days[nextDay]}` };
+        const subtitle = daysAway === 1 ? 'Tomorrow' : `Upcoming on ${days[nextDay]}`;
+        return { title: formatTitle(workoutSplit[nextDay]), subtitle };
       }
       nextDay++;
+      daysAway++;
     }
     return { title: 'Rest Day', subtitle: 'Enjoy your recovery' };
   };
