@@ -127,9 +127,15 @@ export const Profile: React.FC = () => {
           
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neon-blue flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)] shrink-0 bg-tactical-800">
-                <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110" />
-              </div>
+              <button 
+                onClick={() => setShowAvatarModal(true)}
+                className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neon-blue flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)] shrink-0 bg-tactical-800 group"
+              >
+                <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110 group-hover:opacity-50 transition-opacity" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit2 className="w-6 h-6 text-white drop-shadow-md" />
+                </div>
+              </button>
               <div>
                 <h1 className="esports-heading text-3xl text-white tracking-widest break-all">
                   {user?.username || 'AGENT'}
