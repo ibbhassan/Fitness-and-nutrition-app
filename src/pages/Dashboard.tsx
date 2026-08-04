@@ -199,14 +199,14 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-          {/* Active Quests */}
+          {/* Active Challenges */}
           <div className="esports-panel p-6 shrink-0">
             <h2 className="esports-heading text-xl text-white mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-neon-blue" /> Active Quests
+              <Award className="w-5 h-5 text-neon-blue" /> Active Challenges
             </h2>
             
             <div className="space-y-3">
-              {/* Daily Quest */}
+              {/* Daily Challenge */}
               <button 
                 onClick={() => toggleManualQuest(dailyStepsKey, 10)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", isDailyStepsComplete ? "opacity-50" : "")}
@@ -214,7 +214,7 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Quest</span>
+                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
                     <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyStepsComplete ? "line-through" : "")}>Hit 10k Steps</h3>
                   </div>
                   {isDailyStepsComplete ? (
@@ -232,7 +232,7 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Quest</span>
+                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
                     <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions['dailyWater'] ? "line-through" : "")}>Drink 1 Gallon of Water</h3>
                   </div>
                   {manualQuestCompletions['dailyWater'] ? (
@@ -243,7 +243,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </button>
 
-              {/* Weekly Quests */}
+              {/* Weekly Challenges */}
               <button 
                 onClick={() => toggleManualQuest(weeklyWorkoutsKey, 100)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyQuestComplete ? "opacity-50" : "")}
@@ -251,7 +251,7 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Quest</span>
+                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
                     <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyQuestComplete ? "line-through" : "")}>Complete {targetWorkoutsPerWeek} Workouts</h3>
                   </div>
                   {isWeeklyQuestComplete ? (
@@ -269,7 +269,7 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Quest</span>
+                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
                     <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyPrComplete ? "line-through" : "")}>Hit a new PR</h3>
                   </div>
                   {isWeeklyPrComplete ? (
@@ -287,7 +287,7 @@ export const Dashboard: React.FC = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Quest</span>
+                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
                     <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyNutritionComplete ? "line-through" : "")}>Track Nutrition 7 Days</h3>
                   </div>
                   {isWeeklyNutritionComplete ? (
