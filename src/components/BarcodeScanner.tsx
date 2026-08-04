@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
-import { X, Loader2, Camera } from 'lucide-react';
+import { X, Loader2, Camera, RefreshCw } from 'lucide-react';
 import type { FoodItem } from '../types';
 
 interface BarcodeScannerProps {
@@ -12,29 +12,66 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
+  // Initialize CodeReader and fetch devices
   useEffect(() => {
-    let isCleanedUp = false;
     const codeReader = new BrowserMultiFormatReader();
     codeReaderRef.current = codeReader;
+
+    const initCamera = async () => {
+      try {
+        const videoInputDevices = await codeReader.listVideoInputDevices();
+        if (videoInputDevices.length > 0) {
+          setDevices(videoInputDevices);
+          
+          // Heuristic: try to select a 'back' camera if available
+          const backCamera = videoInputDevices.find(d => d.label.toLowerCase().includes('back'));
+          const initialDevice = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
+          setSelectedDeviceId(initialDevice);
+        } else {
+          setError("No cameras found on this device.");
+        }
+      } catch (err) {
+        setError("Failed to access camera. Please check permissions.");
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
+    };
+  }, []);
+
+  // Start scanning when selected device changes
+  useEffect(() => {
+    if (!selectedDeviceId || !videoRef.current || !codeReaderRef.current) return;
+
+    let isCleanedUp = false;
+    const codeReader = codeReaderRef.current;
+    codeReader.reset();
 
     const startScanner = async () => {
       try {
         if (!isCleanedUp && videoRef.current) {
-          codeReader.decodeFromConstraints(
-            { video: { facingMode: 'environment' } },
+          await codeReader.decodeFromVideoDevice(
+            selectedDeviceId,
             videoRef.current,
             async (result, err) => {
               if (result) {
                 // Successfully decoded
-                if (codeReaderRef.current) {
-                  codeReaderRef.current.reset(); // Stop scanning
-                }
+                codeReader.reset(); // Stop scanning
                 await handleBarcodeMatch(result.getText());
               }
               if (err && !(err instanceof NotFoundException)) {
+                // Ignore NotFoundException as it's thrown constantly while scanning
                 console.error(err);
               }
             }
@@ -42,7 +79,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         }
       } catch (err) {
         if (!isCleanedUp) {
-          setError("Failed to start camera. Please check permissions.");
+          setError("Failed to start camera. It may be in use by another application.");
         }
       }
     };
@@ -51,11 +88,9 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
 
     return () => {
       isCleanedUp = true;
-      if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
-      }
+      codeReader.reset();
     };
-  }, []);
+  }, [selectedDeviceId]);
 
   const handleBarcodeMatch = async (barcode: string) => {
     setIsLoading(true);
@@ -104,10 +139,6 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
       } else {
         setError('Product not found. Please try again or enter manually.');
         setIsLoading(false);
-        // Restart scanner if product not found
-        if (codeReaderRef.current) {
-             // Let user try again manually instead of auto restarting to avoid loop
-        }
       }
     } catch (err) {
       setError('Network error checking database.');
@@ -150,6 +181,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
     }
   };
 
+  const cycleCamera = () => {
+    if (devices.length <= 1) return;
+    const currentIndex = devices.findIndex(d => d.deviceId === selectedDeviceId);
+    const nextIndex = (currentIndex + 1) % devices.length;
+    setSelectedDeviceId(devices[nextIndex].deviceId);
+    setError(''); // clear any camera errors
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[60] px-4 fade-in">
       <div className="absolute top-6 right-6">
@@ -158,7 +197,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
         </button>
       </div>
 
-      <div className="w-full max-w-md bg-tactical-800 p-4 rounded-xl border border-tactical-600 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-md bg-tactical-800 p-4 rounded-xl border border-tactical-600 shadow-[0_0_30px_rgba(0,0,0,0.8)] max-h-[90vh] overflow-y-auto custom-scrollbar">
         <h3 className="esports-heading text-xl text-white mb-4 text-center">Scan Barcode</h3>
         
         <div className="w-full bg-black rounded-lg overflow-hidden min-h-[250px] relative border-2 border-tactical-700">
@@ -173,7 +212,24 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
             <div className="w-[80%] h-[150px] border-2 border-neon-blue rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"></div>
           </div>
+          
+          {/* Camera Switcher Button */}
+          {devices.length > 1 && (
+            <button 
+              onClick={cycleCamera}
+              className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full border border-tactical-500 backdrop-blur-sm transition-all"
+              title="Switch Camera (Fix for blurry iPhone cameras)"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          )}
         </div>
+
+        {devices.length > 1 && (
+          <p className="text-center text-xs text-gray-400 mt-2 font-inter">
+            Is the camera blurry? Tap the switch icon to try another lens.
+          </p>
+        )}
 
         {isLoading && (
           <div className="mt-4 flex flex-col items-center text-neon-blue">
@@ -209,7 +265,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
             />
             <button 
               onClick={submitManualBarcode}
-              className="bg-neon-blue text-black px-4 py-2 rounded-lg font-rajdhani uppercase tracking-wider font-bold hover:bg-blue-400 transition-colors"
+              className="bg-neon-blue text-black px-4 py-2 rounded-lg font-rajdhani uppercase tracking-wider font-bold hover:bg-blue-400 transition-colors shrink-0"
             >
               Search
             </button>
