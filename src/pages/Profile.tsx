@@ -27,7 +27,7 @@ export const Profile: React.FC = () => {
   const [selectedGoal, setSelectedGoal] = useState<'Cut' | 'Bulk' | 'Maintenance'>(profile?.currentMode || 'Maintenance');
   const [localSplit, setLocalSplit] = useState<Record<number, string>>(workoutSplit || {});
 
-  const avatarUrl = '/images/avatar_3d.png';
+  const avatarUrl = typeof profile.avatar === 'string' ? profile.avatar : '/images/avatar_3d.png';
 
   const calculateNewMacros = (newGoal: 'Cut' | 'Bulk' | 'Maintenance'): DailyNutrition => {
     if (!biometrics) return nutrition;

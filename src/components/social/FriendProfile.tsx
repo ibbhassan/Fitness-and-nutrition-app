@@ -119,7 +119,7 @@ export const FriendProfile: React.FC<FriendProfileProps> = ({ friendUid, onBack,
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: `linear-gradient(180deg, ${rankInfo.color}, transparent)` }}></div>
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
           <div className="relative shrink-0">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.avatar?.seed || user.username}`} alt="Avatar" className="w-24 h-24 rounded-full bg-tactical-800 border-4 shadow-lg" style={{borderColor: rankInfo.color}} />
+            <img src={typeof profile.avatar === 'string' ? profile.avatar : '/images/avatar_3d.png'} alt="Avatar" className="w-24 h-24 rounded-full bg-tactical-800 border-4 shadow-lg object-cover" style={{borderColor: rankInfo.color}} />
           </div>
           
           <div className="text-center sm:text-left flex-1 mt-2 sm:mt-0">

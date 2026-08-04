@@ -20,18 +20,7 @@ export interface MatchHistoryEntry {
   lpChange: number;
 }
 
-export interface AvatarConfig {
-  seed: string;
-  skinColor: string;
-  top: string;
-  hairColor: string;
-  clothingColor: string;
-  accessories?: string;
-  facialHair?: string;
-  eyes?: string;
-  mouth?: string;
-  body?: string;
-}
+export type AvatarConfig = string;
 
 export interface UserProfile {
   name: string;

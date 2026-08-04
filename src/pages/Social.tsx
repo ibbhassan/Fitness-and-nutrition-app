@@ -165,7 +165,7 @@ export const Social: React.FC = () => {
                       <div className="flex items-center gap-3 pl-3 relative z-30 flex-1 min-w-0">
                         {/* Avatar */}
                         <div className="relative shrink-0">
-                          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${friend.profile?.avatar?.seed || friend.username}`} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md" />
+                          <img src={typeof friend.profile?.avatar === 'string' ? friend.profile.avatar : '/images/avatar_3d.png'} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md object-cover" />
                         </div>
                         
                         {/* Name */}
@@ -270,7 +270,7 @@ export const Social: React.FC = () => {
               {searchResults.map(res => (
                 <div key={res.uid} className="bg-tactical-800 p-3 rounded-lg border border-tactical-600 flex items-center justify-between group hover:border-neon-blue/50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${res.avatar?.seed || res.username}`} alt="Avatar" className="w-10 h-10 rounded-full bg-tactical-900 border border-tactical-700" />
+                    <img src={typeof res.avatar === 'string' ? res.avatar : '/images/avatar_3d.png'} alt="Avatar" className="w-10 h-10 rounded-full bg-tactical-900 border border-tactical-700 object-cover" />
                     <div>
                       <h4 className="font-rajdhani font-bold text-base tracking-wider uppercase text-white">{res.username}</h4>
                       <p className="text-xs text-gray-400 font-inter">Level {res.level} • {res.rank}</p>
