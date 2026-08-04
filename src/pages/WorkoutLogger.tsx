@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { getLocalDateString } from '../utils/dateUtils';
 import { CalendarModal } from '../components/CalendarModal';
@@ -229,6 +229,209 @@ const ExerciseCard = ({
   );
 };
 
+type WorkoutCategory = {
+  id: string;
+  title: string;
+  description: string;
+  workouts: WorkoutPreset[];
+};
+
+const createSets = (numSets: number, reps: number): LoggedSet[] => {
+  return Array.from({ length: numSets }).map((_, i) => ({
+    id: `${Date.now()}-${i}`,
+    reps: reps,
+    weight: 0,
+    type: 'Normal',
+    completed: false
+  }));
+};
+
+const RECOMMENDED_WORKOUT_CATEGORIES: WorkoutCategory[] = [
+  {
+    id: 'cat-ppl',
+    title: 'Push / Pull / Legs (PPL)',
+    description: 'The classic 3-day split, focusing on movement patterns.',
+    workouts: [
+      { 
+        id: 'rec-ppl-1', 
+        name: 'Push', 
+        exercises: [
+          { id: '1', name: 'Bench Press', sets: createSets(4, 8) }, 
+          { id: '2', name: 'Overhead Press', sets: createSets(3, 10) }, 
+          { id: '3', name: 'Incline Dumbbell Press', sets: createSets(3, 10) },
+          { id: '4', name: 'Lateral Raises', sets: createSets(4, 15) },
+          { id: '5', name: 'Tricep Extensions', sets: createSets(3, 12) },
+          { id: '6', name: 'Skull Crushers', sets: createSets(3, 12) }
+        ] 
+      },
+      { 
+        id: 'rec-ppl-2', 
+        name: 'Pull', 
+        exercises: [
+          { id: '1', name: 'Deadlift', sets: createSets(3, 5) }, 
+          { id: '2', name: 'Pull-ups', sets: createSets(3, 10) }, 
+          { id: '3', name: 'Barbell Row', sets: createSets(3, 8) },
+          { id: '4', name: 'Face Pulls', sets: createSets(3, 15) },
+          { id: '5', name: 'Bicep Curls', sets: createSets(3, 12) },
+          { id: '6', name: 'Hammer Curls', sets: createSets(3, 12) }
+        ] 
+      },
+      { 
+        id: 'rec-ppl-3', 
+        name: 'Legs', 
+        exercises: [
+          { id: '1', name: 'Squat', sets: createSets(4, 8) }, 
+          { id: '2', name: 'Leg Press', sets: createSets(3, 12) }, 
+          { id: '3', name: 'Romanian Deadlift (RDL)', sets: createSets(3, 10) },
+          { id: '4', name: 'Leg Extensions', sets: createSets(3, 15) },
+          { id: '5', name: 'Leg Curls', sets: createSets(3, 15) },
+          { id: '6', name: 'Calf Raises', sets: createSets(4, 20) }
+        ] 
+      }
+    ]
+  },
+  {
+    id: 'cat-ul',
+    title: 'Upper / Lower',
+    description: 'A 4-day split, alternating upper and lower body.',
+    workouts: [
+      {
+        id: 'rec-ul-1',
+        name: 'Upper Body',
+        exercises: [
+          { id: '1', name: 'Bench Press', sets: createSets(4, 8) },
+          { id: '2', name: 'Barbell Row', sets: createSets(4, 8) },
+          { id: '3', name: 'Overhead Press', sets: createSets(3, 10) },
+          { id: '4', name: 'Lat Pulldown', sets: createSets(3, 10) },
+          { id: '5', name: 'Bicep Curls', sets: createSets(3, 12) },
+          { id: '6', name: 'Tricep Pushdowns', sets: createSets(3, 12) }
+        ]
+      },
+      {
+        id: 'rec-ul-2',
+        name: 'Lower Body',
+        exercises: [
+          { id: '1', name: 'Squat', sets: createSets(4, 8) },
+          { id: '2', name: 'Romanian Deadlift (RDL)', sets: createSets(4, 8) },
+          { id: '3', name: 'Leg Press', sets: createSets(3, 12) },
+          { id: '4', name: 'Leg Curls', sets: createSets(3, 15) },
+          { id: '5', name: 'Calf Raises', sets: createSets(4, 20) }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'cat-wf',
+    title: 'Women\'s Focus (Glute & Leg Heavy)',
+    description: 'A 6-day split designed around lower body development (4x legs, 2x upper).',
+    workouts: [
+      {
+        id: 'rec-wf-1',
+        name: 'Legs 1 (Glutes & Hams)',
+        exercises: [
+          { id: '1', name: 'Hip Thrusts', sets: createSets(4, 10) },
+          { id: '2', name: 'Romanian Deadlift (RDL)', sets: createSets(4, 10) },
+          { id: '3', name: 'Bulgarian Split Squats', sets: createSets(3, 12) },
+          { id: '4', name: 'Leg Curls', sets: createSets(3, 15) },
+          { id: '5', name: 'Glute Kickbacks', sets: createSets(3, 15) }
+        ]
+      },
+      {
+        id: 'rec-wf-2',
+        name: 'Upper 1 (Back & Shoulders)',
+        exercises: [
+          { id: '1', name: 'Lat Pulldown', sets: createSets(3, 10) },
+          { id: '2', name: 'Seated Cable Row', sets: createSets(3, 12) },
+          { id: '3', name: 'Overhead Press', sets: createSets(3, 10) },
+          { id: '4', name: 'Lateral Raises', sets: createSets(4, 15) },
+          { id: '5', name: 'Face Pulls', sets: createSets(3, 15) }
+        ]
+      },
+      {
+        id: 'rec-wf-3',
+        name: 'Legs 2 (Quads & Calves)',
+        exercises: [
+          { id: '1', name: 'Squat', sets: createSets(4, 8) },
+          { id: '2', name: 'Leg Press', sets: createSets(3, 12) },
+          { id: '3', name: 'Leg Extensions', sets: createSets(3, 15) },
+          { id: '4', name: 'Walking Lunges', sets: createSets(3, 12) },
+          { id: '5', name: 'Calf Raises', sets: createSets(4, 20) }
+        ]
+      },
+      {
+        id: 'rec-wf-4',
+        name: 'Upper 2 (Chest & Arms)',
+        exercises: [
+          { id: '1', name: 'Incline Dumbbell Press', sets: createSets(3, 10) },
+          { id: '2', name: 'Push-ups', sets: createSets(3, 15) },
+          { id: '3', name: 'Bicep Curls', sets: createSets(3, 12) },
+          { id: '4', name: 'Tricep Extensions', sets: createSets(3, 12) }
+        ]
+      },
+      {
+        id: 'rec-wf-5',
+        name: 'Legs 3 (Glutes Focus)',
+        exercises: [
+          { id: '1', name: 'Hip Thrusts', sets: createSets(4, 10) },
+          { id: '2', name: 'Cable Pull-throughs', sets: createSets(3, 15) },
+          { id: '3', name: 'Step-ups', sets: createSets(3, 12) },
+          { id: '4', name: 'Abductor Machine', sets: createSets(3, 15) }
+        ]
+      },
+      {
+        id: 'rec-wf-6',
+        name: 'Legs 4 (Full Legs & Plyo)',
+        exercises: [
+          { id: '1', name: 'Front Squats', sets: createSets(3, 10) },
+          { id: '2', name: 'Jump Squats', sets: createSets(3, 15) },
+          { id: '3', name: 'Kettlebell Swings', sets: createSets(3, 15) },
+          { id: '4', name: 'Calf Raises', sets: createSets(4, 20) }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'cat-fb',
+    title: 'Full Body',
+    description: 'A 3-day split hitting the entire body each session.',
+    workouts: [
+      {
+        id: 'rec-fb-1',
+        name: 'Full Body A',
+        exercises: [
+          { id: '1', name: 'Squat', sets: createSets(3, 8) },
+          { id: '2', name: 'Bench Press', sets: createSets(3, 8) },
+          { id: '3', name: 'Barbell Row', sets: createSets(3, 8) },
+          { id: '4', name: 'Overhead Press', sets: createSets(3, 10) },
+          { id: '5', name: 'Leg Curls', sets: createSets(3, 12) }
+        ]
+      },
+      {
+        id: 'rec-fb-2',
+        name: 'Full Body B',
+        exercises: [
+          { id: '1', name: 'Deadlift', sets: createSets(3, 5) },
+          { id: '2', name: 'Pull-ups', sets: createSets(3, 10) },
+          { id: '3', name: 'Incline Dumbbell Press', sets: createSets(3, 10) },
+          { id: '4', name: 'Leg Press', sets: createSets(3, 12) },
+          { id: '5', name: 'Lateral Raises', sets: createSets(3, 15) }
+        ]
+      },
+      {
+        id: 'rec-fb-3',
+        name: 'Full Body C',
+        exercises: [
+          { id: '1', name: 'Bulgarian Split Squats', sets: createSets(3, 10) },
+          { id: '2', name: 'Lat Pulldown', sets: createSets(3, 10) },
+          { id: '3', name: 'Push-ups', sets: createSets(3, 15) },
+          { id: '4', name: 'Face Pulls', sets: createSets(3, 15) },
+          { id: '5', name: 'Calf Raises', sets: createSets(4, 20) }
+        ]
+      }
+    ]
+  }
+];
+
 export const WorkoutLogger: React.FC = () => {
   const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
@@ -238,6 +441,7 @@ export const WorkoutLogger: React.FC = () => {
 
   const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const shiftDate = (days: number) => {
     const d = new Date(viewDate + 'T12:00:00');
@@ -434,47 +638,6 @@ export const WorkoutLogger: React.FC = () => {
     </AnimatePresence>
   );
 
-  const getRecommendedPresets = (): WorkoutPreset[] => {
-    const createSets = (numSets: number, reps: number): LoggedSet[] => {
-      return Array.from({ length: numSets }).map((_, i) => ({
-        id: `${Date.now()}-${i}`,
-        reps: reps,
-        weight: 0,
-        type: 'Normal',
-        completed: false
-      }));
-    };
-
-    return [
-      { 
-        id: 'rec-1', 
-        name: 'Push', 
-        exercises: [
-          { id: '1', name: 'Bench Press', sets: createSets(4, 8) }, 
-          { id: '2', name: 'Overhead Press', sets: createSets(3, 10) }, 
-          { id: '3', name: 'Tricep Extensions', sets: createSets(3, 12) }
-        ] 
-      },
-      { 
-        id: 'rec-2', 
-        name: 'Pull', 
-        exercises: [
-          { id: '1', name: 'Barbell Row', sets: createSets(4, 8) }, 
-          { id: '2', name: 'Pull-ups', sets: createSets(3, 10) }, 
-          { id: '3', name: 'Bicep Curls', sets: createSets(3, 12) }
-        ] 
-      },
-      { 
-        id: 'rec-3', 
-        name: 'Legs', 
-        exercises: [
-          { id: '1', name: 'Squat', sets: createSets(4, 8) }, 
-          { id: '2', name: 'Leg Press', sets: createSets(3, 12) }, 
-          { id: '3', name: 'Calf Raises', sets: createSets(4, 20) }
-        ] 
-      }
-    ];
-  };
 
   const handleFinishWorkout = () => {
     if (!activeWorkout) return;
@@ -856,26 +1019,62 @@ export const WorkoutLogger: React.FC = () => {
           <h2 className="text-xl font-rajdhani font-bold text-neon-blue uppercase tracking-wider mb-4 flex items-center">
             <Dumbbell className="w-5 h-5 mr-2" /> Recommended For You
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getRecommendedPresets().map(preset => (
-              <div key={preset.id} className="bg-tactical-900 border border-neon-blue/30 rounded-xl p-5 hover:border-neon-blue transition-colors group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-neon-blue/10 rounded-bl-full -mr-8 -mt-8 group-hover:bg-neon-blue/20 transition-colors" />
-                <h3 className="font-rajdhani font-bold text-xl text-white mb-2 relative z-10">{preset.name}</h3>
-                <p className="text-xs text-gray-400 font-inter mb-4 relative z-10">{preset.exercises.length} Exercises</p>
-                <div className="space-y-1 mb-6 relative z-10 text-sm text-gray-500">
-                  {preset.exercises.slice(0, 3).map(ex => (
-                    <div key={ex.id}>• {ex.name}</div>
-                  ))}
-                  {preset.exercises.length > 3 && <div>• +{preset.exercises.length - 3} more</div>}
+          <div className="space-y-4">
+            {RECOMMENDED_WORKOUT_CATEGORIES.map(category => {
+              const isExpanded = expandedCategory === category.id;
+              
+              return (
+                <div key={category.id} className="bg-tactical-900 border border-tactical-700 rounded-xl overflow-hidden transition-all duration-300">
+                  <button
+                    onClick={() => setExpandedCategory(isExpanded ? null : category.id)}
+                    className="w-full p-5 flex items-center justify-between hover:bg-tactical-800 transition-colors text-left"
+                  >
+                    <div>
+                      <h3 className="font-rajdhani font-bold text-xl text-white">{category.title}</h3>
+                      <p className="text-sm text-gray-400 font-inter mt-1">{category.description}</p>
+                    </div>
+                    <div className="text-neon-blue ml-4 flex-shrink-0">
+                      {isExpanded ? <ChevronDown className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
+                    </div>
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-5 border-t border-tactical-700 bg-tactical-900/50">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {category.workouts.map(preset => (
+                              <div key={preset.id} className="bg-tactical-800 border border-neon-blue/30 rounded-xl p-5 hover:border-neon-blue transition-colors group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-neon-blue/10 rounded-bl-full -mr-8 -mt-8 group-hover:bg-neon-blue/20 transition-colors" />
+                                <h4 className="font-rajdhani font-bold text-lg text-white mb-2 relative z-10">{preset.name}</h4>
+                                <p className="text-xs text-gray-400 font-inter mb-4 relative z-10">{preset.exercises.length} Exercises</p>
+                                <div className="space-y-1 mb-6 relative z-10 text-sm text-gray-400">
+                                  {preset.exercises.slice(0, 3).map(ex => (
+                                    <div key={ex.id}>• {ex.name}</div>
+                                  ))}
+                                  {preset.exercises.length > 3 && <div>• +{preset.exercises.length - 3} more</div>}
+                                </div>
+                                <button 
+                                  onClick={() => handleStartWorkout(preset)}
+                                  className="w-full bg-neon-blue/10 text-neon-blue border border-neon-blue/50 py-2 rounded font-rajdhani font-bold uppercase tracking-wider group-hover:bg-neon-blue group-hover:text-tactical-900 transition-all flex items-center justify-center relative z-10"
+                                >
+                                  <Play className="w-4 h-4 mr-2" /> Start
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <button 
-                  onClick={() => handleStartWorkout(preset)}
-                  className="w-full bg-neon-blue/10 text-neon-blue border border-neon-blue/50 py-2 rounded font-rajdhani font-bold uppercase tracking-wider group-hover:bg-neon-blue group-hover:text-tactical-900 transition-all flex items-center justify-center relative z-10"
-                >
-                  <Play className="w-4 h-4 mr-2" /> Start Preset
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
