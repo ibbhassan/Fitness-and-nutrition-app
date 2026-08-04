@@ -50,6 +50,7 @@ export const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ onClose }) =
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {PRESET_AVATARS.map((avatar, idx) => (
               <button
+                type="button"
                 key={idx}
                 onClick={() => setSelectedAvatar(avatar)}
                 className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
@@ -73,12 +74,14 @@ export const AvatarCustomizer: React.FC<AvatarCustomizerProps> = ({ onClose }) =
         <div className="p-6 border-t border-tactical-700 relative z-10 flex justify-end">
           <div className="flex gap-4 w-full md:w-auto">
             <button 
+              type="button"
               onClick={onClose}
               className="flex-1 md:flex-none px-6 py-3 rounded-lg font-rajdhani font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 transition-colors"
             >
               Cancel
             </button>
             <button 
+              type="button"
               onClick={handleSave}
               className="flex-1 md:flex-none px-6 py-3 rounded-lg font-rajdhani font-bold uppercase tracking-wider text-black bg-neon-blue hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2"
             >
