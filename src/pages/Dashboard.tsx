@@ -62,11 +62,21 @@ export const Dashboard: React.FC = () => {
       d.setDate(today.getDate() - (6 - i));
       const dateStr = formatLocalDate(d);
       
-      const loggedWorkout = workoutHistory.find(w => formatLocalDate(w.date) === dateStr);
+      const loggedWorkouts = workoutHistory.filter(w => formatLocalDate(w.date) === dateStr);
+      let bestWorkout = null;
+      if (loggedWorkouts.length > 0) {
+        const gradeValues: Record<string, number> = { 'S+': 7, 'S': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1 };
+        bestWorkout = loggedWorkouts.reduce((best, curr) => {
+          const currGrade = curr.grade || 'A';
+          const bestGrade = best.grade || 'A';
+          return (gradeValues[currGrade] || 0) > (gradeValues[bestGrade] || 0) ? curr : best;
+        });
+      }
+      
       const isScheduled = scheduledWorkoutDays.includes(d.getDay());
       
       let status = 'rest';
-      if (loggedWorkout) {
+      if (bestWorkout) {
         status = 'completed';
       } else if (isScheduled) {
         // If it's strictly before today, it's missed. If today or future, pending.
@@ -77,7 +87,7 @@ export const Dashboard: React.FC = () => {
       return {
         day: days[d.getDay()],
         status,
-        grade: loggedWorkout ? (loggedWorkout.grade || 'A') : '-'
+        grade: bestWorkout ? (bestWorkout.grade || 'A') : '-'
       };
     });
   };
