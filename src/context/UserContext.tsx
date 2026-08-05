@@ -36,6 +36,7 @@ interface UserContextType {
   updateAvatar: (avatar: AvatarConfig) => void;
   workoutHistory: WorkoutLog[];
   logWorkout: (log: WorkoutLog) => void;
+  deleteWorkout: (id: string) => void;
   manualQuestCompletions: Record<string, boolean>;
   toggleManualQuest: (questId: string, epAmount?: number) => void;
   addEp: (amount: number) => void;
@@ -530,6 +531,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  const deleteWorkout = (id: string) => {
+    setWorkoutHistory(prev => prev.filter(w => w.id !== id));
+  };
+
   const startWorkout = (preset: WorkoutPreset | null = null) => {
     if (preset) {
       setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now(), paused: false, accumulatedPauseMs: 0, lastPauseTime: null });
@@ -639,6 +644,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAvatar,
       workoutHistory,
       logWorkout,
+      deleteWorkout,
       manualQuestCompletions,
       toggleManualQuest,
       addEp,

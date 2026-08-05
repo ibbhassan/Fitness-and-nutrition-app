@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import type { WorkoutLog } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const getGradeColor = (grade?: string) => {
@@ -15,7 +15,7 @@ const getGradeColor = (grade?: string) => {
 };
 
 export const MatchHistory: React.FC = () => {
-  const { workoutHistory } = useUser();
+  const { workoutHistory, deleteWorkout } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
 
   // Sort history newest first
@@ -125,12 +125,26 @@ export const MatchHistory: React.FC = () => {
                   {new Date(selectedWorkout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(selectedWorkout.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                 </span>
               </div>
-              <button 
-                onClick={() => setSelectedWorkout(null)}
-                className="text-gray-400 hover:text-white transition-colors p-1"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this workout?')) {
+                      deleteWorkout(selectedWorkout.id);
+                      setSelectedWorkout(null);
+                    }
+                  }}
+                  className="text-gray-400 hover:text-neon-red transition-colors p-1"
+                  title="Delete Workout"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => setSelectedWorkout(null)}
+                  className="text-gray-400 hover:text-white transition-colors p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
             
             {/* Body */}
