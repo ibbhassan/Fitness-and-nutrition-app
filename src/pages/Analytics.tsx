@@ -199,6 +199,11 @@ export const Analytics: React.FC = () => {
                 <PolarGrid stroke="#2D3748" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: '#A0AEC0', fontSize: 12, fontFamily: 'Rajdhani', fontWeight: 'bold' }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1A202C', borderColor: '#b52eff', borderRadius: '8px' }}
+                  itemStyle={{ color: '#b52eff', fontWeight: 'bold' }}
+                  formatter={(value: any) => [`${value}`, 'Level']}
+                />
                 <Radar name="Stats" dataKey="A" stroke="#b52eff" fill="#b52eff" fillOpacity={0.4} />
               </RadarChart>
             </ResponsiveContainer>
