@@ -5,8 +5,8 @@ export const getLocalDateString = (d: Date | string = new Date()) => {
 
 export const getWeekString = (d: Date | string = new Date()) => {
   const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(date.setDate(diff));
-  return getLocalDateString(monday);
+  const daysSinceFriday = (date.getDay() + 2) % 7;
+  const friday = new Date(date);
+  friday.setDate(date.getDate() - daysSinceFriday);
+  return getLocalDateString(friday);
 };

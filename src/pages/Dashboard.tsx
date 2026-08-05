@@ -15,6 +15,9 @@ export const Dashboard: React.FC = () => {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   };
 
+  const todayStr = formatLocalDate(new Date());
+  const weekStr = getWeekString(new Date());
+
   const getWeightTrackingWeekStart = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); 
@@ -93,7 +96,8 @@ export const Dashboard: React.FC = () => {
   };
 
   const consistencyData = getConsistencyData();
-  const workoutsThisWeek = consistencyData.filter(d => d.status === 'completed').length;
+  const weekStartDate = new Date(weekStr + 'T00:00:00');
+  const workoutsThisWeek = workoutHistory.filter(w => new Date(w.date) >= weekStartDate).length;
 
   const calculateStreak = () => {
     let streak = 0;
@@ -121,9 +125,6 @@ export const Dashboard: React.FC = () => {
 
   const currentStreak = calculateStreak();
   
-  const todayStr = formatLocalDate(new Date());
-  const weekStr = getWeekString(new Date());
-
   const dailyStepsKey = `daily-steps-${todayStr}`;
   const weeklyWorkoutsKey = `weekly-workouts-${weekStr}`;
   const weeklyPrKey = `weekly-pr-${weekStr}`;
@@ -132,12 +133,7 @@ export const Dashboard: React.FC = () => {
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
   const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions[dailyStepsKey];
   
-  const last7DaysStrings = Array.from({ length: 7 }).map((_, i) => {
-     const d = new Date();
-     d.setDate(d.getDate() - i);
-     return formatLocalDate(d);
-  });
-  const prsThisWeek = workoutHistory.some(w => w.isPr && last7DaysStrings.includes(formatLocalDate(w.date)));
+  const prsThisWeek = workoutHistory.some(w => w.isPr && new Date(w.date) >= weekStartDate);
   
   const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions[weeklyPrKey];
   const isWeeklyNutritionComplete = !!manualQuestCompletions[weeklyNutritionKey];
