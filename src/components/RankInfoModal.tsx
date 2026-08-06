@@ -117,7 +117,7 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                         {tier === 'Master' ? 'Level 36' : tier === 'Grandmaster' ? 'Level 37' : tier === 'Challenger' ? 'Level 38+' : `Levels ${baseLevel} - ${baseLevel + 4}`}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0 whitespace-nowrap ml-2">
                       <span className="text-sm font-rajdhani text-gray-300 bg-tactical-800 px-2 py-1 rounded border border-tactical-700">{epRequiredText}</span>
                     </div>
                   </div>
