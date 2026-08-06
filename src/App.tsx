@@ -30,14 +30,14 @@ const MainApp = () => {
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       {activeTab === 'dashboard' && <Dashboard />}
-      {activeTab === 'workout' && <WorkoutLogger />}
+      {activeTab === 'workout' && <WorkoutLogger setActiveTab={setActiveTab} />}
       {activeTab === 'nutrition' && <Nutrition />}
       { activeTab === 'biometrics' && <BiometricsTab /> }
       { activeTab === 'analytics' && <Analytics /> }
       { activeTab === 'profile' && <Profile /> }
       {activeTab === 'history' && (
         <div className="max-w-4xl mx-auto fade-in space-y-6">
-          <MatchHistory />
+          <MatchHistory setActiveTab={setActiveTab} />
         </div>
       )}
       { activeTab === 'social' && <Social /> }

@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
+import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown, Clock } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { getLocalDateString } from '../utils/dateUtils';
 import { calculateStreak } from '../utils/streakUtils';
 import { CalendarModal } from '../components/CalendarModal';
-import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
+import type { WorkoutPreset, LoggedSet, ActiveExercise, WorkoutLog } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
 import { RestTimer } from '../components/RestTimer';
 import { clsx } from 'clsx';
@@ -433,8 +433,12 @@ const RECOMMENDED_WORKOUT_CATEGORIES: WorkoutCategory[] = [
   }
 ];
 
-export const WorkoutLogger: React.FC = () => {
-  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate, scheduledWorkoutDays } = useUser();
+interface WorkoutLoggerProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) => {
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate, scheduledWorkoutDays, editingWorkout, setEditingWorkout, updateWorkout } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const isFinishingRef = useRef(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
@@ -482,13 +486,30 @@ export const WorkoutLogger: React.FC = () => {
     }
   ]);
 
+  // History Edit State
+  const [editExercises, setEditExercises] = useState<ActiveExercise[]>([]);
+  const [editName, setEditName] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editDuration, setEditDuration] = useState('');
+  const isEditingRef = useRef(false);
+
+  React.useEffect(() => {
+    if (editingWorkout && !isEditingRef.current) {
+      setEditName(editingWorkout.name);
+      setEditDate(editingWorkout.date.split('T')[0]);
+      setEditDuration(editingWorkout.durationMinutes.toString());
+      setEditExercises(JSON.parse(JSON.stringify(editingWorkout.exercises))); // Deep copy
+      isEditingRef.current = true;
+    }
+  }, [editingWorkout]);
+
   // Exercise Library Selection State
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [librarySearchTerm, setLibrarySearchTerm] = useState('');
   const [targetIndexForLibrary, setTargetIndexForLibrary] = useState<number | null>(null);
-  const [targetListForLibrary, setTargetListForLibrary] = useState<'preset' | 'active'>('active');
+  const [targetListForLibrary, setTargetListForLibrary] = useState<'preset' | 'active' | 'edit'>('active');
 
-  const openLibrary = (index: number, target: 'preset' | 'active') => {
+  const openLibrary = (index: number, target: 'preset' | 'active' | 'edit') => {
     setTargetIndexForLibrary(index);
     setTargetListForLibrary(target);
     setIsLibraryOpen(true);
@@ -512,6 +533,10 @@ export const WorkoutLogger: React.FC = () => {
         const newEx = [...newPresetExercises];
         newEx[targetIndexForLibrary].name = exerciseName;
         setNewPresetExercises(newEx);
+      } else if (targetListForLibrary === 'edit') {
+        const newEx = [...editExercises];
+        newEx[targetIndexForLibrary].name = exerciseName;
+        setEditExercises(newEx);
       } else {
         const newEx = [...exercises];
         newEx[targetIndexForLibrary].name = exerciseName;
@@ -890,6 +915,114 @@ export const WorkoutLogger: React.FC = () => {
               className="w-full bg-neon-gold text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(255,215,0,0.4)] uppercase tracking-wider flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5 mr-2" /> Save Preset
+            </button>
+          </div>
+          {renderLibraryModal()}
+      </div>
+    );
+  }
+
+  const handleUpdateWorkout = () => {
+    if (!editingWorkout) return;
+
+    let totalVolume = 0;
+    editExercises.forEach(ex => {
+      ex.sets.forEach(set => {
+        if (set.completed) {
+          totalVolume += (set.weight || 0) * (set.reps || 0);
+        }
+      });
+    });
+
+    // We keep the old grade and EP changes since recalculating it requires complex logic with historical averages
+    // Actually, the user might want volume to just recalculate, EP isn't purely volume dependent.
+    // Let's just update the workout object
+    const updatedLog: WorkoutLog = {
+      ...editingWorkout,
+      name: editName,
+      date: new Date(editDate + 'T12:00:00').toISOString(),
+      durationMinutes: parseInt(editDuration) || editingWorkout.durationMinutes,
+      exercises: editExercises,
+      volume: totalVolume
+    };
+
+    updateWorkout(updatedLog);
+    setEditingWorkout(null);
+    isEditingRef.current = false;
+    if (setActiveTab) {
+      setActiveTab('history');
+    }
+  };
+
+  if (editingWorkout) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in pb-24 mt-6">
+        <div className="flex flex-col mb-6 border-b border-tactical-700 pb-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 mr-4">
+                <input 
+                  type="text" 
+                  placeholder="Workout Name..." 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-transparent border-none p-0 text-white focus:outline-none focus:ring-0 text-3xl font-rajdhani font-bold placeholder-tactical-600"
+                />
+                <div className="flex items-center gap-4 mt-2">
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="bg-tactical-800 border border-tactical-600 rounded p-1 text-sm text-gray-300"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <input
+                      type="number"
+                      value={editDuration}
+                      onChange={(e) => setEditDuration(e.target.value)}
+                      className="bg-tactical-800 border border-tactical-600 rounded p-1 text-sm text-gray-300 w-16"
+                    />
+                    <span className="text-gray-500 text-sm">min</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingWorkout(null);
+                  isEditingRef.current = false;
+                  if (setActiveTab) {
+                    setActiveTab('history');
+                  }
+                }}
+                className="text-gray-400 hover:text-white transition-colors flex items-center mt-2 whitespace-nowrap"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" /> Cancel
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {renderExerciseTable(editExercises, setEditExercises, false)}
+          </div>
+
+          <button 
+            onClick={() => {
+              const newIdx = editExercises.length;
+              setEditExercises([...editExercises, { id: String(Date.now()), name: '', sets: [{ id: String(Date.now() + 1), reps: 0, weight: 0, type: 'Normal', completed: false }] }]);
+              openLibrary(newIdx, 'edit');
+            }}
+            className="mt-6 w-full bg-neon-green text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(57,255,20,0.4)] uppercase tracking-wider flex items-center justify-center"
+          >
+            <Plus className="w-5 h-5 mr-2" /> Add Exercise
+          </button>
+
+          <div className="mt-4">
+            <button 
+              onClick={handleUpdateWorkout}
+              disabled={!editName || editExercises.some(e => !e.name)}
+              className="w-full bg-neon-blue text-tactical-900 py-2.5 rounded-full font-rajdhani font-bold text-base hover:brightness-110 transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] uppercase tracking-wider flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Check className="w-5 h-5 mr-2" /> Update Past Workout
             </button>
           </div>
           {renderLibraryModal()}

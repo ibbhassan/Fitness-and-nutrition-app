@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import type { WorkoutLog } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2 } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const getGradeColor = (grade?: string) => {
@@ -14,8 +14,12 @@ const getGradeColor = (grade?: string) => {
   }
 };
 
-export const MatchHistory: React.FC = () => {
-  const { workoutHistory, deleteWorkout } = useUser();
+interface MatchHistoryProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
+  const { workoutHistory, deleteWorkout, setEditingWorkout } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
 
   // Sort history newest first
@@ -126,14 +130,27 @@ export const MatchHistory: React.FC = () => {
                 </span>
               </div>
               <div className="flex items-center space-x-2">
+                {setActiveTab && (
+                  <button 
+                    onClick={() => {
+                      setEditingWorkout(selectedWorkout);
+                      setActiveTab('workout');
+                      setSelectedWorkout(null);
+                    }}
+                    className="text-gray-400 hover:text-neon-blue transition-colors p-1"
+                    title="Edit Workout"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                )}
                 <button 
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to delete this workout?')) {
+                    if (window.confirm("Are you sure you want to delete this workout? This will permanently remove its volume and EP from your stats.")) {
                       deleteWorkout(selectedWorkout.id);
                       setSelectedWorkout(null);
                     }
                   }}
-                  className="text-gray-400 hover:text-neon-red transition-colors p-1"
+                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
                   title="Delete Workout"
                 >
                   <Trash2 className="w-5 h-5" />

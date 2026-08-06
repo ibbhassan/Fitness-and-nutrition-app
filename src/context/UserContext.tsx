@@ -37,6 +37,9 @@ interface UserContextType {
   workoutHistory: WorkoutLog[];
   logWorkout: (log: WorkoutLog) => void;
   deleteWorkout: (id: string) => void;
+  updateWorkout: (log: WorkoutLog) => void;
+  editingWorkout: WorkoutLog | null;
+  setEditingWorkout: (log: WorkoutLog | null) => void;
   manualQuestCompletions: Record<string, boolean>;
   toggleManualQuest: (questId: string, epAmount?: number) => void;
   addEp: (amount: number) => void;
@@ -129,6 +132,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
   const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>(initialState.foodLogs || []);
   const [savedMeals, setSavedMeals] = useState<Meal[]>(initialState.savedMeals || []);
+  const [editingWorkout, setEditingWorkout] = useState<WorkoutLog | null>(null);
 
   // Set up an interval to check for date rollover (midnight)
   useEffect(() => {
@@ -535,6 +539,25 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setWorkoutHistory(prev => prev.filter(w => w.id !== id));
   };
 
+  const updateWorkout = (log: WorkoutLog) => {
+    let epDiff = 0;
+    setWorkoutHistory(prev => {
+      const idx = prev.findIndex(w => w.id === log.id);
+      if (idx === -1) return prev;
+      const newHistory = [...prev];
+      
+      const oldLog = newHistory[idx];
+      epDiff = (log.epChange || 0) - (oldLog.epChange || 0);
+
+      newHistory[idx] = log;
+      return newHistory;
+    });
+    
+    if (epDiff !== 0) {
+      addEp(epDiff);
+    }
+  };
+
   const startWorkout = (preset: WorkoutPreset | null = null) => {
     if (preset) {
       setActiveWorkout({ id: preset.id, name: preset.name, startTime: Date.now(), paused: false, accumulatedPauseMs: 0, lastPauseTime: null });
@@ -645,6 +668,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       workoutHistory,
       logWorkout,
       deleteWorkout,
+      updateWorkout,
+      editingWorkout,
+      setEditingWorkout,
       manualQuestCompletions,
       toggleManualQuest,
       addEp,

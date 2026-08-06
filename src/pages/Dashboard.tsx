@@ -5,6 +5,7 @@ import { seedSteps } from '../utils/seedData';
 import { useUser } from '../context/UserContext';
 import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown } from 'lucide-react';
 import { getWeekString } from '../utils/dateUtils';
+import { calculateStreak } from '../utils/streakUtils';
 
 export const Dashboard: React.FC = () => {
   const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
@@ -99,35 +100,7 @@ export const Dashboard: React.FC = () => {
   const weekStartDate = new Date(weekStr + 'T00:00:00');
   const workoutsThisWeek = workoutHistory.filter(w => new Date(w.date) >= weekStartDate).length;
 
-  const calculateStreak = () => {
-    let streak = 0;
-    const today = new Date();
-    const todayStr = formatLocalDate(today);
-    
-    const isTodayLogged = workoutHistory.some(w => formatLocalDate(w.date) === todayStr);
-    const d = new Date(today);
-    if (!isTodayLogged) {
-       d.setDate(d.getDate() - 1);
-    }
-    
-    while(true) {
-       const dateStr = formatLocalDate(d);
-       const logged = workoutHistory.some(w => formatLocalDate(w.date) === dateStr);
-       const isScheduled = scheduledWorkoutDays.includes(d.getDay());
-       
-       if (logged) {
-          streak++;
-          d.setDate(d.getDate() - 1);
-       } else if (!isScheduled) {
-          d.setDate(d.getDate() - 1);
-       } else {
-          break;
-       }
-    }
-    return streak;
-  };
-
-  const currentStreak = calculateStreak();
+  const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
   
   const dailyStepsKey = `daily-steps-${todayStr}`;
   const weeklyWorkoutsKey = `weekly-workouts-${weekStr}`;
