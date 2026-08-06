@@ -173,9 +173,9 @@ export const Social: React.FC = () => {
                         <div className="flex-1 pr-2">
                           <h3 className={clsx(
                             "font-rajdhani font-bold text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap",
-                            friend.username.length > 20 ? "text-[10px] leading-tight" : friend.username.length > 15 ? "text-xs sm:text-sm" : friend.username.length > 10 ? "text-sm sm:text-base" : "text-base sm:text-lg"
+                            (friend.username || '').length > 20 ? "text-[10px] leading-tight" : (friend.username || '').length > 15 ? "text-xs sm:text-sm" : (friend.username || '').length > 10 ? "text-sm sm:text-base" : "text-base sm:text-lg"
                           )}>
-                            {friend.username}
+                            {friend.username || 'Unknown Agent'}
                           </h3>
                         </div>
                       </div>
