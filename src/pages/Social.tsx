@@ -169,7 +169,7 @@ export const Social: React.FC = () => {
                         </div>
                         
                         {/* Name */}
-                        <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md truncate">{friend.username}</h3>
+                        <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md break-all">{friend.username}</h3>
                       </div>
 
                       {/* Rank & Actions (Right side) */}
