@@ -113,8 +113,12 @@ export const Dashboard: React.FC = () => {
     while(true) {
        const dateStr = formatLocalDate(d);
        const logged = workoutHistory.some(w => formatLocalDate(w.date) === dateStr);
+       const isScheduled = scheduledWorkoutDays.includes(d.getDay());
+       
        if (logged) {
           streak++;
+          d.setDate(d.getDate() - 1);
+       } else if (!isScheduled) {
           d.setDate(d.getDate() - 1);
        } else {
           break;
