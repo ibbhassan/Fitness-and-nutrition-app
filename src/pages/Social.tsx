@@ -4,6 +4,7 @@ import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondTo
 import { Search, UserPlus, Check, X, Users } from 'lucide-react';
 import type { FriendRequest } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
+import { clsx } from 'clsx';
 
 import { FriendProfile } from '../components/social/FriendProfile';
 
@@ -169,8 +170,13 @@ export const Social: React.FC = () => {
                         </div>
                         
                         {/* Name */}
-                        <div className="flex-1 min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
-                          <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap">{friend.username}</h3>
+                        <div className="flex-1 min-w-0 pr-2">
+                          <h3 className={clsx(
+                            "font-rajdhani font-bold text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap truncate",
+                            friend.username.length > 15 ? "text-xs sm:text-sm" : friend.username.length > 10 ? "text-sm sm:text-base" : "text-base sm:text-lg"
+                          )}>
+                            {friend.username}
+                          </h3>
                         </div>
                       </div>
 
