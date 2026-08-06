@@ -151,19 +151,19 @@ export const Social: React.FC = () => {
                 <p className="text-xs mt-1 text-gray-500">Search for agents to add to your roster!</p>
               </div>
             ) : (
-              <div className="space-y-4 mt-2">
+              <div className="space-y-4 mt-2 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {friendsProfiles.map(friend => {
                   const rankInfo = getRankInfo(friend.profile?.level);
                   return (
                     <div 
                       key={friend.uid} 
                       onClick={() => setSelectedFriendUid(friend.uid)}
-                      className="bg-tactical-900 rounded-xl border border-tactical-700 flex flex-wrap items-center justify-between p-3 gap-y-3 hover:-translate-y-1 hover:shadow-[0_4px_15px_rgba(0,240,255,0.15)] transition-all cursor-pointer group relative overflow-hidden"
+                      className="bg-tactical-900 rounded-xl border border-tactical-700 flex items-center justify-between p-3 hover:-translate-y-1 hover:shadow-[0_4px_15px_rgba(0,240,255,0.15)] transition-all cursor-pointer group relative overflow-hidden min-w-max"
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-1.5 z-20" style={{backgroundColor: rankInfo.color}}></div>
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" style={{ background: `linear-gradient(90deg, ${rankInfo.color}, transparent)` }}></div>
                       
-                      <div className="flex items-center gap-3 pl-3 relative z-30 flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-3 pl-3 relative z-30 flex-1">
                         {/* Avatar */}
                         <div className="relative shrink-0">
                           <img src={typeof friend.profile?.avatar === 'string' ? friend.profile.avatar : '/images/avatar_3d.png'} alt="Avatar" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-tactical-800 border-2 border-tactical-600 shadow-md object-cover" />
