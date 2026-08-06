@@ -49,7 +49,7 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                 </div>
                 <ul className="text-sm text-gray-400 space-y-1 font-inter">
                   <li className="flex justify-between"><span>S+ Grade (Perfect/PR):</span> <span className="text-neon-blue font-bold">+50 EP</span></li>
-                  <li className="flex justify-between"><span>S Grade:</span> <span className="text-neon-blue font-bold">+35 EP</span></li>
+                  <li className="flex justify-between"><span>S Grade (Excellent):</span> <span className="text-neon-blue font-bold">+35 EP</span></li>
                   <li className="flex justify-between"><span>A Grade (Standard):</span> <span className="text-neon-blue font-bold">+25 EP</span></li>
                   <li className="flex justify-between"><span>B Grade (Light):</span> <span className="text-neon-blue font-bold">+15 EP</span></li>
                   <li className="flex justify-between"><span>C Grade (Short/Easy):</span> <span className="text-neon-blue font-bold">+10 EP</span></li>
