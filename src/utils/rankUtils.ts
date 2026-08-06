@@ -8,6 +8,14 @@ export const getRequiredEpForLevel = (level: number): number => {
   return rawRequired;
 };
 
+export const getCumulativeEpForLevel = (level: number): number => {
+  let total = 0;
+  for (let i = 1; i < level; i++) {
+    total += getRequiredEpForLevel(i);
+  }
+  return total;
+};
+
 export const getRankInfo = (level: number): { tier: RankTier; division: string; crestUrl: string; color: string } => {
   const tiers: RankTier[] = [
     'Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 

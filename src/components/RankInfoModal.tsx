@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Info, Flame, Target } from 'lucide-react';
-import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
+import { getRankInfo, getCumulativeEpForLevel } from '../utils/rankUtils';
 import { clsx } from 'clsx';
 import type { RankTier } from '../types';
 
@@ -94,13 +94,14 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                 const { crestUrl, color } = getRankInfo(baseLevel);
                 
                 let epRequiredText = '';
-                if (tier === 'Master' || tier === 'Grandmaster' || tier === 'Challenger') {
-                  const req = getRequiredEpForLevel(baseLevel);
-                  epRequiredText = `${req} EP per level`;
+                if (tier === 'Iron') {
+                  epRequiredText = `0 Total EP`;
+                } else if (tier === 'Master' || tier === 'Grandmaster' || tier === 'Challenger') {
+                  const req = getCumulativeEpForLevel(baseLevel);
+                  epRequiredText = `${req} Total EP`;
                 } else {
-                  const reqStart = getRequiredEpForLevel(baseLevel);
-                  const reqEnd = getRequiredEpForLevel(baseLevel + 4);
-                  epRequiredText = `${reqStart} - ${reqEnd} EP per level`;
+                  const reqStart = getCumulativeEpForLevel(baseLevel);
+                  epRequiredText = `${reqStart} Total EP`;
                 }
 
                 return (
