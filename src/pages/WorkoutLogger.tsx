@@ -4,6 +4,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion
 import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { getLocalDateString } from '../utils/dateUtils';
+import { calculateStreak } from '../utils/streakUtils';
 import { CalendarModal } from '../components/CalendarModal';
 import type { WorkoutPreset, LoggedSet, ActiveExercise } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
@@ -433,7 +434,7 @@ const RECOMMENDED_WORKOUT_CATEGORIES: WorkoutCategory[] = [
 ];
 
 export const WorkoutLogger: React.FC = () => {
-  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate } = useUser();
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate, scheduledWorkoutDays } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const isFinishingRef = useRef(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
@@ -748,6 +749,13 @@ export const WorkoutLogger: React.FC = () => {
     if (workoutNameLower.includes('leg') || workoutNameLower.includes('lower body')) {
       baseEp += 10;
     }
+    
+    // Check for streak bonus
+    const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
+    if (currentStreak >= 20) {
+      baseEp += 10;
+    }
+    
     const calculatedEp = baseEp;
 
     logWorkout({
