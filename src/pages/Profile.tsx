@@ -9,7 +9,7 @@ import clsx from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync, updateUsername, logWorkout } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync, updateUsername } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showMacroModal, setShowMacroModal] = useState(false);
@@ -96,27 +96,6 @@ export const Profile: React.FC = () => {
     if (!isNaN(val) && val > 0) {
       logWeight(val);
       setShowWeightModal(false);
-    }
-  };
-
-  const handleRestoreJuly = () => {
-    if (confirm("Restore 28 S+ workouts for July to recover your rank points?")) {
-      for (let i = 0; i < 28; i++) {
-        const d = new Date();
-        d.setFullYear(2026, 6, 31 - i); // July 2026
-        logWorkout({
-          id: `restored-july-${Date.now()}-${i}`,
-          date: d.toISOString(),
-          name: 'Restored S+ Workout',
-          durationMinutes: 60,
-          exercises: [],
-          volume: 10000,
-          grade: 'S+',
-          epChange: 50,
-          isPr: false
-        });
-      }
-      alert("28 S+ workouts restored! Refresh the app to see your new rank.");
     }
   };
 
@@ -452,16 +431,6 @@ export const Profile: React.FC = () => {
                 <div className="w-12 h-6 bg-neon-blue/30 rounded-full relative border border-neon-blue cursor-not-allowed">
                   <div className="w-4 h-4 bg-neon-blue rounded-full absolute right-0.5 top-0.5 shadow-[0_0_5px_#00f0ff]"></div>
                 </div>
-              </div>
-              
-              <div className="flex justify-between items-center p-3 bg-tactical-900 rounded-lg border border-tactical-700">
-                <span className="text-gray-300 font-inter text-sm">Restore Missing Points</span>
-                <button 
-                  onClick={handleRestoreJuly}
-                  className="bg-tactical-700 hover:bg-neon-gold hover:text-black text-gray-300 text-xs py-1 px-3 rounded transition-colors font-rajdhani uppercase tracking-wider"
-                >
-                  Restore July
-                </button>
               </div>
             </div>
           </div>
