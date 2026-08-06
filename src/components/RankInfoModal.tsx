@@ -51,6 +51,7 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                   <li className="flex justify-between"><span>S+ Grade (Perfect/PR):</span> <span className="text-neon-blue font-bold">+50 EP</span></li>
                   <li className="flex justify-between"><span>S Grade:</span> <span className="text-neon-blue font-bold">+35 EP</span></li>
                   <li className="flex justify-between"><span>A Grade (Standard):</span> <span className="text-neon-blue font-bold">+25 EP</span></li>
+                  <li className="flex justify-between"><span>B Grade (Light):</span> <span className="text-neon-blue font-bold">+15 EP</span></li>
                   <li className="flex justify-between"><span>C Grade (Short/Easy):</span> <span className="text-neon-blue font-bold">+10 EP</span></li>
                 </ul>
               </div>
@@ -67,6 +68,20 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                   <li className="flex justify-between"><span>Weekly Quests:</span> <span className="text-neon-purple font-bold">Varies</span></li>
                 </ul>
               </div>
+            </div>
+          </section>
+
+          {/* Section: Max Weekly Potential */}
+          <section>
+            <h3 className="text-lg font-rajdhani font-bold text-neon-purple uppercase tracking-wider mb-4 border-b border-tactical-700 pb-2">Max Weekly Potential</h3>
+            <div className="bg-tactical-900 rounded-lg p-4 border border-tactical-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-rajdhani font-bold text-gray-300 text-lg uppercase tracking-wider">Total Maximum</span>
+                <span className="text-neon-purple font-bold text-xl">710 EP / Week</span>
+              </div>
+              <p className="text-sm text-gray-400 font-inter">
+                Assuming daily S+ workouts (350), 10k daily steps (70), hitting 2 leg days (20), maintaining a 20+ day streak (70), and completing all 3 weekly quests (200).
+              </p>
             </div>
           </section>
 

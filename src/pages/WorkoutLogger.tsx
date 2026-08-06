@@ -704,6 +704,8 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     const completedExercises = exercises.filter(ex => ex.sets.some(s => s.completed));
     if (durationMinutes < 15 && completedExercises.length < 3) {
       grade = 'C';
+    } else if (durationMinutes < 30 && completedExercises.length < 4) {
+      grade = 'B';
     } else {
       grade = 'A';
     }
@@ -768,6 +770,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     if (grade === 'S+') baseEp = 50;
     else if (grade === 'S') baseEp = 35;
     else if (grade === 'A') baseEp = 25;
+    else if (grade === 'B') baseEp = 15;
     else if (grade === 'C') baseEp = 10;
 
     const workoutNameLower = activeWorkout.name.toLowerCase();
