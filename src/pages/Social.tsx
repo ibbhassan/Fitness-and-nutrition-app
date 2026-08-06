@@ -169,7 +169,9 @@ export const Social: React.FC = () => {
                         </div>
                         
                         {/* Name */}
-                        <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md break-all">{friend.username}</h3>
+                        <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                          <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap">{friend.username}</h3>
+                        </div>
                       </div>
 
                       {/* Rank & Actions (Right side) */}
