@@ -111,14 +111,16 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                 return (
                   <div key={tier} className="bg-tactical-900 rounded-lg p-3 flex items-center gap-4 border border-tactical-700 hover:border-tactical-600 transition-colors">
                     <img src={crestUrl} alt={tier} className="w-12 h-12 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]" />
-                    <div className="flex-1">
-                      <h4 className={clsx("font-rajdhani font-bold text-lg uppercase tracking-wider", color)}>{tier}</h4>
-                      <p className="text-gray-400 text-sm font-inter">
-                        {tier === 'Master' ? 'Level 36' : tier === 'Grandmaster' ? 'Level 37' : tier === 'Challenger' ? 'Level 38+' : `Levels ${baseLevel} - ${baseLevel + 4}`}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0 whitespace-nowrap ml-2">
-                      <span className="text-sm font-rajdhani text-gray-300 bg-tactical-800 px-2 py-1 rounded border border-tactical-700">{epRequiredText}</span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className={clsx("font-rajdhani font-bold text-lg uppercase tracking-wider truncate", color)}>{tier}</h4>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-gray-400 text-sm font-inter">
+                          {tier === 'Master' ? 'Level 36' : tier === 'Grandmaster' ? 'Level 37' : tier === 'Challenger' ? 'Level 38+' : `Levels ${baseLevel} - ${baseLevel + 4}`}
+                        </p>
+                        <span className="text-xs font-rajdhani text-gray-300 bg-tactical-800 px-2 py-0.5 rounded border border-tactical-700 whitespace-nowrap shrink-0 ml-2">
+                          {epRequiredText}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
