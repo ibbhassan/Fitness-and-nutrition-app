@@ -134,9 +134,9 @@ export const Social: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Column: Friends List */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-3 space-y-6">
           <div className="esports-panel p-6 space-y-4">
             <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider border-b border-tactical-700 pb-4">
               Friends
@@ -169,7 +169,7 @@ export const Social: React.FC = () => {
                         </div>
                         
                         {/* Name */}
-                        <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className="flex-1 min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
                           <h3 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap">{friend.username}</h3>
                         </div>
                       </div>
