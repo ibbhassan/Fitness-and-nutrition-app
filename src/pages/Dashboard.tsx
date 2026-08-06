@@ -103,6 +103,7 @@ export const Dashboard: React.FC = () => {
   const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
   
   const dailyStepsKey = `daily-steps-${todayStr}`;
+  const dailyWaterKey = `daily-water-${todayStr}`;
   const weeklyWorkoutsKey = `weekly-workouts-${weekStr}`;
   const weeklyPrKey = `weekly-pr-${weekStr}`;
   const weeklyNutritionKey = `weekly-nutrition-${weekStr}`;
@@ -221,16 +222,16 @@ export const Dashboard: React.FC = () => {
               </button>
 
               <button 
-                onClick={() => toggleManualQuest('dailyWater', 10)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", manualQuestCompletions['dailyWater'] ? "opacity-50" : "")}
+                onClick={() => toggleManualQuest(dailyWaterKey, 10)}
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", manualQuestCompletions[dailyWaterKey] ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
                     <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions['dailyWater'] ? "line-through" : "")}>Drink 1 Gallon of Water</h3>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions[dailyWaterKey] ? "line-through" : "")}>Drink 1 Gallon of Water</h3>
                   </div>
-                  {manualQuestCompletions['dailyWater'] ? (
+                  {manualQuestCompletions[dailyWaterKey] ? (
                     <CheckCircle className="w-4 h-4 text-neon-purple" />
                   ) : (
                     <span className="text-xs font-rajdhani font-bold text-neon-green">+10 EP</span>
