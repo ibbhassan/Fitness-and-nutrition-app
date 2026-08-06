@@ -3,12 +3,15 @@ import type { UserProfile } from '../types';
 
 import { clsx } from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
+import { Info } from 'lucide-react';
+import { RankInfoModal } from './RankInfoModal';
 
 interface RankDisplayProps {
   profile: UserProfile;
 }
 
 export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
+  const [showInfo, setShowInfo] = React.useState(false);
   const { tier, division, crestUrl, color } = getRankInfo(profile.level);
   const requiredEp = getRequiredEpForLevel(profile.level);
   const progressPercent = Math.min(100, Math.round((profile.lp / requiredEp) * 100));
@@ -34,9 +37,17 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
         <div className="flex-1 w-full">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <h1 className={clsx("text-3xl font-rajdhani font-bold uppercase tracking-wider", color)}>
-                {tier} {division}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className={clsx("text-3xl font-rajdhani font-bold uppercase tracking-wider", color)}>
+                  {tier} {division}
+                </h1>
+                <button 
+                  onClick={() => setShowInfo(true)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <Info className="w-5 h-5" />
+                </button>
+              </div>
               <p className="text-gray-400 font-inter">Level {profile.level} • {profile.currentMode} Mode</p>
             </div>
             <div className="text-right">
@@ -76,6 +87,8 @@ export const RankDisplay: React.FC<RankDisplayProps> = ({ profile }) => {
           )}
         </div>
       </div>
+      
+      {showInfo && <RankInfoModal onClose={() => setShowInfo(false)} />}
     </div>
   );
 };
