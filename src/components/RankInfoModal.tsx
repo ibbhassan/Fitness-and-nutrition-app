@@ -90,7 +90,11 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
             <h3 className="text-lg font-rajdhani font-bold text-neon-blue uppercase tracking-wider mb-4 border-b border-tactical-700 pb-2">The Ladder</h3>
             <div className="space-y-3">
               {tiers.map((tier, idx) => {
-                const baseLevel = idx * 5 + 1;
+                let baseLevel = idx * 5 + 1;
+                if (tier === 'Master') baseLevel = 36;
+                else if (tier === 'Grandmaster') baseLevel = 37;
+                else if (tier === 'Challenger') baseLevel = 38;
+                
                 const { crestUrl, color } = getRankInfo(baseLevel);
                 
                 let epRequiredText = '';
