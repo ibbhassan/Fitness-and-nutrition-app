@@ -172,7 +172,7 @@ export const Social: React.FC = () => {
                         {/* Name */}
                         <div className="flex-1 min-w-0 pr-2">
                           <h3 className={clsx(
-                            "font-rajdhani font-bold text-white uppercase tracking-wider drop-shadow-md whitespace-nowrap truncate",
+                            "font-rajdhani font-bold text-white uppercase tracking-wider drop-shadow-md break-words whitespace-normal",
                             friend.username.length > 15 ? "text-xs sm:text-sm" : friend.username.length > 10 ? "text-sm sm:text-base" : "text-base sm:text-lg"
                           )}>
                             {friend.username}
