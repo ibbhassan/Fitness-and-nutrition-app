@@ -209,40 +209,8 @@ export const Social: React.FC = () => {
             {/* Bottom Half: Activity Feed */}
             <div className="esports-panel p-6 border-l-4 border-neon-purple relative overflow-hidden">
                <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/5 to-transparent pointer-events-none"></div>
-               <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center justify-between w-full mb-6 relative z-10 border-b border-tactical-800 pb-4">
-                 <div className="flex items-center gap-2">
-                   <Activity className="w-5 h-5 text-neon-purple" /> Highlights
-                 </div>
-                 <div className="flex items-center gap-2">
-                   <button 
-                     onClick={async () => {
-                       if (window.confirm('Clear all your highlights to fix the ghost bug?')) {
-                         try {
-                            const q = query(collection(db, 'highlights'), where('userId', '==', user?.uid));
-                            const snap = await getDocs(q);
-                            await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'highlights', d.id))));
-                            window.location.reload();
-                         } catch (e: any) {
-                            alert("Error clearing feed: " + e.message);
-                         }
-                       }
-                     }}
-                     className="text-xs bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded hover:bg-red-500/40"
-                   >
-                     Clear My Feed
-                   </button>
-                   <button 
-                     onClick={async () => {
-                       if (user?.uid) {
-                         await updateDoc(doc(db, 'users', user.uid), { role: 'CEO' });
-                         alert('You are now the CEO! Refresh to apply powers.');
-                       }
-                     }}
-                     className="text-xs bg-neon-gold/20 text-neon-gold border border-neon-gold/50 px-3 py-1 rounded hover:bg-neon-gold/40"
-                   >
-                     Make me CEO
-                   </button>
-                 </div>
+               <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-6 relative z-10 border-b border-tactical-800 pb-4">
+                 <Activity className="w-5 h-5 text-neon-purple" /> Highlights
                </h2>
                
                <div className="space-y-3 relative z-10">
