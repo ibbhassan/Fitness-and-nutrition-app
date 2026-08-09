@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../config/firebase';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
@@ -213,23 +213,36 @@ export const Social: React.FC = () => {
                  <div className="flex items-center gap-2">
                    <Activity className="w-5 h-5 text-neon-purple" /> Highlights
                  </div>
-                 <button 
-                   onClick={async () => {
-                     if (window.confirm('Clear all your highlights to fix the ghost bug?')) {
-                       try {
-                          const q = query(collection(db, 'highlights'), where('userId', '==', user?.uid));
-                          const snap = await getDocs(q);
-                          await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'highlights', d.id))));
-                          window.location.reload();
-                       } catch (e: any) {
-                          alert("Error clearing feed: " + e.message);
+                 <div className="flex items-center gap-2">
+                   <button 
+                     onClick={async () => {
+                       if (window.confirm('Clear all your highlights to fix the ghost bug?')) {
+                         try {
+                            const q = query(collection(db, 'highlights'), where('userId', '==', user?.uid));
+                            const snap = await getDocs(q);
+                            await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'highlights', d.id))));
+                            window.location.reload();
+                         } catch (e: any) {
+                            alert("Error clearing feed: " + e.message);
+                         }
                        }
-                     }
-                   }}
-                   className="text-xs bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded hover:bg-red-500/40"
-                 >
-                   Clear My Feed
-                 </button>
+                     }}
+                     className="text-xs bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded hover:bg-red-500/40"
+                   >
+                     Clear My Feed
+                   </button>
+                   <button 
+                     onClick={async () => {
+                       if (user?.uid) {
+                         await updateDoc(doc(db, 'users', user.uid), { role: 'CEO' });
+                         alert('You are now the CEO! Refresh to apply powers.');
+                       }
+                     }}
+                     className="text-xs bg-neon-gold/20 text-neon-gold border border-neon-gold/50 px-3 py-1 rounded hover:bg-neon-gold/40"
+                   >
+                     Make me CEO
+                   </button>
+                 </div>
                </h2>
                
                <div className="space-y-3 relative z-10">
