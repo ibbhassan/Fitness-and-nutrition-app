@@ -148,7 +148,7 @@ export interface HighlightEvent {
   userId: string;
   username: string;
   avatar: string;
-  type: 'WORKOUT_COMPLETED' | 'PR_BROKEN' | 'RANK_UP';
+  type: 'WORKOUT_COMPLETED' | 'PR_BROKEN' | 'RANK_UP' | 'STREAK';
   data: any;
   timestamp: number;
 }

@@ -8,6 +8,8 @@ import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { publishHighlight } from '../services/socialService';
+import { calculateStreak } from '../utils/streakUtils';
+import { useRef } from 'react';
 
 interface UserContextType {
   user: { username: string, uid?: string } | null;
@@ -259,6 +261,28 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signOut(auth).then(() => setUser(null));
   };
 
+  // Add a ref to track previous level for highlights
+  const prevLevelRef = useRef(profile.level);
+
+  // Monitor for Level Ups to broadcast Rank Up highlights
+  useEffect(() => {
+    if (profile.level > prevLevelRef.current) {
+      if (user?.uid && user.username) {
+        publishHighlight({
+          userId: user.uid,
+          username: user.username,
+          avatar: profile.avatar || { type: 'avatar', style: 'default' } as any,
+          type: 'RANK_UP',
+          data: {
+            level: profile.level
+          },
+          timestamp: Date.now()
+        }).catch(err => console.error("Failed to publish rank up highlight:", err));
+      }
+    }
+    prevLevelRef.current = profile.level;
+  }, [profile.level, user, profile.avatar]);
+
   const updateUsername = async (newUsername: string) => {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, { displayName: newUsername });
@@ -486,17 +510,55 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logWorkout = (log: WorkoutLog) => {
     if (user?.uid && user.username) {
-      publishHighlight({
-        userId: user.uid,
-        username: user.username,
-        avatar: profile.avatar || { type: 'avatar', style: 'default' } as any,
-        type: 'WORKOUT_COMPLETED',
-        data: {
-          workoutName: log.name,
-          grade: log.grade || 'C'
-        },
-        timestamp: Date.now()
-      }).catch(err => console.error("Failed to publish highlight:", err));
+      const avatarConfig = profile.avatar || { type: 'avatar', style: 'default' } as any;
+
+      // Only broadcast S+ Workouts
+      if (log.grade === 'S+') {
+        publishHighlight({
+          userId: user.uid,
+          username: user.username,
+          avatar: avatarConfig,
+          type: 'WORKOUT_COMPLETED',
+          data: {
+            workoutName: log.name,
+            grade: log.grade
+          },
+          timestamp: Date.now()
+        }).catch(err => console.error("Failed to publish workout highlight:", err));
+      }
+
+      // Broadcast PRs
+      if (log.isPr) {
+        publishHighlight({
+          userId: user.uid,
+          username: user.username,
+          avatar: avatarConfig,
+          type: 'PR_BROKEN',
+          data: {
+            workoutName: log.name
+          },
+          timestamp: Date.now() + 1 // Add 1ms to ensure uniqueness
+        }).catch(err => console.error("Failed to publish PR highlight:", err));
+      }
+
+      // Check Streak
+      const newHistory = [...workoutHistory, log];
+      const newStreak = calculateStreak(newHistory, scheduledWorkoutDays);
+      const oldStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
+
+      // If they crossed a multiple of 10 milestone
+      if (newStreak >= 10 && newStreak % 10 === 0 && newStreak > oldStreak) {
+        publishHighlight({
+          userId: user.uid,
+          username: user.username,
+          avatar: avatarConfig,
+          type: 'STREAK',
+          data: {
+            streak: newStreak
+          },
+          timestamp: Date.now() + 2
+        }).catch(err => console.error("Failed to publish streak highlight:", err));
+      }
     }
 
     setWorkoutHistory(prev => [...prev, log]);

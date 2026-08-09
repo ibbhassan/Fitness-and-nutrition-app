@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
-import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield } from 'lucide-react';
+import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import { clsx } from 'clsx';
@@ -217,20 +217,68 @@ export const Social: React.FC = () => {
                       <p className="text-gray-500 font-inter text-sm">No highlights yet. Start dominating to populate the feed!</p>
                     </div>
                   ) : (
-                    highlights.map(highlight => (
-                      <div key={highlight.id} className="bg-tactical-900/80 border border-tactical-800 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-neon-purple/50 transition-colors group">
-                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-neon-purple/10 flex items-center justify-center shrink-0 border border-neon-purple/30 group-hover:bg-neon-purple/20 group-hover:shadow-[0_0_10px_rgba(176,38,255,0.2)] transition-all overflow-hidden">
-                           {highlight.type === 'WORKOUT_COMPLETED' ? (
-                              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-neon-purple" />
-                           ) : (
-                              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-neon-blue" />
-                           )}
+                    highlights.map(highlight => {
+                      let Icon = Activity;
+                      let iconColor = 'text-neon-blue';
+                      let bgColor = 'bg-neon-blue/10';
+                      let borderColor = 'border-neon-blue/30';
+                      let hoverBg = 'group-hover:bg-neon-blue/20';
+                      let hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]';
+                      let hoverBorder = 'hover:border-neon-blue/50';
+                      
+                      if (highlight.type === 'WORKOUT_COMPLETED') {
+                        Icon = Flame;
+                        iconColor = 'text-neon-purple';
+                        bgColor = 'bg-neon-purple/10';
+                        borderColor = 'border-neon-purple/30';
+                        hoverBg = 'group-hover:bg-neon-purple/20';
+                        hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(176,38,255,0.2)]';
+                        hoverBorder = 'hover:border-neon-purple/50';
+                      } else if (highlight.type === 'PR_BROKEN') {
+                        Icon = Crosshair;
+                        iconColor = 'text-neon-gold';
+                        bgColor = 'bg-neon-gold/10';
+                        borderColor = 'border-neon-gold/30';
+                        hoverBg = 'group-hover:bg-neon-gold/20';
+                        hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(255,184,0,0.2)]';
+                        hoverBorder = 'hover:border-neon-gold/50';
+                      } else if (highlight.type === 'RANK_UP') {
+                        Icon = ArrowUpCircle;
+                        iconColor = 'text-neon-blue';
+                        bgColor = 'bg-neon-blue/10';
+                        borderColor = 'border-neon-blue/30';
+                        hoverBg = 'group-hover:bg-neon-blue/20';
+                        hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]';
+                        hoverBorder = 'hover:border-neon-blue/50';
+                      } else if (highlight.type === 'STREAK') {
+                        Icon = Zap;
+                        iconColor = 'text-yellow-400';
+                        bgColor = 'bg-yellow-400/10';
+                        borderColor = 'border-yellow-400/30';
+                        hoverBg = 'group-hover:bg-yellow-400/20';
+                        hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(250,204,21,0.2)]';
+                        hoverBorder = 'hover:border-yellow-400/50';
+                      }
+                      
+                      return (
+                      <div key={highlight.id} className={`bg-tactical-900/80 border border-tactical-800 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 transition-colors group ${hoverBorder}`}>
+                         <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded flex items-center justify-center shrink-0 border transition-all overflow-hidden ${bgColor} ${borderColor} ${hoverBg} ${hoverShadow}`}>
+                           <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColor}`} />
                          </div>
                          <div className="flex-1">
                             <p className="font-inter text-xs sm:text-sm text-gray-300">
                               <strong className="text-white font-rajdhani tracking-wider text-sm sm:text-base uppercase">{highlight.username}</strong> 
                               {highlight.type === 'WORKOUT_COMPLETED' && (
                                 <> achieved an <span className="text-neon-purple font-bold">{highlight.data.grade} Grade</span> on {highlight.data.workoutName}!</>
+                              )}
+                              {highlight.type === 'PR_BROKEN' && (
+                                <> hit a <span className="text-neon-gold font-bold">New PR</span> on {highlight.data.workoutName}!</>
+                              )}
+                              {highlight.type === 'RANK_UP' && (
+                                <> reached <span className="text-neon-blue font-bold">Level {highlight.data.level}</span>!</>
+                              )}
+                              {highlight.type === 'STREAK' && (
+                                <> hit a massive <span className="text-yellow-400 font-bold">{highlight.data.streak}-Day Streak</span>!</>
                               )}
                             </p>
                             <span className="text-[9px] sm:text-[10px] text-gray-500 font-mono mt-1 block">
@@ -239,7 +287,7 @@ export const Social: React.FC = () => {
                          </div>
                          <button className="p-2 bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors border border-tactical-600 text-lg sm:text-xl grayscale hover:grayscale-0" title="Hype">👊</button>
                       </div>
-                    ))
+                    )})
                   )}
                </div>
             </div>
