@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
-import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair } from 'lucide-react';
+import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield } from 'lucide-react';
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import { clsx } from 'clsx';
