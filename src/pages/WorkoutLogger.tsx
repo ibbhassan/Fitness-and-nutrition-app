@@ -443,6 +443,8 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
   const [showCelebration, setShowCelebration] = useState(false);
   const isFinishingRef = useRef(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
+  const [finalGrade, setFinalGrade] = useState<'S+' | 'S' | 'A' | 'B' | 'C' | null>(null);
+  const [finalEp, setFinalEp] = useState<number>(0);
   const [lastCompletedSetTime, setLastCompletedSetTime] = useState(0);
 
   const [viewDate, setViewDate] = useState(getLocalDateString());
@@ -799,6 +801,8 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       isPr
     });
     
+    setFinalGrade(grade);
+    setFinalEp(calculatedEp);
     setShowCelebration(true);
   };
 
@@ -1322,7 +1326,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
 
               <h2 className="esports-heading text-2xl sm:text-3xl text-white mb-2 w-full text-center">Workout Summary</h2>
               <div className="inline-block bg-tactical-900 border border-tactical-600 rounded-full px-4 py-1 mb-6">
-                <span className="text-neon-gold font-rajdhani font-bold text-xl">Rank: S+</span>
+                <span className={clsx("font-rajdhani font-bold text-xl", finalGrade === 'S+' ? "text-neon-gold" : "text-neon-purple")}>Rank: {finalGrade || 'C'}</span>
               </div>
               
               <p className="text-gray-300 font-inter mb-6">
@@ -1336,7 +1340,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
 
               <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-8 flex justify-between items-center">
                 <span className="text-gray-400 font-rajdhani uppercase">Evoke Points</span>
-                <span className="text-2xl font-rajdhani font-bold text-neon-green">+18 EP</span>
+                <span className="text-2xl font-rajdhani font-bold text-neon-green">+{finalEp} EP</span>
               </div>
 
               <button 
