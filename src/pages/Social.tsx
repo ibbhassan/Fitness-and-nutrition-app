@@ -143,7 +143,7 @@ export const Social: React.FC = () => {
             activeTab === 'community' ? "bg-neon-blue text-black shadow-[0_0_15px_rgba(0,240,255,0.4)]" : "text-gray-400 hover:text-white hover:bg-tactical-800"
           )}
         >
-          <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Community</span>
+          <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> Community
         </button>
         <button 
           onClick={() => setActiveTab('roster')}
