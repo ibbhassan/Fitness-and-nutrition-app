@@ -30,7 +30,7 @@ export const Social: React.FC = () => {
       const [requestsResult, friendsResult, highlightsResult] = await Promise.allSettled([
         getPendingRequests(currentUid),
         getFriendsProfiles(profile.friends || []),
-        getNetworkHighlights(profile.friends || [])
+        getNetworkHighlights(currentUid ? [currentUid, ...(profile.friends || [])] : profile.friends || [])
       ]);
       
       if (requestsResult.status === 'fulfilled') {
