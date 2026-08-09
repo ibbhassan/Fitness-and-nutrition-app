@@ -27,14 +27,25 @@ export const Social: React.FC = () => {
     if (!currentUid) return;
     try {
       setIsLoading(true);
-      const [requests, friends, networkHighlights] = await Promise.all([
+      const [requestsResult, friendsResult, highlightsResult] = await Promise.allSettled([
         getPendingRequests(currentUid),
         getFriendsProfiles(profile.friends || []),
         getNetworkHighlights(profile.friends || [])
       ]);
-      setPendingRequests(requests);
-      setFriendsProfiles(friends);
-      setHighlights(networkHighlights);
+      
+      if (requestsResult.status === 'fulfilled') {
+        setPendingRequests(requestsResult.value);
+      }
+      
+      if (friendsResult.status === 'fulfilled') {
+        setFriendsProfiles(friendsResult.value);
+      }
+      
+      if (highlightsResult.status === 'fulfilled') {
+        setHighlights(highlightsResult.value);
+      } else {
+        console.warn("Failed to load highlights, likely due to missing Firestore rules.", highlightsResult.reason);
+      }
     } catch (err) {
       console.error('Failed to load social data', err);
     } finally {
