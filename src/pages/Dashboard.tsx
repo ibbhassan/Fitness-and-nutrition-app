@@ -8,7 +8,7 @@ import { getWeekString } from '../utils/dateUtils';
 import { calculateStreak } from '../utils/streakUtils';
 
 export const Dashboard: React.FC = () => {
-  const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
+  const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics, addEp } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
   const formatLocalDate = (d: Date | string) => {
