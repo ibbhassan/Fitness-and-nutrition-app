@@ -182,17 +182,27 @@ export const Dashboard: React.FC = () => {
             <h2 className="esports-heading text-xl text-white mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-neon-gold" /> Upcoming Workout
             </h2>
-            <div className="bg-tactical-900 border border-tactical-700 p-4 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-tactical-800 flex items-center justify-center border border-neon-gold">
-                  <Dumbbell className="w-5 h-5 text-neon-gold" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">{upcomingWorkout.title}</h3>
-                  <p className="text-sm text-gray-400">{upcomingWorkout.subtitle}</p>
-                </div>
+              <div className="bg-tactical-900 border border-tactical-700 p-4 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-tactical-800 flex items-center justify-center border border-neon-gold">
+                    <Dumbbell className="w-5 h-5 text-neon-gold" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white">{upcomingWorkout.title}</h3>
+                    <p className="text-sm text-gray-400">{upcomingWorkout.subtitle}</p>
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  if (window.confirm('Subtract 180 EP?')) {
+                    addEp(-180);
+                  }
+                }}
+                className="mt-4 w-full bg-red-500/20 text-red-500 border border-red-500/50 p-2 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors"
+              >
+                TEST: Subtract 180 EP
+              </button>
             </div>
 
           {/* Active Challenges */}
