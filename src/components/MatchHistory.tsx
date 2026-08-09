@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import type { WorkoutLog } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2 } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2, Calendar } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const getGradeColor = (grade?: string) => {
@@ -118,18 +118,20 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
       {/* Workout Details Modal */}
       {selectedWorkout && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pb-safe">
-          <div className="absolute inset-0 bg-tactical-900/80 backdrop-blur-sm" onClick={() => setSelectedWorkout(null)}></div>
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedWorkout(null)}></div>
           
-          <div className="relative w-full max-w-2xl bg-tactical-800 border border-tactical-600 rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-2xl bg-tactical-950 border border-tactical-800 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-tactical-700">
+            <div className="flex items-center justify-between p-5 bg-tactical-900/80 border-b border-tactical-800">
               <div>
-                <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider">{selectedWorkout.name}</h2>
-                <span className="text-sm text-gray-400 font-inter">
-                  {new Date(selectedWorkout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(selectedWorkout.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                <h2 className="text-2xl font-rajdhani font-bold text-white uppercase tracking-wider">{selectedWorkout.name}</h2>
+                <span className="text-xs text-gray-500 font-inter tracking-wide uppercase flex items-center gap-2 mt-0.5">
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(selectedWorkout.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span className="text-tactical-700">•</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(selectedWorkout.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>
                 </span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2 bg-tactical-900 p-1 rounded-lg border border-tactical-800">
                 {setActiveTab && (
                   <button 
                     onClick={() => {
@@ -137,10 +139,10 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                       setActiveTab('workout');
                       setSelectedWorkout(null);
                     }}
-                    className="text-gray-400 hover:text-neon-blue transition-colors p-1"
+                    className="text-gray-400 hover:text-neon-blue hover:bg-tactical-800 p-2 rounded-md transition-all"
                     title="Edit Workout"
                   >
-                    <Edit2 className="w-5 h-5" />
+                    <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 )}
                 <button 
@@ -150,97 +152,99 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                       setSelectedWorkout(null);
                     }
                   }}
-                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                  className="text-gray-400 hover:text-neon-red hover:bg-tactical-800 p-2 rounded-md transition-all"
                   title="Delete Workout"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
+                <div className="w-px h-6 bg-tactical-800 mx-1"></div>
                 <button 
                   onClick={() => setSelectedWorkout(null)}
-                  className="text-gray-400 hover:text-white transition-colors p-1"
+                  className="text-gray-400 hover:text-white hover:bg-tactical-800 p-2 rounded-md transition-all"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
             
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              
-              {/* Summary Stats */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
-                  <Clock className="w-5 h-5 text-neon-blue mb-1" />
-                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Duration</span>
-                  <span className="text-lg font-bold text-white">{selectedWorkout.durationMinutes} min</span>
-                </div>
-                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
-                  <Activity className="w-5 h-5 text-neon-purple mb-1" />
-                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Grade</span>
-                  <span className={clsx("text-4xl font-bold mt-2 leading-none", getGradeColor(selectedWorkout.grade || 'A'))}>
-                    {selectedWorkout.grade || 'A'}
-                  </span>
-                </div>
-                <div className="bg-tactical-900 p-3 rounded-lg border border-tactical-700 flex flex-col items-center">
-                  <Dumbbell className="w-5 h-5 text-neon-green mb-1" />
-                  <span className="text-sm text-gray-400 font-rajdhani uppercase text-center">Volume</span>
-                  <span className="text-lg font-bold text-white text-center">{selectedWorkout.volume.toLocaleString()} lbs</span>
-                </div>
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-3 p-4 sm:p-5 bg-tactical-900/30 border-b border-tactical-800/50">
+              <div className="flex flex-col items-center justify-center p-3 bg-tactical-900/80 rounded-xl border border-tactical-800 shadow-inner">
+                <span className="text-[10px] text-gray-500 font-rajdhani uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Duration</span>
+                <span className="text-xl sm:text-2xl font-bold text-white font-mono">{selectedWorkout.durationMinutes}<span className="text-sm text-gray-500 ml-0.5">m</span></span>
               </div>
-
-              {/* Exercises List */}
-              <div className="space-y-4">
-                <h3 className="font-rajdhani font-bold text-lg text-gray-300 uppercase tracking-wider border-b border-tactical-700 pb-2">Exercises</h3>
-                
-                {selectedWorkout.exercises.map((ex, exIdx) => {
-                  const completedSets = ex.sets.filter(s => s.completed);
-                  if (completedSets.length === 0) return null;
-                  
-                  return (
-                    <div key={ex.id} className="bg-tactical-900 rounded-lg border border-tactical-700 overflow-hidden">
-                      <div className="px-4 py-3 bg-tactical-800/50 border-b border-tactical-700">
-                        <h4 className="font-bold text-white">{exIdx + 1}. {ex.name || 'Unnamed Exercise'}</h4>
-                      </div>
-                      <div className="p-2 sm:p-4">
-                        <div className="grid grid-cols-12 gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-2 px-1">
-                          <div className="col-span-3 sm:col-span-2 text-center">Set</div>
-                          <div className="col-span-4 sm:col-span-5 text-center">Lbs</div>
-                          <div className="col-span-5 sm:col-span-5 text-center">Reps</div>
-                        </div>
-                        <div className="space-y-1">
-                          {completedSets.map((set, sIdx) => (
-                            <div key={set.id} className="grid grid-cols-12 gap-2 items-center p-2 bg-tactical-800 rounded">
-                              <div className="col-span-3 sm:col-span-2 flex justify-center">
-                                <span className={clsx(
-                                  "px-2 py-0.5 rounded text-xs font-bold",
-                                  set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold" : 
-                                  set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple" :
-                                  set.type === 'Failure' ? "bg-neon-red/20 text-neon-red" : 
-                                  "bg-tactical-700 text-gray-300"
-                                )}>
-                                  {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : sIdx + 1}
-                                </span>
-                              </div>
-                              <div className="col-span-4 sm:col-span-5 text-center font-inter text-white text-sm">
-                                {set.weight}
-                              </div>
-                              <div className="col-span-5 sm:col-span-5 text-center font-inter text-white text-sm">
-                                {set.reps}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                {selectedWorkout.exercises.filter(ex => ex.sets.some(s => s.completed)).length === 0 && (
-                  <p className="text-gray-500 text-sm italic">No completed exercises in this workout.</p>
-                )}
+              <div className="flex flex-col items-center justify-center p-3 bg-tactical-900 rounded-xl border border-tactical-700 shadow-[0_0_15px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                <div className={clsx("absolute inset-0 opacity-10 blur-xl", getGradeColor(selectedWorkout.grade || 'A').replace('text-', 'bg-').split(' ')[0])}></div>
+                <span className="text-[10px] text-gray-400 font-rajdhani uppercase tracking-widest mb-1 relative z-10">Grade</span>
+                <span className={clsx("text-3xl sm:text-4xl font-bold leading-none relative z-10", getGradeColor(selectedWorkout.grade || 'A'))}>
+                  {selectedWorkout.grade || 'A'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center justify-center p-3 bg-tactical-900/80 rounded-xl border border-tactical-800 shadow-inner">
+                <span className="text-[10px] text-gray-500 font-rajdhani uppercase tracking-widest mb-1 flex items-center gap-1"><Activity className="w-3 h-3" /> Volume</span>
+                <span className="text-xl sm:text-2xl font-bold text-white font-mono">{selectedWorkout.volume.toLocaleString()}<span className="text-[10px] text-gray-500 ml-1">LBS</span></span>
               </div>
             </div>
-            
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+              {/* Exercises List */}
+              {selectedWorkout.exercises.map((ex, exIdx) => {
+                const completedSets = ex.sets.filter(s => s.completed);
+                if (completedSets.length === 0) return null;
+                
+                return (
+                  <div key={ex.id} className="bg-tactical-900/60 rounded-xl border border-tactical-800 overflow-hidden">
+                    <div className="bg-tactical-800/30 px-4 py-3 border-b border-tactical-800 flex items-center justify-between">
+                      <h4 className="font-rajdhani font-bold text-base sm:text-lg text-white uppercase tracking-wider flex items-center gap-2">
+                        <span className="text-tactical-500 font-mono text-sm">{exIdx + 1}.</span> {ex.name || 'Unnamed Exercise'}
+                      </h4>
+                      <span className="text-[10px] sm:text-xs font-mono text-gray-500 bg-tactical-900 px-2 py-1 rounded border border-tactical-700">{completedSets.length} Sets</span>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      {completedSets.map((set, sIdx) => {
+                        const dotColor = set.type === 'Warmup' ? "bg-neon-gold shadow-[0_0_5px_rgba(255,215,0,0.5)]" : 
+                                       set.type === 'Drop' ? "bg-neon-purple shadow-[0_0_5px_rgba(176,38,255,0.5)]" :
+                                       set.type === 'Failure' ? "bg-neon-red shadow-[0_0_5px_rgba(255,51,102,0.5)]" : 
+                                       "bg-neon-blue shadow-[0_0_5px_rgba(0,240,255,0.5)]";
+                                       
+                        return (
+                          <div key={set.id} className="flex items-center justify-between p-2 sm:p-3 bg-tactical-950/50 rounded-lg border border-transparent hover:border-tactical-700/50 transition-colors group">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 w-8 shrink-0">
+                                <span className="text-gray-600 font-mono text-xs group-hover:text-gray-400 transition-colors">{sIdx + 1}.</span>
+                                <div className={clsx("w-1.5 h-1.5 rounded-full", dotColor)}></div>
+                              </div>
+                              <div className="flex items-center gap-2 sm:gap-3 font-mono">
+                                <span className="text-white font-medium text-sm sm:text-base">{set.weight} <span className="text-gray-600 text-[10px] sm:text-xs">LBS</span></span>
+                                <span className="text-tactical-600 text-xs">×</span>
+                                <span className="text-white font-medium text-sm sm:text-base">{set.reps} <span className="text-gray-600 text-[10px] sm:text-xs">REPS</span></span>
+                              </div>
+                            </div>
+                            
+                            {set.type !== 'Normal' && (
+                              <span className={clsx(
+                                "text-[9px] sm:text-[10px] uppercase font-rajdhani font-bold tracking-widest px-1.5 py-0.5 rounded border ml-2",
+                                set.type === 'Warmup' ? "text-neon-gold border-neon-gold/30 bg-neon-gold/5" : 
+                                set.type === 'Drop' ? "text-neon-purple border-neon-purple/30 bg-neon-purple/5" : "text-neon-red border-neon-red/30 bg-neon-red/5"
+                              )}>
+                                {set.type}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {selectedWorkout.exercises.filter(ex => ex.sets.some(s => s.completed)).length === 0 && (
+                <div className="p-8 text-center bg-tactical-900/50 rounded-xl border border-tactical-800 border-dashed">
+                  <p className="text-gray-500 text-sm font-inter">No completed exercises in this workout.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

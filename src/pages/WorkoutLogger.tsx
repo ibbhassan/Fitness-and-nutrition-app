@@ -80,20 +80,20 @@ const ExerciseCard = ({
       value={exercise}
       dragListener={false}
       dragControls={controls}
-      className="bg-tactical-900 border-b border-tactical-700/50 p-2 sm:p-3 mb-2 relative"
+      className="bg-black border border-tactical-800/30 rounded-2xl p-4 sm:p-5 mb-4 relative shadow-2xl"
     >
-      <div className="flex justify-between items-center mb-3 px-1">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-1">
           <div 
-            className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-white p-2 flex items-center justify-center -ml-2"
+            className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-white p-2 flex items-center justify-center -ml-3"
             onPointerDown={(e) => controls.start(e)}
             style={{ touchAction: "none" }}
           >
-            <GripVertical className="w-6 h-6" />
+            <GripVertical className="w-5 h-5" />
           </div>
           <button 
             onClick={() => openLibrary(exIndex, isPreset ? 'preset' : 'active')}
-            className="text-neon-blue hover:text-[#00f0ff] transition-colors font-rajdhani font-bold text-xl uppercase tracking-wider text-left"
+            className="text-white hover:text-neon-blue transition-colors font-rajdhani font-bold text-xl uppercase tracking-wider text-left"
           >
             {exercise.name || 'Select Exercise...'}
           </button>
@@ -104,22 +104,13 @@ const ExerciseCard = ({
             newEx.splice(exIndex, 1);
             setExerciseList(newEx);
           }}
-          className="text-gray-500 hover:text-neon-red transition-colors"
+          className="text-gray-600 hover:text-neon-red transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
       
       <div>
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-1 sm:gap-2 text-[10px] sm:text-xs font-rajdhani uppercase text-gray-500 font-bold mb-1 px-0 sm:px-1">
-          <div className="col-span-2 sm:col-span-1 text-center">Set</div>
-          <div className="col-span-3 sm:col-span-3 text-center">Previous</div>
-          <div className="col-span-2 sm:col-span-2 text-center">Lbs</div>
-          <div className="col-span-2 sm:col-span-2 text-center">Reps</div>
-          <div className="col-span-3 sm:col-span-4 text-center"></div>
-        </div>
-
         <Reorder.Group 
           axis="y" 
           values={exercise.sets} 
@@ -128,91 +119,101 @@ const ExerciseCard = ({
             newEx[exIndex].sets = newSets;
             setExerciseList(newEx);
           }}
-          className="space-y-0"
+          className="space-y-2"
         >
           {exercise.sets.map((set, setIndex) => {
             const prevData = getPreviousSetData(exercise.name, setIndex);
+            
+            const dotColor = set.type === 'Warmup' ? "bg-neon-gold shadow-[0_0_5px_rgba(255,215,0,0.5)]" : 
+                           set.type === 'Drop' ? "bg-neon-purple shadow-[0_0_5px_rgba(176,38,255,0.5)]" :
+                           set.type === 'Failure' ? "bg-neon-red shadow-[0_0_5px_rgba(255,51,102,0.5)]" : 
+                           "bg-neon-blue shadow-[0_0_5px_rgba(0,240,255,0.5)]";
+
             return (
               <Reorder.Item 
                 key={set.id} 
                 value={set}
                 className={clsx(
-                  "grid grid-cols-12 gap-1 sm:gap-2 items-center py-1 px-0 sm:px-1 rounded-sm transition-colors",
-                  set.completed ? "bg-neon-green/10" : "hover:bg-tactical-800/50"
+                  "flex items-center gap-2 sm:gap-3 p-2 rounded-xl transition-all border",
+                  set.completed 
+                    ? "bg-neon-green/5 border-neon-green/20" 
+                    : "bg-tactical-900/30 border-transparent hover:bg-tactical-800/40"
                 )}
               >
-                {/* Set Number / Type Toggle */}
-                <div className="col-span-2 sm:col-span-1 flex justify-center">
-                  <button
-                    onClick={() => cycleSetType(setIndex, set.type)}
-                    className={clsx(
-                      "w-6 h-6 sm:w-8 sm:h-8 rounded flex items-center justify-center font-rajdhani font-bold text-xs sm:text-sm transition-colors",
-                      set.type === 'Warmup' ? "bg-neon-gold/20 text-neon-gold border border-neon-gold/50" : 
-                      set.type === 'Drop' ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/50" :
-                      set.type === 'Failure' ? "bg-neon-red/20 text-neon-red border border-neon-red/50" : 
-                      "bg-tactical-700 text-white"
-                    )}
-                  >
-                    {set.type === 'Warmup' ? 'W' : set.type === 'Drop' ? 'D' : set.type === 'Failure' ? 'F' : setIndex + 1}
-                  </button>
+                {/* Drag Handle for Set */}
+                <div className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-gray-400 p-1 flex items-center justify-center shrink-0">
+                  <GripVertical className="w-4 h-4" />
                 </div>
+
+                {/* Set Indicator */}
+                <button
+                  onClick={() => cycleSetType(setIndex, set.type)}
+                  className="flex items-center gap-2 w-10 shrink-0 group"
+                  title="Click to change set type"
+                >
+                  <span className="text-gray-500 font-mono text-sm group-hover:text-white transition-colors">{setIndex + 1}.</span>
+                  <div className={clsx("w-1.5 h-1.5 rounded-full", dotColor)}></div>
+                </button>
                 
-                {/* Previous Data */}
-                <div className="col-span-3 sm:col-span-3 flex items-center justify-center">
-                  <span className="text-gray-500 font-inter text-[10px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
-                    {prevData ? `${prevData.weight}x${prevData.reps}` : '-'}
-                  </span>
-                </div>
+                {/* Inputs & Prev Data */}
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  
+                  {/* Prev Data */}
+                  <div className="flex items-center sm:w-20 shrink-0">
+                    <span className="text-[10px] text-gray-600 font-mono">
+                      {prevData ? `P: ${prevData.weight}x${prevData.reps}` : 'P: -'}
+                    </span>
+                  </div>
 
-                {/* Weight */}
-                <div className="col-span-2 sm:col-span-2">
-                  <input 
-                    type="number" 
-                    step="any"
-                    value={set.weight === 0 ? '' : set.weight}
-                    onChange={(e) => updateSet(setIndex, 'weight', e.target.value)}
-                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
-                    placeholder="0"
-                  />
-                </div>
-
-                {/* Reps */}
-                <div className="col-span-2 sm:col-span-2">
-                  <input 
-                    type="number" 
-                    step="any"
-                    value={set.reps === 0 ? '' : set.reps}
-                    onChange={(e) => updateSet(setIndex, 'reps', e.target.value)}
-                    className="w-full bg-transparent border-b border-tactical-700 rounded-none p-1 text-white text-center focus:outline-none focus:border-neon-blue font-inter text-sm transition-colors"
-                    placeholder="0"
-                  />
+                  {/* Lbs x Reps */}
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="relative flex-1 max-w-[80px]">
+                      <input 
+                        type="number" 
+                        step="any"
+                        value={set.weight === 0 ? '' : set.weight}
+                        onChange={(e) => updateSet(setIndex, 'weight', e.target.value)}
+                        className="w-full bg-tactical-900/50 rounded-lg p-2 text-white font-bold text-sm text-center focus:outline-none focus:ring-1 focus:ring-neon-blue placeholder-gray-700 transition-all"
+                        placeholder="lbs"
+                      />
+                    </div>
+                    <span className="text-gray-600 font-bold text-sm">×</span>
+                    <div className="relative flex-1 max-w-[80px]">
+                      <input 
+                        type="number" 
+                        step="any"
+                        value={set.reps === 0 ? '' : set.reps}
+                        onChange={(e) => updateSet(setIndex, 'reps', e.target.value)}
+                        className="w-full bg-tactical-900/50 rounded-lg p-2 text-white font-bold text-sm text-center focus:outline-none focus:ring-1 focus:ring-neon-blue placeholder-gray-700 transition-all"
+                        placeholder="reps"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="col-span-3 sm:col-span-4 flex justify-end sm:justify-center items-center gap-1 sm:gap-2">
-                  {!isPreset && (
-                    <button 
-                      onClick={() => toggleSetComplete(setIndex)}
-                      className={clsx(
-                        "w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center transition-all",
-                        set.completed 
-                          ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.5)]" 
-                          : "bg-tactical-800 border border-tactical-600 text-transparent hover:border-neon-green"
-                      )}
-                    >
-                      <Check className={clsx("w-4 h-4 sm:w-5 sm:h-5", set.completed ? "text-tactical-900" : "hidden")} />
-                    </button>
-                  )}
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   <button
                     onClick={() => removeSet(setIndex)}
-                    className="w-7 h-7 sm:w-8 sm:h-8 hover:text-neon-red rounded flex items-center justify-center text-gray-500 transition-colors"
+                    className="w-8 h-8 hover:text-neon-red rounded-lg flex items-center justify-center text-gray-600 transition-colors"
                     title="Delete Set"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <div className="cursor-grab active:cursor-grabbing text-tactical-600 hover:text-gray-400 p-1 flex items-center justify-center">
-                    <GripVertical className="w-5 h-5" />
-                  </div>
+                  
+                  {!isPreset && (
+                    <button 
+                      onClick={() => toggleSetComplete(setIndex)}
+                      className={clsx(
+                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                        set.completed 
+                          ? "bg-neon-green text-tactical-900 shadow-[0_0_10px_rgba(0,255,100,0.3)]" 
+                          : "bg-tactical-800 text-transparent hover:border hover:border-neon-green/50"
+                      )}
+                    >
+                      <Check className={clsx("w-4 h-4", set.completed ? "text-tactical-900" : "hidden")} />
+                    </button>
+                  )}
                 </div>
               </Reorder.Item>
             );
@@ -221,9 +222,9 @@ const ExerciseCard = ({
         
         <button
           onClick={addSet}
-          className="mt-2 w-full py-2 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded transition-colors font-rajdhani font-bold text-sm uppercase flex justify-center items-center"
+          className="mt-4 w-full py-3 border border-dashed border-tactical-800 hover:border-neon-blue text-gray-500 hover:text-neon-blue bg-transparent rounded-xl transition-all font-rajdhani font-bold text-sm uppercase flex justify-center items-center"
         >
-          <Plus className="w-4 h-4 mr-1" /> Add Set
+          <Plus className="w-4 h-4 mr-2" /> Add Set
         </button>
       </div>
     </Reorder.Item>
