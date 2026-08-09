@@ -1,6 +1,6 @@
 import { db } from '../config/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import type { FriendRequest } from '../types';
+import type { FriendRequest, HighlightEvent } from '../types';
 
 export const searchUsersByUsername = async (username: string, currentUid: string) => {
   if (!username.trim()) return [];
@@ -122,4 +122,38 @@ export const getFriendFullProfile = async (friendUid: string) => {
     return snap.data();
   }
   return null;
+};
+
+export const publishHighlight = async (event: Omit<HighlightEvent, 'id'>) => {
+  const highlightsRef = collection(db, 'highlights');
+  await addDoc(highlightsRef, event);
+};
+
+export const getNetworkHighlights = async (friendUids: string[], limitCount: number = 20): Promise<HighlightEvent[]> => {
+  if (!friendUids || friendUids.length === 0) return [];
+  
+  // Note: To avoid the 10-item limit for `in` queries in Firestore if a user has many friends, 
+  // we could just fetch recent global highlights and filter locally, OR batch `in` queries. 
+  // For now, we will query globally ordered by timestamp, limit, and filter locally.
+  // In a massive app, you'd use a fan-out architecture for feeds.
+  
+  // Since we don't have complex indexes yet, let's fetch recent highlights and filter in memory.
+  // If we try to order by timestamp AND filter by 'in', it requires a composite index.
+  const highlightsRef = collection(db, 'highlights');
+  const snapshot = await getDocs(highlightsRef); // A real app would use a more constrained query
+  
+  const results: HighlightEvent[] = [];
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (friendUids.includes(data.userId)) {
+      results.push({
+        id: docSnap.id,
+        ...data
+      } as HighlightEvent);
+    }
+  });
+  
+  // Sort descending by timestamp and slice to limit
+  results.sort((a, b) => b.timestamp - a.timestamp);
+  return results.slice(0, limitCount);
 };

@@ -7,6 +7,7 @@ import { seedProfile, seedNutrition } from '../utils/seedData';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
+import { publishHighlight } from '../services/socialService';
 
 interface UserContextType {
   user: { username: string, uid?: string } | null;
@@ -484,6 +485,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logWorkout = (log: WorkoutLog) => {
+    if (user?.uid && user.username) {
+      publishHighlight({
+        userId: user.uid,
+        username: user.username,
+        avatar: profile.avatar || { type: 'avatar', style: 'default' } as any,
+        type: 'WORKOUT_COMPLETED',
+        data: {
+          workoutName: log.name,
+          grade: log.grade || 'C'
+        },
+        timestamp: Date.now()
+      }).catch(err => console.error("Failed to publish highlight:", err));
+    }
+
     setWorkoutHistory(prev => [...prev, log]);
     if (log.epChange) {
       addEp(log.epChange);

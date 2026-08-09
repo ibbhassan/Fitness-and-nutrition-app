@@ -142,3 +142,13 @@ export interface WorkoutLog {
   epChange?: number;
   isPr?: boolean;
 }
+
+export interface HighlightEvent {
+  id: string;
+  userId: string;
+  username: string;
+  avatar: string;
+  type: 'WORKOUT_COMPLETED' | 'PR_BROKEN' | 'RANK_UP';
+  data: any;
+  timestamp: number;
+}

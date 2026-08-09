@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend } from '../services/socialService';
+import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair } from 'lucide-react';
-import type { FriendRequest } from '../types';
+import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import { clsx } from 'clsx';
 
@@ -19,6 +19,7 @@ export const Social: React.FC = () => {
   const [selectedFriendUid, setSelectedFriendUid] = useState<string | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'lobby' | 'roster'>('lobby');
+  const [highlights, setHighlights] = useState<HighlightEvent[]>([]);
 
   const currentUid = user?.uid;
 
@@ -26,12 +27,14 @@ export const Social: React.FC = () => {
     if (!currentUid) return;
     try {
       setIsLoading(true);
-      const [requests, friends] = await Promise.all([
+      const [requests, friends, networkHighlights] = await Promise.all([
         getPendingRequests(currentUid),
-        getFriendsProfiles(profile.friends || [])
+        getFriendsProfiles(profile.friends || []),
+        getNetworkHighlights(profile.friends || [])
       ]);
       setPendingRequests(requests);
       setFriendsProfiles(friends);
+      setHighlights(networkHighlights);
     } catch (err) {
       console.error('Failed to load social data', err);
     } finally {
@@ -194,35 +197,39 @@ export const Social: React.FC = () => {
             <div className="esports-panel p-6 border-l-4 border-neon-purple relative overflow-hidden">
                <div className="absolute inset-0 bg-gradient-to-r from-neon-purple/5 to-transparent pointer-events-none"></div>
                <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2 mb-6 relative z-10 border-b border-tactical-800 pb-4">
-                 <Activity className="w-5 h-5 text-neon-purple" /> Network Highlights
+                 <Activity className="w-5 h-5 text-neon-purple" /> Highlights
                </h2>
                
                <div className="space-y-3 relative z-10">
-                  <div className="bg-tactical-900/80 border border-tactical-800 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-neon-purple/50 transition-colors group">
-                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-neon-purple/10 flex items-center justify-center shrink-0 border border-neon-purple/30 group-hover:bg-neon-purple/20 group-hover:shadow-[0_0_10px_rgba(176,38,255,0.2)] transition-all">
-                       <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-neon-purple" />
-                     </div>
-                     <div className="flex-1">
-                        <p className="font-inter text-xs sm:text-sm text-gray-300">
-                          <strong className="text-white font-rajdhani tracking-wider text-sm sm:text-base uppercase">AURA_FIT</strong> achieved an <span className="text-neon-purple font-bold">S+ Grade</span> on Leg Day!
-                        </p>
-                        <span className="text-[9px] sm:text-[10px] text-gray-500 font-mono mt-1 block">2 HOURS AGO</span>
-                     </div>
-                     <button className="p-2 bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors border border-tactical-600 text-lg sm:text-xl grayscale hover:grayscale-0" title="Hype">👊</button>
-                  </div>
-                  
-                  <div className="bg-tactical-900/80 border border-tactical-800 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-neon-gold/50 transition-colors group">
-                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-neon-gold/10 flex items-center justify-center shrink-0 border border-neon-gold/30 group-hover:bg-neon-gold/20 group-hover:shadow-[0_0_10px_rgba(255,215,0,0.2)] transition-all">
-                       <Crosshair className="w-4 h-4 sm:w-5 sm:h-5 text-neon-gold" />
-                     </div>
-                     <div className="flex-1">
-                        <p className="font-inter text-xs sm:text-sm text-gray-300">
-                          <strong className="text-white font-rajdhani tracking-wider text-sm sm:text-base uppercase">IRON_WOLF</strong> hit a new PR: <span className="text-neon-gold font-bold">315 lbs</span> on Bench Press!
-                        </p>
-                        <span className="text-[9px] sm:text-[10px] text-gray-500 font-mono mt-1 block">5 HOURS AGO</span>
-                     </div>
-                     <button className="p-2 bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors border border-tactical-600 text-lg sm:text-xl grayscale hover:grayscale-0" title="Hype">👊</button>
-                  </div>
+                  {highlights.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-gray-500 font-inter text-sm">No highlights yet. Start dominating to populate the feed!</p>
+                    </div>
+                  ) : (
+                    highlights.map(highlight => (
+                      <div key={highlight.id} className="bg-tactical-900/80 border border-tactical-800 rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-neon-purple/50 transition-colors group">
+                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-neon-purple/10 flex items-center justify-center shrink-0 border border-neon-purple/30 group-hover:bg-neon-purple/20 group-hover:shadow-[0_0_10px_rgba(176,38,255,0.2)] transition-all overflow-hidden">
+                           {highlight.type === 'WORKOUT_COMPLETED' ? (
+                              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-neon-purple" />
+                           ) : (
+                              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-neon-blue" />
+                           )}
+                         </div>
+                         <div className="flex-1">
+                            <p className="font-inter text-xs sm:text-sm text-gray-300">
+                              <strong className="text-white font-rajdhani tracking-wider text-sm sm:text-base uppercase">{highlight.username}</strong> 
+                              {highlight.type === 'WORKOUT_COMPLETED' && (
+                                <> achieved an <span className="text-neon-purple font-bold">{highlight.data.grade} Grade</span> on {highlight.data.workoutName}!</>
+                              )}
+                            </p>
+                            <span className="text-[9px] sm:text-[10px] text-gray-500 font-mono mt-1 block">
+                              {new Date(highlight.timestamp).toLocaleString()}
+                            </span>
+                         </div>
+                         <button className="p-2 bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors border border-tactical-600 text-lg sm:text-xl grayscale hover:grayscale-0" title="Hype">👊</button>
+                      </div>
+                    ))
+                  )}
                </div>
             </div>
          </div>
