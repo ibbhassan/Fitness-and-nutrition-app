@@ -18,31 +18,9 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
-  // Initialize CodeReader and fetch devices
+  // Initialize CodeReader
   useEffect(() => {
-    const codeReader = new BrowserMultiFormatReader();
-    codeReaderRef.current = codeReader;
-
-    const initCamera = async () => {
-      try {
-        const videoInputDevices = await codeReader.listVideoInputDevices();
-        if (videoInputDevices.length > 0) {
-          setDevices(videoInputDevices);
-          
-          // Heuristic: try to select a 'back' camera if available
-          const backCamera = videoInputDevices.find(d => d.label.toLowerCase().includes('back'));
-          const initialDevice = backCamera ? backCamera.deviceId : videoInputDevices[0].deviceId;
-          setSelectedDeviceId(initialDevice);
-        } else {
-          setError("No cameras found on this device.");
-        }
-      } catch (err) {
-        setError("Failed to access camera. Please check permissions.");
-      }
-    };
-
-    initCamera();
-
+    codeReaderRef.current = new BrowserMultiFormatReader();
     return () => {
       if (codeReaderRef.current) {
         codeReaderRef.current.reset();
@@ -50,36 +28,68 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose, onScanS
     };
   }, []);
 
-  // Start scanning when selected device changes
+  // Start scanning
   useEffect(() => {
-    if (!selectedDeviceId || !videoRef.current || !codeReaderRef.current) return;
+    if (!videoRef.current || !codeReaderRef.current) return;
 
     let isCleanedUp = false;
     const codeReader = codeReaderRef.current;
     codeReader.reset();
 
+    const handleScanResult = async (result: any, err: any) => {
+      if (result) {
+        // Successfully decoded
+        codeReader.reset(); // Stop scanning
+        await handleBarcodeMatch(result.getText());
+      }
+      if (err && !(err instanceof NotFoundException)) {
+        // Ignore NotFoundException as it's thrown constantly while scanning
+        console.error(err);
+      }
+    };
+
     const startScanner = async () => {
       try {
         if (!isCleanedUp && videoRef.current) {
-          await codeReader.decodeFromVideoDevice(
-            selectedDeviceId,
-            videoRef.current,
-            async (result, err) => {
-              if (result) {
-                // Successfully decoded
-                codeReader.reset(); // Stop scanning
-                await handleBarcodeMatch(result.getText());
-              }
-              if (err && !(err instanceof NotFoundException)) {
-                // Ignore NotFoundException as it's thrown constantly while scanning
-                console.error(err);
-              }
+          if (selectedDeviceId) {
+            // User manually selected a specific camera (e.g., using the switch button)
+            await codeReader.decodeFromVideoDevice(
+              selectedDeviceId,
+              videoRef.current,
+              handleScanResult
+            );
+          } else {
+            // Default: ask the browser for the environment (back) camera directly
+            // This forces iOS to show the permission prompt without needing to list devices first
+            await codeReader.decodeFromConstraints(
+              { video: { facingMode: "environment" } },
+              videoRef.current,
+              handleScanResult
+            );
+            
+            // Once permissions are granted, fetch the device list for the camera switcher UI
+            if (!isCleanedUp) {
+               try {
+                 const videoInputDevices = await codeReader.listVideoInputDevices();
+                 if (videoInputDevices.length > 0) {
+                   setDevices(videoInputDevices);
+                 }
+               } catch (e) {
+                 console.error("Failed to list devices after permission grant", e);
+               }
             }
-          );
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         if (!isCleanedUp) {
-          setError("Failed to start camera. It may be in use by another application.");
+          console.error("Scanner init error:", err);
+          if (err?.name === 'NotAllowedError') {
+            setError("Camera access denied. Please allow camera permissions in your browser settings.");
+          } else if (err?.name === 'NotFoundError') {
+            setError("No camera found on this device.");
+          } else {
+            setError("Failed to start camera. Please ensure you are using HTTPS (Live Site).");
+          }
         }
       }
     };
