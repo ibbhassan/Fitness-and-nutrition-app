@@ -274,7 +274,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: profile.avatar || { type: 'avatar', style: 'default' } as any,
           type: 'RANK_UP',
           data: {
-            level: profile.level
+            level: profile.level,
+            oldLevel: prevLevelRef.current
           },
           timestamp: Date.now()
         }).catch(err => console.error("Failed to publish rank up highlight:", err));

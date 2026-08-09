@@ -242,14 +242,38 @@ export const Social: React.FC = () => {
                         hoverBg = 'group-hover:bg-neon-gold/20';
                         hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(255,184,0,0.2)]';
                         hoverBorder = 'hover:border-neon-gold/50';
-                      } else if (highlight.type === 'RANK_UP') {
+                      }
+
+                      let isMajorPromotion = false;
+                      let oldRankInfo = null;
+                      let newRankInfo = null;
+
+                      if (highlight.type === 'RANK_UP') {
+                        const newLevel = highlight.data.level;
+                        const oldLevel = highlight.data.oldLevel || Math.max(1, newLevel - 1); // fallback if oldLevel wasn't tracked
+                        newRankInfo = getRankInfo(newLevel);
+                        oldRankInfo = getRankInfo(oldLevel);
+                        
+                        isMajorPromotion = newRankInfo.tier !== oldRankInfo.tier;
+
                         Icon = ArrowUpCircle;
-                        iconColor = 'text-neon-blue';
-                        bgColor = 'bg-neon-blue/10';
-                        borderColor = 'border-neon-blue/30';
-                        hoverBg = 'group-hover:bg-neon-blue/20';
-                        hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]';
-                        hoverBorder = 'hover:border-neon-blue/50';
+                        if (isMajorPromotion) {
+                          // Make it look legendary
+                          iconColor = newRankInfo.color;
+                          bgColor = `bg-tactical-900/50`;
+                          borderColor = `border-${newRankInfo.color.split('-')[1]}-500/50`;
+                          hoverBg = `group-hover:bg-tactical-800`;
+                          hoverShadow = `group-hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]`;
+                          hoverBorder = `hover:border-${newRankInfo.color.split('-')[1]}-400`;
+                        } else {
+                          // Standard promotion
+                          iconColor = 'text-neon-blue';
+                          bgColor = 'bg-neon-blue/10';
+                          borderColor = 'border-neon-blue/30';
+                          hoverBg = 'group-hover:bg-neon-blue/20';
+                          hoverShadow = 'group-hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]';
+                          hoverBorder = 'hover:border-neon-blue/50';
+                        }
                       } else if (highlight.type === 'STREAK') {
                         Icon = Zap;
                         iconColor = 'text-yellow-400';
@@ -275,7 +299,11 @@ export const Social: React.FC = () => {
                                 <> hit a <span className="text-neon-gold font-bold">New PR</span> on {highlight.data.workoutName}!</>
                               )}
                               {highlight.type === 'RANK_UP' && (
-                                <> reached <span className="text-neon-blue font-bold">Level {highlight.data.level}</span>!</>
+                                isMajorPromotion ? (
+                                  <> hit a <span className={clsx("font-bold text-lg", newRankInfo?.color)}>MAJOR PROMOTION</span> to <span className={newRankInfo?.color}>{newRankInfo?.tier} {newRankInfo?.division}</span>!</>
+                                ) : (
+                                  <> promoted to <span className="text-neon-blue font-bold">{newRankInfo?.tier} {newRankInfo?.division}</span>!</>
+                                )
                               )}
                               {highlight.type === 'STREAK' && (
                                 <> hit a massive <span className="text-yellow-400 font-bold">{highlight.data.streak}-Day Streak</span>!</>
