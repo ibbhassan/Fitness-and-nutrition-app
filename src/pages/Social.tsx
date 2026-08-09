@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../config/firebase';
-import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useUser } from '../context/UserContext';
 import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
