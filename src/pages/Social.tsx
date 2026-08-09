@@ -18,7 +18,7 @@ export const Social: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFriendUid, setSelectedFriendUid] = useState<string | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'lobby' | 'roster'>('lobby');
+  const [activeTab, setActiveTab] = useState<'community' | 'roster'>('community');
   const [highlights, setHighlights] = useState<HighlightEvent[]>([]);
 
   const currentUid = user?.uid;
@@ -137,13 +137,13 @@ export const Social: React.FC = () => {
       {/* Sub-Navigation Tabs */}
       <div className="flex items-center gap-2 bg-tactical-900/50 p-2 rounded-xl border border-tactical-800 backdrop-blur-sm relative z-20">
         <button 
-          onClick={() => setActiveTab('lobby')}
+          onClick={() => setActiveTab('community')}
           className={clsx(
             "flex-1 py-3 px-2 sm:px-4 rounded-lg font-rajdhani font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 text-sm sm:text-base",
-            activeTab === 'lobby' ? "bg-neon-blue text-black shadow-[0_0_15px_rgba(0,240,255,0.4)]" : "text-gray-400 hover:text-white hover:bg-tactical-800"
+            activeTab === 'community' ? "bg-neon-blue text-black shadow-[0_0_15px_rgba(0,240,255,0.4)]" : "text-gray-400 hover:text-white hover:bg-tactical-800"
           )}
         >
-          <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">HQ</span> Lobby
+          <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Community</span>
         </button>
         <button 
           onClick={() => setActiveTab('roster')}
@@ -161,7 +161,7 @@ export const Social: React.FC = () => {
         </button>
       </div>
 
-      {activeTab === 'lobby' ? (
+      {activeTab === 'community' ? (
          <div className="space-y-6 animate-fade-in-up">
             {/* Top Half: Ranked Ladder */}
             <div className="esports-panel p-6 border-t-4 border-neon-gold relative overflow-hidden">
