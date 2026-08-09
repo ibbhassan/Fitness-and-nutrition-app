@@ -1,5 +1,5 @@
 import { db } from '../config/firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import type { FriendRequest, HighlightEvent } from '../types';
 
 export const searchUsersByUsername = async (username: string, currentUid: string) => {
@@ -127,6 +127,15 @@ export const getFriendFullProfile = async (friendUid: string) => {
 export const publishHighlight = async (event: Omit<HighlightEvent, 'id'>) => {
   const highlightsRef = collection(db, 'highlights');
   await addDoc(highlightsRef, event);
+};
+
+export const deleteHighlightsForWorkout = async (workoutId: string) => {
+  const highlightsRef = collection(db, 'highlights');
+  const q = query(highlightsRef, where('data.workoutId', '==', workoutId));
+  const snapshot = await getDocs(q);
+  
+  const deletePromises = snapshot.docs.map(docSnap => deleteDoc(doc(db, 'highlights', docSnap.id)));
+  await Promise.allSettled(deletePromises);
 };
 
 export const getNetworkHighlights = async (friendUids: string[], limitCount: number = 20): Promise<HighlightEvent[]> => {

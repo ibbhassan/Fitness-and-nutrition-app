@@ -7,7 +7,7 @@ import { seedProfile, seedNutrition } from '../utils/seedData';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
-import { publishHighlight } from '../services/socialService';
+import { publishHighlight, deleteHighlightsForWorkout } from '../services/socialService';
 import { calculateStreak } from '../utils/streakUtils';
 import { useRef } from 'react';
 
@@ -520,6 +520,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: avatarConfig,
           type: 'WORKOUT_COMPLETED',
           data: {
+            workoutId: log.id,
             workoutName: log.name,
             grade: log.grade
           },
@@ -535,6 +536,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           avatar: avatarConfig,
           type: 'PR_BROKEN',
           data: {
+            workoutId: log.id,
             workoutName: log.name
           },
           timestamp: Date.now() + 1 // Add 1ms to ensure uniqueness
@@ -613,6 +615,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteWorkout = (id: string) => {
+    // Find the workout before deleting
+    const workoutToDelete = workoutHistory.find(w => w.id === id);
+    if (workoutToDelete?.epChange) {
+      addEp(-workoutToDelete.epChange);
+    }
+    
+    // Remove highlights
+    deleteHighlightsForWorkout(id).catch(err => console.error("Failed to delete highlights:", err));
+
     setWorkoutHistory(prev => prev.filter(w => w.id !== id));
   };
 
