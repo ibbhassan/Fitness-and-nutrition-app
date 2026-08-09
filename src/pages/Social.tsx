@@ -216,10 +216,14 @@ export const Social: React.FC = () => {
                  <button 
                    onClick={async () => {
                      if (window.confirm('Clear all your highlights to fix the ghost bug?')) {
-                        const q = query(collection(db, 'highlights'), where('username', '==', user?.username));
-                        const snap = await getDocs(q);
-                        await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'highlights', d.id))));
-                        window.location.reload();
+                       try {
+                          const q = query(collection(db, 'highlights'), where('userId', '==', user?.uid));
+                          const snap = await getDocs(q);
+                          await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'highlights', d.id))));
+                          window.location.reload();
+                       } catch (e: any) {
+                          alert("Error clearing feed: " + e.message);
+                       }
                      }
                    }}
                    className="text-xs bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded hover:bg-red-500/40"
