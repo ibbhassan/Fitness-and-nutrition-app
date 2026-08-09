@@ -10,3 +10,19 @@ export const getWeekString = (d: Date | string = new Date()) => {
   friday.setDate(date.getDate() - daysSinceFriday);
   return getLocalDateString(friday);
 };
+
+export const getTimeUntilNextReset = () => {
+  const now = new Date();
+  const nextFriday = new Date(now);
+  const daysUntilFriday = (5 - now.getDay() + 7) % 7 || 7;
+  
+  nextFriday.setDate(now.getDate() + daysUntilFriday);
+  nextFriday.setHours(0, 0, 0, 0);
+
+  const diffMs = nextFriday.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  return `${diffDays}D ${diffHours}H`;
+};
+

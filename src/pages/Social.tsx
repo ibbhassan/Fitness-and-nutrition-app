@@ -4,6 +4,7 @@ import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondTo
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
+import { getTimeUntilNextReset } from '../utils/dateUtils';
 import { clsx } from 'clsx';
 
 import { FriendProfile } from '../components/social/FriendProfile';
@@ -170,7 +171,7 @@ export const Social: React.FC = () => {
                  <h2 className="text-2xl font-rajdhani font-bold text-white uppercase tracking-wider flex items-center gap-2">
                    <Trophy className="w-6 h-6 text-neon-gold" /> Weekly Ranked Ladder
                  </h2>
-                 <span className="text-xs text-gray-500 font-mono border border-tactical-700 bg-tactical-900 px-3 py-1 rounded-full">RESETS IN: 2D 14H</span>
+                 <span className="text-xs text-gray-500 font-mono border border-tactical-700 bg-tactical-900 px-3 py-1 rounded-full">RESETS IN: {getTimeUntilNextReset()}</span>
                </div>
                
                <div className="flex items-end justify-center gap-2 sm:gap-6 mt-4 mb-2 relative z-10 px-2">
