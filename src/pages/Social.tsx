@@ -138,7 +138,7 @@ export const Social: React.FC = () => {
             activeTab === 'roster' ? "bg-neon-blue text-black shadow-[0_0_15px_rgba(0,240,255,0.4)]" : "text-gray-400 hover:text-white hover:bg-tactical-800"
           )}
         >
-          <Shield className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Friends</span> Roster
+          <Shield className="w-4 h-4 sm:w-5 sm:h-5" /> Friends
           {(pendingRequests.length > 0) && (
              <span className={clsx("w-5 h-5 rounded-full flex items-center justify-center text-[10px]", activeTab === 'roster' ? "bg-black text-neon-blue" : "bg-neon-gold text-black")}>
                {pendingRequests.length}
@@ -234,7 +234,7 @@ export const Social: React.FC = () => {
                 <div className="flex items-center gap-4 relative z-10">
                   <div>
                     <h1 className="text-2xl font-rajdhani font-bold tracking-widest text-white uppercase">Friends List</h1>
-                    <p className="text-gray-400 text-sm font-inter">Manage your roster and dominate together.</p>
+                    <p className="text-gray-400 text-sm font-inter">Manage your friends and dominate together.</p>
                   </div>
                 </div>
                 <button 
@@ -247,7 +247,7 @@ export const Social: React.FC = () => {
 
               <div className="esports-panel p-6 space-y-4">
                 <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider border-b border-tactical-700 pb-4">
-                  Roster
+                  Friends
                 </h2>
                 
                 {friendsProfiles.length === 0 ? (
@@ -255,7 +255,7 @@ export const Social: React.FC = () => {
                     <div className="absolute inset-0 bg-neon-blue/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
                     <p className="font-rajdhani uppercase tracking-wider text-sm">No friends yet</p>
-                    <p className="text-xs mt-1 text-gray-500">Search for agents to add to your roster!</p>
+                    <p className="text-xs mt-1 text-gray-500">Search for agents to add to your friends list!</p>
                   </div>
                 ) : (
                   <div className="space-y-4 mt-2 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
