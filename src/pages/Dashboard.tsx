@@ -277,7 +277,7 @@ export const Dashboard: React.FC = () => {
               </button>
 
               <button 
-                onClick={() => toggleManualQuest(weeklyNutritionKey, 50)}
+                onClick={() => toggleManualQuest(weeklyNutritionKey, 200)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyNutritionComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
@@ -289,7 +289,7 @@ export const Dashboard: React.FC = () => {
                   {isWeeklyNutritionComplete ? (
                     <CheckCircle className="w-4 h-4 text-neon-blue" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+50 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green">+200 EP</span>
                   )}
                 </div>
               </button>
