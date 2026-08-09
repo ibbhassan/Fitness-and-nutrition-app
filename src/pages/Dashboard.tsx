@@ -8,7 +8,7 @@ import { getWeekString } from '../utils/dateUtils';
 import { calculateStreak } from '../utils/streakUtils';
 
 export const Dashboard: React.FC = () => {
-  const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics, addEp } = useUser();
+  const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
   const formatLocalDate = (d: Date | string) => {
@@ -193,16 +193,6 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  if (window.confirm('Subtract 180 EP?')) {
-                    addEp(-180);
-                  }
-                }}
-                className="mt-4 w-full bg-red-500/20 text-red-500 border border-red-500/50 p-2 rounded-lg text-sm font-bold hover:bg-red-500/30 transition-colors"
-              >
-                TEST: Subtract 180 EP
-              </button>
             </div>
 
           {/* Active Challenges */}
