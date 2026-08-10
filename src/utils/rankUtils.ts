@@ -1,11 +1,15 @@
 import type { RankTier } from '../types';
 
 export const getRequiredEpForLevel = (level: number): number => {
-  // Tier-based jumps: Base 100, +10 per level within a tier, +100 per new tier
   const safeLevel = Math.max(1, level);
-  const tier = Math.floor((safeLevel - 1) / 5);
-  const rawRequired = 100 + (tier * 100) + ((safeLevel - 1) % 5) * 10;
-  return rawRequired;
+  
+  // The True Endgame Wall (Hardcoded Spikes)
+  if (safeLevel === 36) return 22500; // Master
+  if (safeLevel === 37) return 30000; // Grandmaster
+  if (safeLevel >= 38) return 50000;  // Challenger+
+  
+  // The Normal Grind: 12% exponential growth (Levels 1-35)
+  return Math.floor(100 * Math.pow(1.12, safeLevel - 1));
 };
 
 export const getCumulativeEpForLevel = (level: number): number => {
