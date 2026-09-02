@@ -177,6 +177,42 @@ export const Analytics: React.FC = () => {
   const weightYMin = weightGraphData.length > 0 ? Math.floor(Math.min(...weightGraphData.map(d => d.weightLbs)) - 5) : 0;
   const weightYMax = weightGraphData.length > 0 ? Math.ceil(Math.max(...weightGraphData.map(d => d.weightLbs)) + 5) : 100;
 
+  // 7. Weekly Weight Average Data
+  const weeklyWeightAvgData = useMemo(() => {
+    if (weightGraphData.length === 0) return [];
+
+    const weeksMap = new Map<string, { sum: number; count: number; dateStart: Date }>();
+
+    weightGraphData.forEach(w => {
+      const d = new Date(w.date + 'T12:00:00');
+      
+      // Get the Monday of this week
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d);
+      monday.setDate(diff);
+      monday.setHours(0, 0, 0, 0);
+      
+      const weekKey = monday.toISOString();
+      
+      const existing = weeksMap.get(weekKey);
+      if (existing) {
+        weeksMap.set(weekKey, { sum: existing.sum + w.weightLbs, count: existing.count + 1, dateStart: monday });
+      } else {
+        weeksMap.set(weekKey, { sum: w.weightLbs, count: 1, dateStart: monday });
+      }
+    });
+
+    return Array.from(weeksMap.values())
+      .sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime())
+      .map(data => ({
+        displayDate: data.dateStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        avgWeightLbs: Number((data.sum / data.count).toFixed(1))
+      }));
+  }, [weightGraphData]);
+
+  const weeklyWeightYMin = weeklyWeightAvgData.length > 0 ? Math.floor(Math.min(...weeklyWeightAvgData.map(d => d.avgWeightLbs)) - 5) : 0;
+  const weeklyWeightYMax = weeklyWeightAvgData.length > 0 ? Math.ceil(Math.max(...weeklyWeightAvgData.map(d => d.avgWeightLbs)) + 5) : 100;
 
 
   return (
@@ -294,7 +330,7 @@ export const Analytics: React.FC = () => {
         <div className="esports-panel p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="esports-heading text-xl text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-neon-blue" /> Weight Trend
+              <TrendingUp className="w-5 h-5 text-neon-blue" /> Weight Trend (Daily)
             </h1>
             <div className="flex gap-2">
               {['1M', '3M', '6M', '1Y'].map(range => (
@@ -351,6 +387,58 @@ export const Analytics: React.FC = () => {
             ) : (
               <div className="h-full flex items-center justify-center text-gray-500 font-inter text-sm flex-col gap-2">
                 <span>Not enough data to display a trend.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Weekly Avg Weight Trend Graph */}
+        <div className="esports-panel p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="esports-heading text-xl text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-neon-purple" /> Weekly Avg Weight
+            </h1>
+          </div>
+          
+          <div className="h-52 w-full">
+            {weeklyWeightAvgData.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weeklyWeightAvgData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" vertical={false} />
+                  <XAxis 
+                    dataKey="displayDate" 
+                    stroke="#718096" 
+                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                    minTickGap={20}
+                  />
+                  <YAxis 
+                    domain={[weeklyWeightYMin, weeklyWeightYMax]} 
+                    stroke="#718096" 
+                    tick={{ fill: '#718096', fontSize: 12, fontFamily: 'Inter' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1A202C', borderColor: '#b52eff', color: '#fff', borderRadius: '8px' }}
+                    itemStyle={{ color: '#b52eff', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#A0AEC0', marginBottom: '4px' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="avgWeightLbs" 
+                    name="Avg Weight (lbs)"
+                    stroke="#b52eff" 
+                    strokeWidth={3} 
+                    dot={{ fill: '#1A202C', stroke: '#b52eff', strokeWidth: 2, r: 4 }} 
+                    activeDot={{ r: 6, fill: '#b52eff' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500 font-inter text-sm flex-col gap-2">
+                <span>Not enough weekly data to display a trend.</span>
               </div>
             )}
           </div>
