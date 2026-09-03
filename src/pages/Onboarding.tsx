@@ -32,11 +32,13 @@ export const Onboarding: React.FC = () => {
   const handleNext = () => setStep(prev => prev + 1);
 
   const calculateAndAdvanceToMacros = () => {
+    const workoutsCount = scheduledDays.length > 0 ? scheduledDays.length : (workoutsPerWeek || 3);
+    
     // 1. Convert to metric
     const heightCm = ((bio.heightFeet * 12) + bio.heightInches) * 2.54;
     const weightKg = bio.weightLbs * 0.453592;
 
-    // 2. Base Mifflin-St Jeor
+    // 2. Base Mifflin-St Jeor BMR
     let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * bio.age);
     if (bio.gender === 'Male') {
       bmr += 5;
@@ -45,7 +47,6 @@ export const Onboarding: React.FC = () => {
     }
 
     // 3. Activity Multiplier based on workouts per week
-    const workoutsCount = scheduledDays.length;
     let multiplier = 1.2; // Sedentary
     if (workoutsCount >= 1 && workoutsCount <= 3) multiplier = 1.375; // Light activity
     if (workoutsCount === 4) multiplier = 1.465; // Light/Moderate
@@ -55,23 +56,29 @@ export const Onboarding: React.FC = () => {
     let tdee = bmr * multiplier;
 
     // 4. Goal Modifier
-    if (goal === 'Cut') tdee -= 500;
-    if (goal === 'Bulk') tdee += 500;
+    if (goal === 'Cut') tdee -= 400;
+    if (goal === 'Bulk') tdee += 350;
 
-    const targetCals = Math.round(tdee);
+    // Minimum safe calorie floor (1200 kcal for female, 1500 kcal for male)
+    const minCals = bio.gender === 'Female' ? 1200 : 1500;
+    const targetCals = Math.max(minCals, Math.round(tdee));
     
-    // 5. Intelligent Macros Split
-    // 1g protein per lb of bodyweight
-    const targetProtein = Math.round(bio.weightLbs * 1.0);
-    
-    // Fat multiplier based on preference (hormonally safe minimums)
-    const fatMultiplier = macroPreference === 'HighCarb' ? 0.35 : 0.5;
-    const targetFat = Math.max(55, Math.round(bio.weightLbs * fatMultiplier));
-    
+    // 5. Intelligent Balanced Macros Split
+    // Protein: ~0.85g-0.95g per lb of bodyweight (capped at 35% of total cals so it doesn't starve carbs)
+    const rawProtein = Math.round(bio.weightLbs * 0.9);
+    const maxProteinByCals = Math.round((targetCals * 0.35) / 4);
+    const targetProtein = Math.max(50, Math.min(rawProtein, maxProteinByCals));
+
+    // Fat: 0.3g - 0.45g per lb (minimum 30g female, 40g male)
+    const fatMultiplier = macroPreference === 'HighCarb' ? 0.3 : 0.45;
+    const minFat = bio.gender === 'Female' ? 30 : 40;
+    const targetFat = Math.max(minFat, Math.round(bio.weightLbs * fatMultiplier));
+
+    // Carbs: Remaining calories, with a minimum floor of 50g
     const proteinCals = targetProtein * 4;
     const fatCals = targetFat * 9;
     const remainingCals = targetCals - proteinCals - fatCals;
-    const targetCarbs = Math.max(0, Math.round(remainingCals / 4));
+    const targetCarbs = Math.max(50, Math.round(remainingCals / 4));
 
     setMacros({
       calories: { current: 0, target: targetCals },

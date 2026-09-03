@@ -54,20 +54,25 @@ export const Profile: React.FC = () => {
     let tdee = bmr * multiplier;
 
     // Goal Modifier
-    if (newGoal === 'Cut') tdee -= 500;
-    if (newGoal === 'Bulk') tdee += 500;
+    if (newGoal === 'Cut') tdee -= 400;
+    if (newGoal === 'Bulk') tdee += 350;
 
-    const targetCals = Math.round(tdee);
+    // Minimum safe calorie floor (1200 kcal for female, 1500 kcal for male)
+    const minCals = biometrics.gender === 'Female' ? 1200 : 1500;
+    const targetCals = Math.max(minCals, Math.round(tdee));
     
-    // Intelligent Macros Split (1g protein per lb of bodyweight)
-    const targetProtein = Math.round(biometrics.weightLbs * 1.0);
-    const fatMultiplier = 0.4; // balanced approach
-    const targetFat = Math.max(55, Math.round(biometrics.weightLbs * fatMultiplier));
+    // Intelligent Balanced Macros Split
+    const rawProtein = Math.round(biometrics.weightLbs * 0.9);
+    const maxProteinByCals = Math.round((targetCals * 0.35) / 4);
+    const targetProtein = Math.max(50, Math.min(rawProtein, maxProteinByCals));
+
+    const minFat = biometrics.gender === 'Female' ? 30 : 40;
+    const targetFat = Math.max(minFat, Math.round(biometrics.weightLbs * 0.35));
     
     const proteinCals = targetProtein * 4;
     const fatCals = targetFat * 9;
     const remainingCals = targetCals - proteinCals - fatCals;
-    const targetCarbs = Math.max(0, Math.round(remainingCals / 4));
+    const targetCarbs = Math.max(50, Math.round(remainingCals / 4));
 
     return {
       calories: { current: nutrition.calories.current, target: targetCals },
