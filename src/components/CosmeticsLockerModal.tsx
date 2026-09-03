@@ -42,9 +42,7 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
 
   const itemsForTab = COSMETIC_ITEMS.filter(item => item.type === activeTab);
 
-  const avatarUrl = profile?.avatar 
-    ? (profile.avatar.startsWith('http') ? profile.avatar : `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.avatar}`)
-    : `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.username || 'Agent'}`;
+  const avatarUrl = typeof profile?.avatar === 'string' ? profile.avatar : '/images/avatar_3d.png';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 pb-safe">
