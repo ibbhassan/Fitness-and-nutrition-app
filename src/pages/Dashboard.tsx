@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import { RankDisplay } from '../components/RankDisplay';
 import { seedSteps } from '../utils/seedData';
 import { useUser } from '../context/UserContext';
-import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown } from 'lucide-react';
+import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown, Settings, X } from 'lucide-react';
 import { getWeekString } from '../utils/dateUtils';
 import { calculateStreak } from '../utils/streakUtils';
 
 export const Dashboard: React.FC = () => {
-  const { profile, nutrition, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, weightHistory, workoutHistory, manualQuestCompletions, toggleManualQuest, dailySteps, biometrics } = useUser();
+  const { 
+    profile, 
+    nutrition, 
+    targetWorkoutsPerWeek, 
+    scheduledWorkoutDays, 
+    workoutSplit, 
+    weightHistory, 
+    workoutHistory, 
+    manualQuestCompletions, 
+    toggleManualQuest, 
+    dailySteps, 
+    biometrics,
+    dailyStepsTarget,
+    dailyWaterTarget,
+    updateChallengeTargets
+  } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
   const formatLocalDate = (d: Date | string) => {
@@ -108,8 +123,24 @@ export const Dashboard: React.FC = () => {
   const weeklyPrKey = `weekly-pr-${weekStr}`;
   const weeklyNutritionKey = `weekly-nutrition-${weekStr}`;
 
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const targetSteps = dailyStepsTarget || 10000;
+  const targetWater = dailyWaterTarget || '1 Gallon';
+
+  const [tempSteps, setTempSteps] = useState(targetSteps);
+  const [tempWater, setTempWater] = useState(targetWater);
+
+  const stepsEpReward = Math.round(targetSteps / 1000);
+  const getWaterEpReward = (w: string) => {
+    if (w === '0.5 Gallon') return 5;
+    if (w === '0.75 Gallon') return 7;
+    if (w === '1.5 Gallons') return 15;
+    return 10;
+  };
+  const waterEpReward = getWaterEpReward(targetWater);
+
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
-  const isDailyStepsComplete = dailySteps >= seedSteps.target || !!manualQuestCompletions[dailyStepsKey];
+  const isDailyStepsComplete = dailySteps >= targetSteps || !!manualQuestCompletions[dailyStepsKey];
   
   const prsThisWeek = workoutHistory.some(w => w.isPr && new Date(w.date) >= weekStartDate);
   
@@ -123,10 +154,10 @@ export const Dashboard: React.FC = () => {
   }, [workoutsThisWeek, targetWorkoutsPerWeek]);
 
   React.useEffect(() => {
-    if (dailySteps >= seedSteps.target && !manualQuestCompletions[dailyStepsKey]) {
-      toggleManualQuest(dailyStepsKey, 10);
+    if (dailySteps >= targetSteps && !manualQuestCompletions[dailyStepsKey]) {
+      toggleManualQuest(dailyStepsKey, stepsEpReward);
     }
-  }, [dailySteps, seedSteps.target]);
+  }, [dailySteps, targetSteps, stepsEpReward]);
 
   React.useEffect(() => {
     if (prsThisWeek && !manualQuestCompletions[weeklyPrKey]) {
@@ -197,44 +228,59 @@ export const Dashboard: React.FC = () => {
 
           {/* Active Challenges */}
           <div className="esports-panel p-6 shrink-0">
-            <h2 className="esports-heading text-xl text-white mb-4 flex items-center gap-2">
-              <Award className="w-5 h-5 text-neon-blue" /> Active Challenges
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="esports-heading text-xl text-white flex items-center gap-2">
+                <Award className="w-5 h-5 text-neon-blue" /> Active Challenges
+              </h2>
+              <button 
+                onClick={() => {
+                  setTempSteps(targetSteps);
+                  setTempWater(targetWater);
+                  setShowChallengeModal(true);
+                }}
+                className="px-2.5 py-1 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-rajdhani uppercase font-bold border border-tactical-700"
+                title="Customize Challenges"
+              >
+                <Settings className="w-3.5 h-3.5 text-neon-blue" />
+                <span>Customize</span>
+              </button>
+            </div>
             
             <div className="space-y-3">
-              {/* Daily Challenge */}
+              {/* Daily Challenge - Steps */}
               <button 
-                onClick={() => toggleManualQuest(dailyStepsKey, 10)}
+                onClick={() => toggleManualQuest(dailyStepsKey, stepsEpReward)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", isDailyStepsComplete ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
                     <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyStepsComplete ? "line-through" : "")}>Hit 10k Steps</h3>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyStepsComplete ? "line-through" : "")}>Hit {targetSteps / 1000}k Steps</h3>
                   </div>
                   {isDailyStepsComplete ? (
                     <CheckCircle className="w-4 h-4 text-neon-purple" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+10 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green">+{stepsEpReward} EP</span>
                   )}
                 </div>
               </button>
 
+              {/* Daily Challenge - Water */}
               <button 
-                onClick={() => toggleManualQuest(dailyWaterKey, 10)}
+                onClick={() => toggleManualQuest(dailyWaterKey, waterEpReward)}
                 className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", manualQuestCompletions[dailyWaterKey] ? "opacity-50" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-start ml-2">
                   <div>
                     <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions[dailyWaterKey] ? "line-through" : "")}>Drink 1 Gallon of Water</h3>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions[dailyWaterKey] ? "line-through" : "")}>Drink {targetWater} of Water</h3>
                   </div>
                   {manualQuestCompletions[dailyWaterKey] ? (
                     <CheckCircle className="w-4 h-4 text-neon-purple" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+10 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green">+{waterEpReward} EP</span>
                   )}
                 </div>
               </button>
@@ -370,13 +416,13 @@ export const Dashboard: React.FC = () => {
                     cx="64" cy="64" r="56" 
                     stroke="currentColor" strokeWidth="6" fill="transparent" 
                     strokeDasharray="351.8" 
-                    strokeDashoffset={351.8 - (351.8 * Math.min((dailySteps / seedSteps.target), 1))} 
+                    strokeDashoffset={351.8 - (351.8 * Math.min((dailySteps / targetSteps), 1))} 
                     className="text-neon-green transition-all duration-1000" 
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-2xl font-rajdhani font-bold text-white">{dailySteps.toLocaleString()}</span>
-                  <span className="text-xs text-gray-400 font-inter">/ {seedSteps.target.toLocaleString()}</span>
+                  <span className="text-xs text-gray-400 font-inter">/ {targetSteps.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -447,6 +493,73 @@ export const Dashboard: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Customize Challenges Modal */}
+      {showChallengeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-tactical-900 border border-tactical-700 p-6 sm:p-8 rounded-xl w-full max-w-lg shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b border-tactical-800 pb-4">
+              <div className="flex items-center gap-2">
+                <Settings className="w-6 h-6 text-neon-blue" />
+                <h3 className="font-rajdhani font-bold text-2xl uppercase tracking-wider text-white">Customize Challenges</h3>
+              </div>
+              <button onClick={() => setShowChallengeModal(false)} className="text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
+            </div>
+
+            <div className="space-y-6 mb-8">
+              {/* Step Target */}
+              <div>
+                <label className="text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Daily Step Target</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {[5000, 8000, 10000, 12000, 15000].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setTempSteps(s)}
+                      className={clsx(
+                        "p-3 rounded-lg border-2 font-rajdhani text-center transition-all",
+                        tempSteps === s ? "border-neon-blue bg-neon-blue/20 text-white font-bold" : "border-tactical-700 bg-tactical-800 text-gray-400 hover:border-tactical-600"
+                      )}
+                    >
+                      <span className="block text-base sm:text-lg font-bold">{s / 1000}k</span>
+                      <span className="text-[10px] text-neon-green font-bold">+{s / 1000} EP</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Water Target */}
+              <div>
+                <label className="text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Daily Water Target</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {['0.5 Gallon', '0.75 Gallon', '1 Gallon', '1.5 Gallons'].map((w) => (
+                    <button
+                      key={w}
+                      onClick={() => setTempWater(w)}
+                      className={clsx(
+                        "p-3 rounded-lg border-2 font-rajdhani text-center transition-all",
+                        tempWater === w ? "border-neon-purple bg-neon-purple/20 text-white font-bold" : "border-tactical-700 bg-tactical-800 text-gray-400 hover:border-tactical-600"
+                      )}
+                    >
+                      <span className="block text-sm font-bold truncate">{w}</span>
+                      <span className="text-[10px] text-neon-green font-bold">+{getWaterEpReward(w)} EP</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                updateChallengeTargets(tempSteps, tempWater);
+                setShowChallengeModal(false);
+              }} 
+              className="w-full bg-neon-blue text-tactical-900 font-rajdhani font-bold text-xl uppercase tracking-wider py-4 rounded-lg hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+            >
+              Save Challenge Targets
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
