@@ -21,6 +21,9 @@ export const Dashboard: React.FC = () => {
     biometrics,
     dailyStepsTarget,
     dailyWaterTarget,
+    dailyWaterIntake,
+    addWaterIntake,
+    foodLogs,
     updateChallengeTargets
   } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
@@ -126,6 +129,14 @@ export const Dashboard: React.FC = () => {
   const targetSteps = dailyStepsTarget || 10000;
   const targetWater = dailyWaterTarget || '1 Gallon';
 
+  const getWaterTargetOz = (w: string) => {
+    if (w === '0.5 Gallon') return 64;
+    if (w === '0.75 Gallon') return 96;
+    if (w === '1.5 Gallons') return 192;
+    return 128; // 1 Gallon default
+  };
+  const targetWaterOz = getWaterTargetOz(targetWater);
+
   const [tempSteps, setTempSteps] = useState(targetSteps);
   const [tempWater, setTempWater] = useState(targetWater);
 
@@ -134,29 +145,51 @@ export const Dashboard: React.FC = () => {
 
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
   const isDailyStepsComplete = dailySteps >= targetSteps || !!manualQuestCompletions[dailyStepsKey];
+  const isDailyWaterComplete = dailyWaterIntake >= targetWaterOz || !!manualQuestCompletions[dailyWaterKey];
   
   const prsThisWeek = workoutHistory.some(w => w.isPr && new Date(w.date) >= weekStartDate);
-  
   const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions[weeklyPrKey];
-  const isWeeklyNutritionComplete = !!manualQuestCompletions[weeklyNutritionKey];
+
+  const nutritionDaysLoggedThisWeek = React.useMemo(() => {
+    const datesThisWeek = new Set(
+      foodLogs
+        .filter(log => log.date >= weekStr)
+        .map(log => log.date)
+    );
+    return datesThisWeek.size;
+  }, [foodLogs, weekStr]);
+
+  const isWeeklyNutritionComplete = nutritionDaysLoggedThisWeek >= 7 || !!manualQuestCompletions[weeklyNutritionKey];
 
   React.useEffect(() => {
     if (workoutsThisWeek >= targetWorkoutsPerWeek && !manualQuestCompletions[weeklyWorkoutsKey]) {
       toggleManualQuest(weeklyWorkoutsKey, 100);
     }
-  }, [workoutsThisWeek, targetWorkoutsPerWeek]);
+  }, [workoutsThisWeek, targetWorkoutsPerWeek, weeklyWorkoutsKey, manualQuestCompletions]);
 
   React.useEffect(() => {
     if (dailySteps >= targetSteps && !manualQuestCompletions[dailyStepsKey]) {
       toggleManualQuest(dailyStepsKey, stepsEpReward);
     }
-  }, [dailySteps, targetSteps, stepsEpReward]);
+  }, [dailySteps, targetSteps, stepsEpReward, dailyStepsKey, manualQuestCompletions]);
+
+  React.useEffect(() => {
+    if (dailyWaterIntake >= targetWaterOz && !manualQuestCompletions[dailyWaterKey]) {
+      toggleManualQuest(dailyWaterKey, waterEpReward);
+    }
+  }, [dailyWaterIntake, targetWaterOz, waterEpReward, dailyWaterKey, manualQuestCompletions]);
 
   React.useEffect(() => {
     if (prsThisWeek && !manualQuestCompletions[weeklyPrKey]) {
       toggleManualQuest(weeklyPrKey, 50);
     }
-  }, [prsThisWeek]);
+  }, [prsThisWeek, weeklyPrKey, manualQuestCompletions]);
+
+  React.useEffect(() => {
+    if (nutritionDaysLoggedThisWeek >= 7 && !manualQuestCompletions[weeklyNutritionKey]) {
+      toggleManualQuest(weeklyNutritionKey, 200);
+    }
+  }, [nutritionDaysLoggedThisWeek, weeklyNutritionKey, manualQuestCompletions]);
 
   const getUpcomingWorkout = () => {
     if (!scheduledWorkoutDays || scheduledWorkoutDays.length === 0) return { title: 'No Workouts Scheduled', subtitle: 'Update your schedule in settings' };
@@ -241,98 +274,120 @@ export const Dashboard: React.FC = () => {
             
             <div className="space-y-3">
               {/* Daily Challenge - Steps */}
-              <button 
-                onClick={() => toggleManualQuest(dailyStepsKey, stepsEpReward)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", isDailyStepsComplete ? "opacity-50" : "")}
+              <div 
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isDailyStepsComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
-                <div className="flex justify-between items-start ml-2">
+                <div className="flex justify-between items-center ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyStepsComplete ? "line-through" : "")}>Hit {targetSteps / 1000}k Steps</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({dailySteps.toLocaleString()} / {targetSteps.toLocaleString()})</span>
+                    </div>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyStepsComplete ? "line-through text-gray-400" : "")}>Hit {targetSteps / 1000}k Steps</h3>
                   </div>
                   {isDailyStepsComplete ? (
-                    <CheckCircle className="w-4 h-4 text-neon-purple" />
+                    <CheckCircle className="w-5 h-5 text-neon-purple shrink-0" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+{stepsEpReward} EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green shrink-0">+{stepsEpReward} EP</span>
                   )}
                 </div>
-              </button>
+              </div>
 
               {/* Daily Challenge - Water */}
-              <button 
-                onClick={() => toggleManualQuest(dailyWaterKey, waterEpReward)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-purple/50 cursor-pointer", manualQuestCompletions[dailyWaterKey] ? "opacity-50" : "")}
+              <div 
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isDailyWaterComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
-                <div className="flex justify-between items-start ml-2">
+                <div className="flex justify-between items-center ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", manualQuestCompletions[dailyWaterKey] ? "line-through" : "")}>Drink {targetWater} of Water</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({dailyWaterIntake} / {targetWaterOz} oz)</span>
+                    </div>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyWaterComplete ? "line-through text-gray-400" : "")}>Drink {targetWater} of Water</h3>
                   </div>
-                  {manualQuestCompletions[dailyWaterKey] ? (
-                    <CheckCircle className="w-4 h-4 text-neon-purple" />
-                  ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+{waterEpReward} EP</span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!isDailyWaterComplete && (
+                      <button 
+                        onClick={() => addWaterIntake(16)}
+                        className="px-2 py-1 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple hover:text-black rounded text-[10px] font-rajdhani font-bold uppercase transition-all shadow-sm cursor-pointer"
+                        title="Log 1 Cup (16 oz) of Water"
+                      >
+                        +16 oz
+                      </button>
+                    )}
+                    {isDailyWaterComplete ? (
+                      <CheckCircle className="w-5 h-5 text-neon-purple" />
+                    ) : (
+                      <span className="text-xs font-rajdhani font-bold text-neon-green">+{waterEpReward} EP</span>
+                    )}
+                  </div>
                 </div>
-              </button>
+              </div>
 
-              {/* Weekly Challenges */}
-              <button 
-                onClick={() => toggleManualQuest(weeklyWorkoutsKey, 100)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyQuestComplete ? "opacity-50" : "")}
+              {/* Weekly Challenges - Workouts */}
+              <div 
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isWeeklyQuestComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
-                <div className="flex justify-between items-start ml-2">
+                <div className="flex justify-between items-center ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyQuestComplete ? "line-through" : "")}>Complete {targetWorkoutsPerWeek} Workouts</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({workoutsThisWeek} / {targetWorkoutsPerWeek})</span>
+                    </div>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyQuestComplete ? "line-through text-gray-400" : "")}>Complete {targetWorkoutsPerWeek} Workouts</h3>
                   </div>
                   {isWeeklyQuestComplete ? (
-                    <CheckCircle className="w-4 h-4 text-neon-blue" />
+                    <CheckCircle className="w-5 h-5 text-neon-blue shrink-0" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+100 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green shrink-0">+100 EP</span>
                   )}
                 </div>
-              </button>
+              </div>
 
-              <button 
-                onClick={() => toggleManualQuest(weeklyPrKey, 50)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyPrComplete ? "opacity-50" : "")}
+              {/* Weekly Challenges - PR */}
+              <div 
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isWeeklyPrComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
-                <div className="flex justify-between items-start ml-2">
+                <div className="flex justify-between items-center ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyPrComplete ? "line-through" : "")}>Hit a new PR</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({prsThisWeek ? '1 / 1' : '0 / 1'})</span>
+                    </div>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyPrComplete ? "line-through text-gray-400" : "")}>Hit a new PR</h3>
                   </div>
                   {isWeeklyPrComplete ? (
-                    <CheckCircle className="w-4 h-4 text-neon-blue" />
+                    <CheckCircle className="w-5 h-5 text-neon-blue shrink-0" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+50 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green shrink-0">+50 EP</span>
                   )}
                 </div>
-              </button>
+              </div>
 
-              <button 
-                onClick={() => toggleManualQuest(weeklyNutritionKey, 200)}
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all hover:border-neon-blue/50 cursor-pointer", isWeeklyNutritionComplete ? "opacity-50" : "")}
+              {/* Weekly Challenges - Nutrition 7 Days */}
+              <div 
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isWeeklyNutritionComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-blue" />
-                <div className="flex justify-between items-start ml-2">
+                <div className="flex justify-between items-center ml-2">
                   <div>
-                    <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyNutritionComplete ? "line-through" : "")}>Track Nutrition 7 Days</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-neon-blue font-rajdhani uppercase font-bold tracking-wider">Weekly Challenge</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({nutritionDaysLoggedThisWeek} / 7 Days)</span>
+                    </div>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isWeeklyNutritionComplete ? "line-through text-gray-400" : "")}>Track Nutrition 7 Days</h3>
                   </div>
                   {isWeeklyNutritionComplete ? (
-                    <CheckCircle className="w-4 h-4 text-neon-blue" />
+                    <CheckCircle className="w-5 h-5 text-neon-blue shrink-0" />
                   ) : (
-                    <span className="text-xs font-rajdhani font-bold text-neon-green">+200 EP</span>
+                    <span className="text-xs font-rajdhani font-bold text-neon-green shrink-0">+200 EP</span>
                   )}
                 </div>
-              </button>
-
+              </div>
             </div>
           </div>
         </div>
