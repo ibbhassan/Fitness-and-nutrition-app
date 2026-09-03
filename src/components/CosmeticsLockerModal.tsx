@@ -15,12 +15,30 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
   const { profile, workoutHistory, scheduledWorkoutDays, equipCosmetic, user } = useUser();
   const [activeTab, setActiveTab] = useState<CosmeticType>('border');
 
+  // Preview state (allows previewing ANY cosmetic before equipping or even if locked!)
+  const [previewBorderId, setPreviewBorderId] = useState<string | null>(null);
+  const [previewBannerId, setPreviewBannerId] = useState<string | null>(null);
+  const [previewTitleId, setPreviewTitleId] = useState<string | null>(null);
+
   const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
   const currentRank = profile ? getRankInfo(profile.level) : getRankInfo(1);
 
-  const equippedBorder = getCosmeticItem(profile?.equippedCosmetics?.border) || getCosmeticItem('border_default');
-  const equippedBanner = getCosmeticItem(profile?.equippedCosmetics?.banner) || getCosmeticItem('banner_default');
-  const equippedTitle = getCosmeticItem(profile?.equippedCosmetics?.title);
+  // Active items being shown in the Live Agent Card Preview (previews override equipped)
+  const activeBorder = getCosmeticItem(previewBorderId || profile?.equippedCosmetics?.border) || getCosmeticItem('border_default');
+  const activeBanner = getCosmeticItem(previewBannerId || profile?.equippedCosmetics?.banner) || getCosmeticItem('banner_default');
+  const activeTitle = previewTitleId !== null 
+    ? (previewTitleId ? getCosmeticItem(previewTitleId) : undefined)
+    : getCosmeticItem(profile?.equippedCosmetics?.title);
+
+  const isPreviewActive = (previewBorderId && previewBorderId !== profile?.equippedCosmetics?.border) ||
+                          (previewBannerId && previewBannerId !== profile?.equippedCosmetics?.banner) ||
+                          (previewTitleId !== null && previewTitleId !== profile?.equippedCosmetics?.title);
+
+  const handleResetPreview = () => {
+    setPreviewBorderId(null);
+    setPreviewBannerId(null);
+    setPreviewTitleId(null);
+  };
 
   const itemsForTab = COSMETIC_ITEMS.filter(item => item.type === activeTab);
 
@@ -41,7 +59,7 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
             </div>
             <div>
               <h2 className="text-xl font-rajdhani font-bold text-white uppercase tracking-wider">Cosmetics & Customization Locker</h2>
-              <p className="text-xs text-gray-400 font-inter">Personalize your avatar frame, profile banner, and title badges</p>
+              <p className="text-xs text-gray-400 font-inter">Click any item to preview borders, banners, and titles on your agent card</p>
             </div>
           </div>
           <button 
@@ -54,12 +72,29 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
 
         {/* Live Preview Card */}
         <div className="p-4 sm:p-5 bg-tactical-900/40 border-b border-tactical-800 shrink-0">
-          <span className="text-[10px] font-rajdhani uppercase font-bold tracking-widest text-gray-400 block mb-2">Live Agent Card Preview</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-rajdhani uppercase font-bold tracking-widest text-gray-400 flex items-center gap-2">
+              <span>Live Agent Card Preview</span>
+              {isPreviewActive && (
+                <span className="px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 text-[9px] font-bold uppercase animate-pulse">
+                  Preview Active
+                </span>
+              )}
+            </span>
+            {isPreviewActive && (
+              <button 
+                onClick={handleResetPreview}
+                className="text-[10px] font-rajdhani font-bold uppercase text-neon-blue hover:underline cursor-pointer"
+              >
+                Reset Preview
+              </button>
+            )}
+          </div>
           
-          <div className={clsx("p-4 rounded-xl border relative overflow-hidden transition-all duration-300", equippedBanner?.cssClass || 'bg-tactical-900 border-tactical-700')}>
+          <div className={clsx("p-4 rounded-xl border relative overflow-hidden transition-all duration-300", activeBanner?.cssClass || 'bg-tactical-900 border-tactical-700')}>
             <div className="flex items-center gap-4 relative z-10">
-              {/* Avatar with Equipped Border */}
-              <div className={clsx("w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 transition-all duration-300 bg-tactical-900 flex items-center justify-center", equippedBorder?.cssClass || 'border-2 border-neon-blue')}>
+              {/* Avatar with Active Border */}
+              <div className={clsx("w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 transition-all duration-300 bg-tactical-900 flex items-center justify-center", activeBorder?.cssClass || 'border-2 border-neon-blue')}>
                 <img src={avatarUrl} alt="Preview Avatar" className="w-full h-full object-cover scale-110" />
               </div>
 
@@ -67,9 +102,9 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="esports-heading text-xl sm:text-2xl text-white tracking-wider truncate">{user?.username || 'AGENT'}</h3>
-                  {equippedTitle && (
-                    <span className={clsx("px-2.5 py-0.5 rounded font-rajdhani font-bold text-xs uppercase tracking-widest shrink-0", equippedTitle.badgeClass || 'bg-neon-blue/20 border border-neon-blue text-neon-blue')}>
-                      {equippedTitle.badgeText || equippedTitle.name}
+                  {activeTitle && (
+                    <span className={clsx("px-2.5 py-0.5 rounded font-rajdhani font-bold text-xs uppercase tracking-widest shrink-0", activeTitle.badgeClass || 'bg-neon-blue/20 border border-neon-blue text-neon-blue')}>
+                      {activeTitle.badgeText || activeTitle.name}
                     </span>
                   )}
                 </div>
@@ -123,16 +158,28 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
                 (activeTab === 'banner' && (profile?.equippedCosmetics?.banner === item.id || (!profile?.equippedCosmetics?.banner && item.id === 'banner_default'))) ||
                 (activeTab === 'title' && profile?.equippedCosmetics?.title === item.id);
 
+              const isCurrentlyPreviewed = 
+                (activeTab === 'border' && previewBorderId === item.id) ||
+                (activeTab === 'banner' && previewBannerId === item.id) ||
+                (activeTab === 'title' && previewTitleId === item.id);
+
               return (
                 <div 
                   key={item.id}
+                  onClick={() => {
+                    if (item.type === 'border') setPreviewBorderId(item.id);
+                    else if (item.type === 'banner') setPreviewBannerId(item.id);
+                    else if (item.type === 'title') setPreviewTitleId(item.id);
+                  }}
                   className={clsx(
-                    "p-3.5 rounded-xl border transition-all flex flex-col justify-between relative overflow-hidden",
+                    "p-3.5 rounded-xl border transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer group",
                     isEquipped 
                       ? "border-neon-blue bg-neon-blue/10 shadow-[0_0_15px_rgba(0,240,255,0.2)]" 
-                      : unlocked 
-                        ? "border-tactical-700 bg-tactical-900 hover:border-tactical-600" 
-                        : "border-tactical-800/80 bg-tactical-950/60 opacity-70"
+                      : isCurrentlyPreviewed
+                        ? "border-yellow-400 bg-yellow-500/10 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+                        : unlocked 
+                          ? "border-tactical-700 bg-tactical-900 hover:border-tactical-600" 
+                          : "border-tactical-800/80 bg-tactical-950/60 opacity-75 hover:opacity-100"
                   )}
                 >
                   <div>
@@ -143,6 +190,10 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
                       {isEquipped ? (
                         <span className="px-2 py-0.5 rounded text-[10px] font-rajdhani font-bold uppercase bg-neon-blue text-tactical-950 shrink-0">
                           Equipped
+                        </span>
+                      ) : isCurrentlyPreviewed ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-rajdhani font-bold uppercase bg-yellow-400 text-black shrink-0 animate-pulse">
+                          Previewing
                         </span>
                       ) : !unlocked ? (
                         <Lock className="w-4 h-4 text-gray-500 shrink-0" />
@@ -166,27 +217,41 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
                       {item.category === 'streak' ? `${item.requiredStreak}d Streak` : item.category === 'rank' ? `${item.requiredRank} Tier` : 'Default'}
                     </span>
 
-                    {unlocked ? (
-                      isEquipped ? (
-                        <button
-                          onClick={() => equipCosmetic(item.type, activeTab === 'border' ? 'border_default' : activeTab === 'banner' ? 'banner_default' : undefined)}
-                          className="px-3 py-1 bg-tactical-800 hover:bg-tactical-700 text-gray-300 rounded text-xs font-rajdhani font-bold uppercase transition-colors cursor-pointer"
-                        >
-                          Unequip
-                        </button>
+                    <div className="flex items-center gap-2">
+                      {unlocked ? (
+                        isEquipped ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              equipCosmetic(item.type, activeTab === 'border' ? 'border_default' : activeTab === 'banner' ? 'banner_default' : undefined);
+                              if (activeTab === 'border') setPreviewBorderId(null);
+                              if (activeTab === 'banner') setPreviewBannerId(null);
+                              if (activeTab === 'title') setPreviewTitleId(null);
+                            }}
+                            className="px-3 py-1 bg-tactical-800 hover:bg-tactical-700 text-gray-300 rounded text-xs font-rajdhani font-bold uppercase transition-colors cursor-pointer"
+                          >
+                            Unequip
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              equipCosmetic(item.type, item.id);
+                              if (activeTab === 'border') setPreviewBorderId(null);
+                              if (activeTab === 'banner') setPreviewBannerId(null);
+                              if (activeTab === 'title') setPreviewTitleId(null);
+                            }}
+                            className="px-3 py-1 bg-neon-blue text-tactical-950 hover:bg-[#00d0dd] rounded text-xs font-rajdhani font-bold uppercase transition-colors cursor-pointer shadow-sm"
+                          >
+                            Equip
+                          </button>
+                        )
                       ) : (
-                        <button
-                          onClick={() => equipCosmetic(item.type, item.id)}
-                          className="px-3 py-1 bg-neon-blue text-tactical-950 hover:bg-[#00d0dd] rounded text-xs font-rajdhani font-bold uppercase transition-colors cursor-pointer shadow-sm"
-                        >
-                          Equip
-                        </button>
-                      )
-                    ) : (
-                      <span className="text-[11px] font-rajdhani font-bold text-gray-500 uppercase flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Locked
-                      </span>
-                    )}
+                        <span className="text-[11px] font-rajdhani font-bold text-yellow-400/90 uppercase flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-yellow-400" /> {item.category === 'streak' ? `Reach ${item.requiredStreak}d` : `Reach ${item.requiredRank}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
