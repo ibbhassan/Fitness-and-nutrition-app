@@ -502,7 +502,7 @@ export const Profile: React.FC = () => {
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
               className="w-full bg-tactical-900 border border-tactical-700 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all mb-6"
-              placeholder="operator_name"
+              placeholder="username"
               autoFocus
             />
 

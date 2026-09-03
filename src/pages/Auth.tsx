@@ -87,7 +87,7 @@ export const Auth: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all"
-                placeholder="operator_name"
+                placeholder="username"
               />
             </div>
           )}
@@ -100,7 +100,7 @@ export const Auth: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-rajdhani text-lg focus:border-neon-blue focus:shadow-[0_0_10px_rgba(0,240,255,0.2)] outline-none transition-all"
-              placeholder="operator@evoke.com"
+              placeholder="user@evoke.com"
             />
           </div>
 
