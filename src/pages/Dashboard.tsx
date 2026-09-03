@@ -20,9 +20,7 @@ export const Dashboard: React.FC = () => {
     dailySteps, 
     biometrics,
     dailyStepsTarget,
-    dailyWaterTarget,
-    dailyWaterIntake,
-    addWaterIntake,
+    dailyWorkoutDurationTarget,
     foodLogs,
     updateChallengeTargets
   } = useUser();
@@ -35,6 +33,7 @@ export const Dashboard: React.FC = () => {
 
   const todayStr = formatLocalDate(new Date());
   const weekStr = getWeekString(new Date());
+  const weekStartDate = new Date(weekStr + 'T00:00:00');
 
   const getWeightTrackingWeekStart = () => {
     const today = new Date();
@@ -54,7 +53,6 @@ export const Dashboard: React.FC = () => {
       d.setDate(weekStart.getDate() + i);
       const dateStr = formatLocalDate(d);
       const isLogged = weightHistory.some(entry => {
-        // If entry.date is an ISO string, format it. If it's already YYYY-MM-DD, formatLocalDate handles it.
         return formatLocalDate(entry.date) === dateStr;
       });
       return { label: days[d.getDay()], isLogged, date: dateStr };
@@ -100,7 +98,6 @@ export const Dashboard: React.FC = () => {
       if (bestWorkout) {
         status = 'completed';
       } else if (isScheduled) {
-        // If it's strictly before today, it's missed. If today or future, pending.
         const isPastDay = d.getTime() < new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
         status = isPastDay ? 'missed' : 'pending';
       }
@@ -114,38 +111,35 @@ export const Dashboard: React.FC = () => {
   };
 
   const consistencyData = getConsistencyData();
-  const weekStartDate = new Date(weekStr + 'T00:00:00');
   const workoutsThisWeek = workoutHistory.filter(w => new Date(w.date) >= weekStartDate).length;
 
   const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
   
   const dailyStepsKey = `daily-steps-${todayStr}`;
-  const dailyWaterKey = `daily-water-${todayStr}`;
+  const dailyDurationKey = `daily-duration-${todayStr}`;
   const weeklyWorkoutsKey = `weekly-workouts-${weekStr}`;
   const weeklyPrKey = `weekly-pr-${weekStr}`;
   const weeklyNutritionKey = `weekly-nutrition-${weekStr}`;
 
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const targetSteps = dailyStepsTarget || 10000;
-  const targetWater = dailyWaterTarget || '1 Gallon';
-
-  const getWaterTargetOz = (w: string) => {
-    if (w === '0.5 Gallon') return 64;
-    if (w === '0.75 Gallon') return 96;
-    if (w === '1.5 Gallons') return 192;
-    return 128; // 1 Gallon default
-  };
-  const targetWaterOz = getWaterTargetOz(targetWater);
+  const targetDuration = dailyWorkoutDurationTarget || 30;
 
   const [tempSteps, setTempSteps] = useState(targetSteps);
-  const [tempWater, setTempWater] = useState(targetWater);
+  const [tempDuration, setTempDuration] = useState(targetDuration);
 
   const stepsEpReward = 10;
-  const waterEpReward = 10;
+  const durationEpReward = 10;
+
+  const todayWorkoutMinutes = React.useMemo(() => {
+    return workoutHistory
+      .filter(w => formatLocalDate(w.date) === todayStr)
+      .reduce((sum, w) => sum + (w.durationMinutes || 0), 0);
+  }, [workoutHistory, todayStr]);
 
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
   const isDailyStepsComplete = dailySteps >= targetSteps || !!manualQuestCompletions[dailyStepsKey];
-  const isDailyWaterComplete = dailyWaterIntake >= targetWaterOz || !!manualQuestCompletions[dailyWaterKey];
+  const isDailyDurationComplete = todayWorkoutMinutes >= targetDuration || !!manualQuestCompletions[dailyDurationKey];
   
   const prsThisWeek = workoutHistory.some(w => w.isPr && new Date(w.date) >= weekStartDate);
   const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions[weeklyPrKey];
@@ -174,10 +168,10 @@ export const Dashboard: React.FC = () => {
   }, [dailySteps, targetSteps, stepsEpReward, dailyStepsKey, manualQuestCompletions]);
 
   React.useEffect(() => {
-    if (dailyWaterIntake >= targetWaterOz && !manualQuestCompletions[dailyWaterKey]) {
-      toggleManualQuest(dailyWaterKey, waterEpReward);
+    if (todayWorkoutMinutes >= targetDuration && !manualQuestCompletions[dailyDurationKey]) {
+      toggleManualQuest(dailyDurationKey, durationEpReward);
     }
-  }, [dailyWaterIntake, targetWaterOz, waterEpReward, dailyWaterKey, manualQuestCompletions]);
+  }, [todayWorkoutMinutes, targetDuration, durationEpReward, dailyDurationKey, manualQuestCompletions]);
 
   React.useEffect(() => {
     if (prsThisWeek && !manualQuestCompletions[weeklyPrKey]) {
@@ -261,7 +255,7 @@ export const Dashboard: React.FC = () => {
               <button 
                 onClick={() => {
                   setTempSteps(targetSteps);
-                  setTempWater(targetWater);
+                  setTempDuration(targetDuration);
                   setShowChallengeModal(true);
                 }}
                 className="px-2.5 py-1 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-rajdhani uppercase font-bold border border-tactical-700"
@@ -294,35 +288,24 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Daily Challenge - Water */}
+              {/* Daily Challenge - Workout Duration */}
               <div 
-                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isDailyWaterComplete ? "opacity-60 bg-tactical-950/60" : "")}
+                className={clsx("w-full text-left bg-tactical-900 border border-tactical-700 p-3 rounded-lg relative overflow-hidden transition-all", isDailyDurationComplete ? "opacity-60 bg-tactical-950/60" : "")}
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                 <div className="flex justify-between items-center ml-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-neon-purple font-rajdhani uppercase font-bold tracking-wider">Daily Challenge</span>
-                      <span className="text-[10px] font-mono text-gray-400 font-bold">({dailyWaterIntake} / {targetWaterOz} oz)</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold">({todayWorkoutMinutes} / {targetDuration} Mins)</span>
                     </div>
-                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyWaterComplete ? "line-through text-gray-400" : "")}>Drink {targetWater} of Water</h3>
+                    <h3 className={clsx("text-sm font-bold text-white mt-0.5", isDailyDurationComplete ? "line-through text-gray-400" : "")}>Workout {targetDuration}+ Mins Today</h3>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!isDailyWaterComplete && (
-                      <button 
-                        onClick={() => addWaterIntake(16)}
-                        className="px-2 py-1 bg-neon-purple/20 border border-neon-purple/50 text-neon-purple hover:bg-neon-purple hover:text-black rounded text-[10px] font-rajdhani font-bold uppercase transition-all shadow-sm cursor-pointer"
-                        title="Log 1 Cup (16 oz) of Water"
-                      >
-                        +16 oz
-                      </button>
-                    )}
-                    {isDailyWaterComplete ? (
-                      <CheckCircle className="w-5 h-5 text-neon-purple" />
-                    ) : (
-                      <span className="text-xs font-rajdhani font-bold text-neon-green">+{waterEpReward} EP</span>
-                    )}
-                  </div>
+                  {isDailyDurationComplete ? (
+                    <CheckCircle className="w-5 h-5 text-neon-purple shrink-0" />
+                  ) : (
+                    <span className="text-xs font-rajdhani font-bold text-neon-green shrink-0">+{durationEpReward} EP</span>
+                  )}
                 </div>
               </div>
 
@@ -575,20 +558,20 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Water Target */}
+              {/* Workout Duration Target */}
               <div>
-                <label className="text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Daily Water Target</label>
+                <label className="text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Daily Workout Duration Target</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {['0.5 Gallon', '0.75 Gallon', '1 Gallon', '1.5 Gallons'].map((w) => (
+                  {[20, 30, 45, 60].map((mins) => (
                     <button
-                      key={w}
-                      onClick={() => setTempWater(w)}
+                      key={mins}
+                      onClick={() => setTempDuration(mins)}
                       className={clsx(
-                        "p-3 rounded-lg border-2 font-rajdhani text-center transition-all",
-                        tempWater === w ? "border-neon-purple bg-neon-purple/20 text-white font-bold" : "border-tactical-700 bg-tactical-800 text-gray-400 hover:border-tactical-600"
+                        "p-3 rounded-lg border-2 font-rajdhani text-center transition-all cursor-pointer",
+                        tempDuration === mins ? "border-neon-purple bg-neon-purple/20 text-white font-bold" : "border-tactical-700 bg-tactical-800 text-gray-400 hover:border-tactical-600"
                       )}
                     >
-                      <span className="block text-sm font-bold truncate">{w}</span>
+                      <span className="block text-sm font-bold truncate">{mins} Mins</span>
                       <span className="text-[10px] text-neon-green font-bold">+10 EP</span>
                     </button>
                   ))}
@@ -598,10 +581,10 @@ export const Dashboard: React.FC = () => {
 
             <button 
               onClick={() => {
-                updateChallengeTargets(tempSteps, tempWater);
+                updateChallengeTargets(tempSteps, tempDuration);
                 setShowChallengeModal(false);
               }} 
-              className="w-full bg-neon-blue text-tactical-900 font-rajdhani font-bold text-xl uppercase tracking-wider py-4 rounded-lg hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+              className="w-full bg-neon-blue text-tactical-900 font-rajdhani font-bold text-xl uppercase tracking-wider py-4 rounded-lg hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)] cursor-pointer"
             >
               Save Challenge Targets
             </button>

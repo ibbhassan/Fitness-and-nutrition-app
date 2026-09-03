@@ -55,7 +55,8 @@ interface UserContextType {
   dailyWaterTarget: string;
   dailyWaterIntake: number;
   addWaterIntake: (ozAmount: number) => void;
-  updateChallengeTargets: (stepsTarget: number, waterTarget: string) => void;
+  dailyWorkoutDurationTarget: number;
+  updateChallengeTargets: (stepsTarget: number, durationTarget: number | string) => void;
   activeWorkout: { id: string, name: string, startTime: number, paused?: boolean, accumulatedPauseMs?: number, lastPauseTime?: number | null } | null;
   activeExercises: ActiveExercise[];
   startWorkout: (preset: WorkoutPreset | null) => void;
@@ -113,7 +114,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       lastStepDate: getLocalDateString(),
       dailyStepsTarget: 10000,
       dailyWaterTarget: '1 Gallon',
-      dailyWaterIntake: 0
+      dailyWaterIntake: 0,
+      dailyWorkoutDurationTarget: 30
     };
   };
 
@@ -137,6 +139,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [dailyStepsTarget, setDailyStepsTarget] = useState<number>(initialState.dailyStepsTarget || 10000);
   const [dailyWaterTarget, setDailyWaterTarget] = useState<string>(initialState.dailyWaterTarget || '1 Gallon');
   const [dailyWaterIntake, setDailyWaterIntake] = useState<number>(initialState.dailyWaterIntake || 0);
+  const [dailyWorkoutDurationTarget, setDailyWorkoutDurationTarget] = useState<number>(initialState.dailyWorkoutDurationTarget || 30);
   const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || getLocalDateString());
   const [currentDate, setCurrentDate] = useState<string>(getLocalDateString());
   const [activeWorkout, setActiveWorkout] = useState<{id: string, name: string, startTime: number, paused?: boolean, accumulatedPauseMs?: number, lastPauseTime?: number | null} | null>(initialState.activeWorkout || null);
@@ -211,7 +214,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       savedMeals,
       dailyStepsTarget,
       dailyWaterTarget,
-      dailyWaterIntake
+      dailyWaterIntake,
+      dailyWorkoutDurationTarget
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
 
@@ -223,7 +227,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, dailyStepsTarget, dailyWaterTarget, dailyWaterIntake, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, dailyStepsTarget, dailyWaterTarget, dailyWaterIntake, dailyWorkoutDurationTarget, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -252,6 +256,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.dailyStepsTarget !== undefined) setDailyStepsTarget(data.dailyStepsTarget);
             if (data.dailyWaterTarget !== undefined) setDailyWaterTarget(data.dailyWaterTarget);
             if (data.dailyWaterIntake !== undefined) setDailyWaterIntake(data.dailyWaterIntake);
+            if (data.dailyWorkoutDurationTarget !== undefined) setDailyWorkoutDurationTarget(data.dailyWorkoutDurationTarget);
             if (data.lastStepDate !== undefined) setLastStepDate(data.lastStepDate);
             if (data.activeWorkout !== undefined) setActiveWorkout(data.activeWorkout);
             if (data.activeExercises !== undefined) setActiveExercises(data.activeExercises);
@@ -792,9 +797,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dailyWaterTarget,
       dailyWaterIntake,
       addWaterIntake: (ozAmount: number) => setDailyWaterIntake(prev => prev + ozAmount),
-      updateChallengeTargets: (stepsTarget: number, waterTarget: string) => {
+      dailyWorkoutDurationTarget,
+      updateChallengeTargets: (stepsTarget: number, durationTarget: number | string) => {
         setDailyStepsTarget(stepsTarget);
-        setDailyWaterTarget(waterTarget);
+        if (typeof durationTarget === 'number') {
+          setDailyWorkoutDurationTarget(durationTarget);
+        } else if (typeof durationTarget === 'string') {
+          setDailyWaterTarget(durationTarget);
+        }
       },
       activeWorkout,
       activeExercises,
