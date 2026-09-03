@@ -4,7 +4,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion
 import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown, Clock } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { getLocalDateString } from '../utils/dateUtils';
-import { calculateStreak } from '../utils/streakUtils';
+import { calculateStreak, getStreakBonusEp } from '../utils/streakUtils';
 import { CalendarModal } from '../components/CalendarModal';
 import type { WorkoutPreset, LoggedSet, ActiveExercise, WorkoutLog } from '../types';
 import { exerciseLibrary } from '../utils/exerciseLibrary';
@@ -781,11 +781,10 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       baseEp += 10;
     }
     
-    // Check for streak bonus
+    // Check for tiered streak bonus
     const currentStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
-    if (currentStreak >= 20) {
-      baseEp += 10;
-    }
+    const streakBonusEp = getStreakBonusEp(currentStreak);
+    baseEp += streakBonusEp;
     
     const calculatedEp = baseEp;
 

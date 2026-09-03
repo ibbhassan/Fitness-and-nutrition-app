@@ -124,9 +124,10 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
                 </div>
                 <ul className="text-sm text-gray-400 space-y-1 font-inter">
                   <li className="flex justify-between"><span>Leg Day Bonus:</span> <span className="text-neon-gold font-bold">+10 EP</span></li>
-                  <li className="flex justify-between"><span>20+ Day Streak:</span> <span className="text-neon-gold font-bold">+10 EP</span></li>
-                  <li className="flex justify-between"><span>Daily Steps (10k+):</span> <span className="text-neon-purple font-bold">+10 EP</span></li>
-                  <li className="flex justify-between"><span>Weekly Quests:</span> <span className="text-neon-purple font-bold">Varies</span></li>
+                  <li className="flex justify-between"><span>Streak Bonus (3d to 365d):</span> <span className="text-neon-gold font-bold">+5 to +300 EP</span></li>
+                  <li className="flex justify-between"><span>365-Day Legendary Milestone:</span> <span className="text-yellow-400 font-bold">+2,500 EP</span></li>
+                  <li className="flex justify-between"><span>Half-Year Titan Milestone:</span> <span className="text-yellow-400 font-bold">+1,000 EP</span></li>
+                  <li className="flex justify-between"><span>Daily Challenges:</span> <span className="text-neon-purple font-bold">+20 EP / Day</span></li>
                 </ul>
               </div>
             </div>

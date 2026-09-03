@@ -8,7 +8,7 @@ import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { publishHighlight, deleteHighlightsForWorkout } from '../services/socialService';
-import { calculateStreak } from '../utils/streakUtils';
+import { calculateStreak, getStreakMilestoneBonus } from '../utils/streakUtils';
 import { useRef } from 'react';
 
 interface UserContextType {
@@ -569,13 +569,29 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }).catch(err => console.error("Failed to publish PR highlight:", err));
       }
 
-      // Check Streak
+      // Check Streak & Major Milestones
       const newHistory = [...workoutHistory, log];
       const newStreak = calculateStreak(newHistory, scheduledWorkoutDays);
       const oldStreak = calculateStreak(workoutHistory, scheduledWorkoutDays);
 
-      // If they crossed a multiple of 10 milestone
-      if (newStreak >= 10 && newStreak % 10 === 0 && newStreak > oldStreak) {
+      const milestone = getStreakMilestoneBonus(newStreak, oldStreak);
+      if (milestone) {
+        // Award instant milestone bonus EP!
+        addEp(milestone.bonusEp);
+        publishHighlight({
+          userId: user.uid,
+          username: user.username,
+          avatar: avatarConfig,
+          type: 'STREAK',
+          data: {
+            streak: newStreak,
+            milestoneTitle: milestone.title,
+            badge: milestone.badge,
+            bonusEp: milestone.bonusEp
+          },
+          timestamp: Date.now() + 2
+        }).catch(err => console.error("Failed to publish streak milestone highlight:", err));
+      } else if (newStreak >= 10 && newStreak % 10 === 0 && newStreak > oldStreak) {
         publishHighlight({
           userId: user.uid,
           username: user.username,

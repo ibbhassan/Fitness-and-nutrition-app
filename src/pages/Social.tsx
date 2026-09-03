@@ -400,7 +400,11 @@ export const Social: React.FC = () => {
                                 )
                               )}
                               {highlight.type === 'STREAK' && (
-                                <> hit a massive <span className="text-yellow-400 font-bold">{highlight.data.streak}-Day Streak</span>!</>
+                                highlight.data.milestoneTitle ? (
+                                  <> achieved the <span className="text-yellow-400 font-bold">{highlight.data.badge || '🔥'} {highlight.data.milestoneTitle} ({highlight.data.streak} Days)</span> (+{highlight.data.bonusEp} EP Bonus)!</>
+                                ) : (
+                                  <> hit a massive <span className="text-yellow-400 font-bold">{highlight.data.streak}-Day Streak</span>!</>
+                                )
                               )}
                             </p>
                             <span className="text-[9px] sm:text-[10px] text-gray-500 font-mono mt-1 block">
