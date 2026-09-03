@@ -217,33 +217,33 @@ export const Profile: React.FC = () => {
       {/* Macro Modal */}
       {showMacroModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-tactical-900 border border-tactical-700 p-6 rounded-xl w-full max-w-sm">
-            <div className="flex justify-between items-center mb-4 border-b border-tactical-800 pb-3">
-              <h3 className="font-rajdhani font-bold text-xl uppercase tracking-wider">Custom Macros</h3>
-              <button onClick={() => setShowMacroModal(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+          <div className="bg-tactical-900 border border-tactical-700 p-6 sm:p-8 rounded-xl w-full max-w-lg shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b border-tactical-800 pb-4">
+              <h3 className="font-rajdhani font-bold text-2xl uppercase tracking-wider text-white">Custom Fuel Targets</h3>
+              <button onClick={() => setShowMacroModal(false)} className="text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
             </div>
-            <div className="space-y-4 mb-6">
+            <div className="space-y-6 mb-8">
               <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Calories</label>
-                <input type="number" value={customMacros.calories} onChange={(e) => setCustomMacros(prev => ({...prev, calories: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-4 py-2 text-white font-bold focus:outline-none focus:border-neon-red" />
+                <label className="text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Calories (kcal)</label>
+                <input type="number" value={customMacros.calories} onChange={(e) => setCustomMacros(prev => ({...prev, calories: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-4 py-3 text-white text-2xl font-bold font-mono focus:outline-none focus:border-neon-red" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Protein (g)</label>
-                  <input type="number" value={customMacros.protein} onChange={(e) => setCustomMacros(prev => ({...prev, protein: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-blue-400" />
+                  <label className="text-xs sm:text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Protein (g)</label>
+                  <input type="number" value={customMacros.protein} onChange={(e) => setCustomMacros(prev => ({...prev, protein: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-3 text-white text-xl font-bold font-mono focus:outline-none focus:border-blue-400" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Carbs (g)</label>
-                  <input type="number" value={customMacros.carbs} onChange={(e) => setCustomMacros(prev => ({...prev, carbs: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-yellow-400" />
+                  <label className="text-xs sm:text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Carbs (g)</label>
+                  <input type="number" value={customMacros.carbs} onChange={(e) => setCustomMacros(prev => ({...prev, carbs: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-3 text-white text-xl font-bold font-mono focus:outline-none focus:border-yellow-400" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Fat (g)</label>
-                  <input type="number" value={customMacros.fat} onChange={(e) => setCustomMacros(prev => ({...prev, fat: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-purple-400" />
+                  <label className="text-xs sm:text-sm font-rajdhani font-bold text-gray-300 uppercase tracking-wider block mb-2">Fat (g)</label>
+                  <input type="number" value={customMacros.fat} onChange={(e) => setCustomMacros(prev => ({...prev, fat: e.target.value}))} className="w-full bg-tactical-800 border border-tactical-700 rounded-lg px-3 py-3 text-white text-xl font-bold font-mono focus:outline-none focus:border-purple-400" />
                 </div>
               </div>
             </div>
-            <button onClick={handleUpdateMacros} className="w-full bg-neon-red text-white font-rajdhani font-bold text-lg uppercase tracking-wider py-3 rounded-lg hover:bg-neon-red/80 transition-colors">
-              Save Plan
+            <button onClick={handleUpdateMacros} className="w-full bg-neon-red text-white font-rajdhani font-bold text-xl uppercase tracking-wider py-4 rounded-lg hover:bg-neon-red/80 transition-colors shadow-[0_0_15px_rgba(255,0,85,0.3)]">
+              Save Fuel Plan
             </button>
           </div>
         </div>

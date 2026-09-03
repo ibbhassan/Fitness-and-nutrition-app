@@ -94,8 +94,8 @@ export const Onboarding: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-6 text-white font-inter">
-      <div className="max-w-md w-full esports-panel p-8 fade-in relative">
+    <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-4 sm:p-6 text-white font-inter">
+      <div className="max-w-xl sm:max-w-2xl w-full esports-panel p-6 sm:p-10 fade-in relative">
         {profile && (
           <button 
             onClick={cancelRecalibration}
@@ -366,56 +366,60 @@ export const Onboarding: React.FC = () => {
         )}
 
         {step === 7 && (
-          <div className="space-y-6 fade-in">
-            <h2 className="esports-heading text-2xl text-center mb-2">Your Fuel Targets</h2>
-            <p className="text-gray-400 text-center text-sm mb-4">We've generated optimal targets based on the Mifflin-St Jeor formula for your {goal} goal. You can adjust these manually.</p>
+          <div className="space-y-8 fade-in">
+            <div>
+              <h2 className="esports-heading text-3xl sm:text-4xl text-center mb-3">Your Fuel Targets</h2>
+              <p className="text-gray-300 text-center text-base sm:text-lg max-w-lg mx-auto leading-relaxed">
+                We've generated optimal targets based on the Mifflin-St Jeor formula for your <span className="text-neon-blue font-bold">{goal}</span> goal. You can adjust these manually.
+              </p>
+            </div>
             
-            <div className="bg-tactical-900 border border-tactical-700 p-3 rounded flex items-start gap-2 mb-6">
-              <Activity className="w-4 h-4 text-neon-blue shrink-0 mt-0.5" />
-              <p className="text-xs text-gray-400 leading-relaxed">
-                <span className="text-neon-blue font-bold font-rajdhani uppercase">Adaptive TDEE Enabled:</span> Log your real weight and calories for 2 weeks, and the app will automatically adapt these textbook targets to your actual metabolism!
+            <div className="bg-tactical-900 border border-tactical-700 p-4 sm:p-5 rounded-lg flex items-start gap-3">
+              <Activity className="w-6 h-6 text-neon-blue shrink-0 mt-0.5" />
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">
+                <span className="text-neon-blue font-bold font-rajdhani uppercase text-base sm:text-lg">Adaptive TDEE Enabled:</span> Log your real weight and calories for 2 weeks, and the app will automatically adapt these textbook targets to your actual metabolism!
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="flex justify-between text-xs text-gray-400 font-rajdhani uppercase mb-1">
+                <label className="flex justify-between items-center text-sm sm:text-base text-gray-300 font-rajdhani font-bold uppercase tracking-wider mb-2">
                   <span>Calories (kcal)</span>
-                  <Flame className="w-3 h-3 text-neon-red" />
+                  <Flame className="w-5 h-5 text-neon-red" />
                 </label>
                 <input 
                   type="number"
                   value={macros.calories.target || ''}
                   onChange={(e) => setMacros({...macros, calories: { current: 0, target: e.target.value === '' ? 0 : Number(e.target.value) }})}
-                  className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-bold focus:border-neon-blue focus:ring-1 focus:ring-neon-blue outline-none transition-all"
+                  className="w-full bg-tactical-800 border border-tactical-600 rounded-lg p-4 text-white text-2xl sm:text-3xl font-bold font-mono focus:border-neon-blue focus:ring-2 focus:ring-neon-blue outline-none transition-all"
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Protein (g)</label>
+                  <label className="block text-xs sm:text-sm text-gray-300 font-rajdhani font-bold uppercase tracking-wider mb-2">Protein (g)</label>
                   <input 
                     type="number"
                     value={macros.protein.target || ''}
                     onChange={(e) => setMacros({...macros, protein: { current: 0, target: e.target.value === '' ? 0 : Number(e.target.value) }})}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-bold focus:border-neon-blue outline-none transition-all"
+                    className="w-full bg-tactical-800 border border-tactical-600 rounded-lg p-3 sm:p-4 text-white text-xl sm:text-2xl font-bold font-mono focus:border-neon-blue outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Carbs (g)</label>
+                  <label className="block text-xs sm:text-sm text-gray-300 font-rajdhani font-bold uppercase tracking-wider mb-2">Carbs (g)</label>
                   <input 
                     type="number"
                     value={macros.carbs.target || ''}
                     onChange={(e) => setMacros({...macros, carbs: { current: 0, target: e.target.value === '' ? 0 : Number(e.target.value) }})}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-bold focus:border-neon-blue outline-none transition-all"
+                    className="w-full bg-tactical-800 border border-tactical-600 rounded-lg p-3 sm:p-4 text-white text-xl sm:text-2xl font-bold font-mono focus:border-neon-blue outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 font-rajdhani uppercase mb-1">Fats (g)</label>
+                  <label className="block text-xs sm:text-sm text-gray-300 font-rajdhani font-bold uppercase tracking-wider mb-2">Fats (g)</label>
                   <input 
                     type="number"
                     value={macros.fat.target || ''}
                     onChange={(e) => setMacros({...macros, fat: { current: 0, target: e.target.value === '' ? 0 : Number(e.target.value) }})}
-                    className="w-full bg-tactical-800 border border-tactical-600 rounded p-3 text-white font-bold focus:border-neon-blue outline-none transition-all"
+                    className="w-full bg-tactical-800 border border-tactical-600 rounded-lg p-3 sm:p-4 text-white text-xl sm:text-2xl font-bold font-mono focus:border-neon-blue outline-none transition-all"
                   />
                 </div>
               </div>
@@ -423,9 +427,9 @@ export const Onboarding: React.FC = () => {
 
             <button 
               onClick={handleComplete}
-              className="w-full mt-8 bg-neon-blue text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-[#00d0dd] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.4)] flex justify-center items-center gap-2"
+              className="w-full mt-8 bg-neon-blue text-tactical-900 py-4 rounded-lg font-rajdhani font-bold text-xl sm:text-2xl hover:bg-[#00d0dd] transition-colors shadow-[0_0_20px_rgba(0,240,255,0.4)] flex justify-center items-center gap-3"
             >
-              <Zap className="w-5 h-5" /> Complete Setup
+              <Zap className="w-6 h-6" /> Complete Setup
             </button>
           </div>
         )}
