@@ -128,14 +128,14 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     requiredStreak: 365
   },
 
-  // BANNERS (Dark Matte Carbon Canvas with Left Rank Accent Bar)
+  // BANNERS (Full-Width Rich Ambient Backdrops)
   {
     id: 'banner_default',
     name: 'Tactical',
     type: 'banner',
     category: 'special',
     description: 'Standard tactical dark banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-neon-blue border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-tactical-950 via-tactical-900 to-neon-blue/20 border border-neon-blue/40 shadow-[0_0_20px_rgba(0,240,255,0.15)]',
     isUnlockedByDefault: true
   },
   {
@@ -144,7 +144,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Bronze Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-amber-600 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-stone-950 via-amber-950/80 to-stone-900 border border-amber-700/50 shadow-[0_0_20px_rgba(180,83,9,0.25)]',
     requiredRank: 'Bronze'
   },
   {
@@ -153,7 +153,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Silver Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-slate-300 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-slate-950 via-slate-800 to-slate-900 border border-slate-400/50 shadow-[0_0_20px_rgba(203,213,225,0.25)]',
     requiredRank: 'Silver'
   },
   {
@@ -162,7 +162,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Gold Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-yellow-400 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-amber-950/90 via-tactical-900 to-yellow-950/80 border border-yellow-400/60 shadow-[0_0_25px_rgba(250,204,21,0.3)]',
     requiredRank: 'Gold'
   },
   {
@@ -171,7 +171,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Platinum Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-cyan-400 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-cyan-950/90 via-tactical-900 to-slate-900 border border-cyan-400/60 shadow-[0_0_25px_rgba(34,211,238,0.3)]',
     requiredRank: 'Platinum'
   },
   {
@@ -180,7 +180,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Emerald Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-emerald-400 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-emerald-950/90 via-teal-950/70 to-emerald-900/50 border border-emerald-400/60 shadow-[0_0_25px_rgba(52,211,153,0.3)]',
     requiredRank: 'Emerald'
   },
   {
@@ -189,7 +189,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Diamond Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-cyan-300 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-blue-950/90 via-cyan-950/80 to-indigo-950/70 border border-cyan-300/70 shadow-[0_0_30px_rgba(103,232,249,0.35)]',
     requiredRank: 'Diamond'
   },
   {
@@ -198,7 +198,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Master Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-purple-400 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-purple-950/90 via-fuchsia-950/80 to-purple-900/60 border border-purple-400/70 shadow-[0_0_30px_rgba(192,132,252,0.35)]',
     requiredRank: 'Master'
   },
   {
@@ -207,7 +207,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Grandmaster Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-red-500 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-red-950/95 via-amber-950/80 to-red-900/60 border border-red-500/80 shadow-[0_0_35px_rgba(239,68,68,0.4)]',
     requiredRank: 'Grandmaster'
   },
   {
@@ -216,7 +216,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'rank',
     description: 'Challenger Rank profile banner.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-yellow-400 border-y border-r border-tactical-800 shadow-[0_0_20px_rgba(250,204,21,0.15)]',
+    cssClass: 'bg-gradient-to-r from-yellow-950/95 via-amber-900/80 to-purple-950/80 border border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.45)]',
     requiredRank: 'Challenger'
   },
   {
@@ -225,7 +225,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'streak',
     description: 'Unlocked by hitting a 180-Day Streak.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-orange-500 border-y border-r border-tactical-800',
+    cssClass: 'bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-red-950/70 border border-orange-500/80 shadow-[0_0_35px_rgba(249,115,22,0.4)]',
     requiredStreak: 180
   },
   {
@@ -234,7 +234,7 @@ export const COSMETIC_ITEMS: CosmeticItem[] = [
     type: 'banner',
     category: 'streak',
     description: 'Unlocked by achieving the 365-Day IMMORTAL Streak.',
-    cssClass: 'bg-tactical-950 border-l-4 border-l-yellow-300 border-y border-r border-tactical-800 shadow-[0_0_25px_rgba(255,215,0,0.2)]',
+    cssClass: 'bg-gradient-to-r from-yellow-950/95 via-tactical-950 to-cyan-950/90 border-2 border-yellow-300 shadow-[0_0_50px_rgba(255,215,0,0.5)]',
     requiredStreak: 365
   },
 
