@@ -35,6 +35,7 @@ export interface UserProfile {
   currentMode: 'Cut' | 'Bulk' | 'Maintenance';
   lastSeenPatchVersion?: string;
   friends?: string[];
+  weeklyEp?: number;
 }
 
 export interface FriendRequest {

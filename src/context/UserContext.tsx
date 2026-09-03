@@ -492,8 +492,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       const { tier } = getRankInfo(newLevel);
+      const currentWeeklyEp = prev.weeklyEp || 0;
+      const newWeeklyEp = Math.max(0, currentWeeklyEp + amount);
       
-      return { ...prev, lp: newLp, level: newLevel, rank: tier };
+      return { ...prev, lp: newLp, level: newLevel, rank: tier, weeklyEp: newWeeklyEp };
     });
   };
 

@@ -187,3 +187,24 @@ export const toggleFistBump = async (highlightId: string, userIdentifier: string
     }
   }
 };
+
+export const getGlobalLeaderboard = async (limitCount: number = 50) => {
+  const usersRef = collection(db, 'users');
+  const snapshot = await getDocs(usersRef);
+  
+  const results: any[] = [];
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    if (data.profile && data.user) {
+      results.push({
+        uid: docSnap.id,
+        username: data.user.username,
+        profile: data.profile,
+        recentWorkout: data.workoutHistory?.length > 0 ? data.workoutHistory[data.workoutHistory.length - 1] : null
+      });
+    }
+  });
+  
+  results.sort((a, b) => (b.profile?.weeklyEp || 0) - (a.profile?.weeklyEp || 0));
+  return results.slice(0, limitCount);
+};

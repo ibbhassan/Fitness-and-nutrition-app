@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '../context/UserContext';
-import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights, toggleFistBump } from '../services/socialService';
+import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights, toggleFistBump, getGlobalLeaderboard } from '../services/socialService';
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
@@ -22,8 +22,28 @@ export const Social: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'community' | 'roster'>('community');
   const [highlights, setHighlights] = useState<HighlightEvent[]>([]);
 
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [leaderboardTab, setLeaderboardTab] = useState<'friends' | 'global'>('friends');
+  const [globalLeaderboard, setGlobalLeaderboard] = useState<any[]>([]);
+  const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+
   const currentUid = user?.uid;
   const userIdentifier = user?.uid || user?.username || 'me';
+
+  const currentUserProfile = useMemo(() => ({
+    uid: currentUid || 'me',
+    username: user?.username || profile.name || 'You',
+    profile: profile
+  }), [currentUid, user, profile]);
+
+  const sortedFriendsLeaderboard = useMemo(() => {
+    const combined = [currentUserProfile, ...friendsProfiles];
+    const uniqueMap = new Map();
+    combined.forEach(u => uniqueMap.set(u.uid, u));
+    const list = Array.from(uniqueMap.values());
+    list.sort((a, b) => (b.profile?.weeklyEp || 0) - (a.profile?.weeklyEp || 0));
+    return list;
+  }, [currentUserProfile, friendsProfiles]);
 
   const handleFistBump = (highlightId: string) => {
     setHighlights(prev => prev.map(h => {
@@ -188,20 +208,53 @@ export const Social: React.FC = () => {
                  <span className="text-xs text-gray-500 font-mono border border-tactical-700 bg-tactical-900 px-3 py-1 rounded-full">RESETS IN: {getTimeUntilNextReset()}</span>
                </div>
                
-               <div className="flex items-end justify-center gap-2 sm:gap-6 mt-4 mb-2 relative z-10 px-2">
+                <div className="flex items-end justify-center gap-2 sm:gap-6 mt-4 mb-2 relative z-10 px-2">
                   {[
-                     { place: 2, height: 'h-24 sm:h-32', color: 'bg-tactical-700', text: 'text-gray-300', friend: [...friendsProfiles].sort((a,b)=> (b.profile?.level||0) - (a.profile?.level||0))[1] },
-                     { place: 1, height: 'h-32 sm:h-40', color: 'bg-neon-gold', text: 'text-black', friend: [...friendsProfiles].sort((a,b)=> (b.profile?.level||0) - (a.profile?.level||0))[0] },
-                     { place: 3, height: 'h-20 sm:h-24', color: 'bg-tactical-800', text: 'text-amber-700', friend: [...friendsProfiles].sort((a,b)=> (b.profile?.level||0) - (a.profile?.level||0))[2] }
+                    { 
+                      place: 2, 
+                      height: 'h-28 sm:h-36', 
+                      color: 'bg-gradient-to-t from-tactical-800 to-tactical-700 border-2 border-tactical-600', 
+                      text: 'text-gray-300', 
+                      reward: '+300 EP', 
+                      rewardColor: 'text-slate-300 bg-slate-900/90 border-slate-600',
+                      badge: '🥈',
+                      friend: sortedFriendsLeaderboard[1] 
+                    },
+                    { 
+                      place: 1, 
+                      height: 'h-36 sm:h-44', 
+                      color: 'bg-gradient-to-t from-amber-600/40 via-neon-gold/20 to-neon-gold border-2 border-neon-gold shadow-[0_0_25px_rgba(255,215,0,0.3)]', 
+                      text: 'text-black', 
+                      reward: '+500 EP', 
+                      rewardColor: 'text-yellow-300 bg-black/90 border-neon-gold shadow-[0_0_10px_rgba(255,215,0,0.4)]',
+                      badge: '👑',
+                      friend: sortedFriendsLeaderboard[0] 
+                    },
+                    { 
+                      place: 3, 
+                      height: 'h-24 sm:h-28', 
+                      color: 'bg-gradient-to-t from-tactical-800 to-amber-950/60 border-2 border-amber-800/60', 
+                      text: 'text-amber-600', 
+                      reward: '+150 EP', 
+                      rewardColor: 'text-amber-400 bg-amber-950/90 border-amber-700',
+                      badge: '🥉',
+                      friend: sortedFriendsLeaderboard[2] 
+                    }
                   ].map((podium) => (
                     <div key={podium.place} className="flex flex-col items-center w-full max-w-[120px]">
                        {podium.friend ? (
                          <div className="flex flex-col items-center mb-3">
                            <div className="relative mb-2">
-                             <img src={typeof podium.friend.profile?.avatar === 'string' ? podium.friend.profile.avatar : '/images/avatar_3d.png'} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-tactical-500 object-cover bg-tactical-800 shadow-[0_0_15px_rgba(0,0,0,0.5)]" />
+                             <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl z-20 drop-shadow-md">{podium.badge}</span>
+                             <img 
+                               src={typeof podium.friend.profile?.avatar === 'string' ? podium.friend.profile.avatar : '/images/avatar_3d.png'} 
+                               className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-tactical-500 object-cover bg-tactical-800 shadow-[0_0_15px_rgba(0,0,0,0.5)]" 
+                               alt={podium.friend.username}
+                             />
                              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded border border-tactical-600 whitespace-nowrap">LVL {podium.friend.profile?.level||1}</span>
                            </div>
                            <span className="font-rajdhani font-bold text-white truncate w-full text-center tracking-wider text-xs sm:text-sm px-1">{podium.friend.username}</span>
+                           <span className="text-[10px] sm:text-xs font-mono font-bold text-neon-green mt-0.5">{(podium.friend.profile?.weeklyEp || 0).toLocaleString()} EP</span>
                          </div>
                        ) : (
                          <div className="flex flex-col items-center mb-3 opacity-30">
@@ -211,13 +264,39 @@ export const Social: React.FC = () => {
                            <span className="font-rajdhani font-bold text-white tracking-wider text-xs sm:text-sm">Empty</span>
                          </div>
                        )}
-                       <div className={clsx("w-full rounded-t-xl flex items-start justify-center pt-2 font-black text-xl sm:text-2xl shadow-inner", podium.height, podium.color, podium.text)}>
-                         #{podium.place}
+                       <div className={clsx("w-full rounded-t-xl flex flex-col items-center justify-between py-2 font-black shadow-inner relative overflow-hidden", podium.height, podium.color)}>
+                         <span className={clsx("text-xl sm:text-2xl", podium.text)}>#{podium.place}</span>
+                         <span className={clsx("text-[9px] sm:text-[10px] font-rajdhani uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded border shadow-sm mb-1", podium.rewardColor)}>
+                           {podium.reward}
+                         </span>
                        </div>
                     </div>
                   ))}
-               </div>
-            </div>
+                </div>
+
+                <div className="flex justify-center mt-6 relative z-10">
+                  <button
+                    onClick={async () => {
+                      setShowLeaderboardModal(true);
+                      if (globalLeaderboard.length === 0) {
+                        setIsGlobalLoading(true);
+                        try {
+                          const globalList = await getGlobalLeaderboard(50);
+                          setGlobalLeaderboard(globalList);
+                        } catch (err) {
+                          console.error("Failed to load global leaderboard", err);
+                        } finally {
+                          setIsGlobalLoading(false);
+                        }
+                      }
+                    }}
+                    className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-600 hover:border-neon-gold text-white font-rajdhani font-bold text-xs sm:text-sm uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all shadow-md flex items-center gap-2 group cursor-pointer"
+                  >
+                    <Trophy className="w-4 h-4 text-neon-gold group-hover:scale-110 transition-transform" />
+                    <span>View Full Leaderboard</span>
+                  </button>
+                </div>
+             </div>
 
             {/* Bottom Half: Activity Feed */}
             <div className="esports-panel p-6 border-l-4 border-neon-purple relative overflow-hidden">
@@ -519,6 +598,137 @@ export const Social: React.FC = () => {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Leaderboard Modal */}
+      {showLeaderboardModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+          <div className="bg-tactical-900 border border-tactical-700 rounded-xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            {/* Header */}
+            <div className="p-4 sm:p-6 border-b border-tactical-800 bg-tactical-950 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-neon-gold/10 border border-neon-gold/30 rounded-lg">
+                  <Trophy className="w-6 h-6 text-neon-gold" />
+                </div>
+                <div>
+                  <h2 className="font-rajdhani font-bold text-xl sm:text-2xl uppercase tracking-wider text-white">Weekly Leaderboard</h2>
+                  <p className="text-xs text-gray-400 font-mono">RESETS IN: {getTimeUntilNextReset()}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowLeaderboardModal(false)}
+                className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-tactical-800 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Leaderboard Tabs */}
+            <div className="flex border-b border-tactical-800 bg-tactical-900 px-4 sm:px-6 pt-3 shrink-0">
+              <button
+                onClick={() => setLeaderboardTab('friends')}
+                className={clsx(
+                  "pb-3 px-4 font-rajdhani font-bold uppercase tracking-wider text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer",
+                  leaderboardTab === 'friends' ? "border-neon-gold text-neon-gold" : "border-transparent text-gray-400 hover:text-gray-200"
+                )}
+              >
+                <Users className="w-4 h-4" /> Friends ({sortedFriendsLeaderboard.length})
+              </button>
+              <button
+                onClick={() => setLeaderboardTab('global')}
+                className={clsx(
+                  "pb-3 px-4 font-rajdhani font-bold uppercase tracking-wider text-xs sm:text-sm border-b-2 transition-all flex items-center gap-2 cursor-pointer",
+                  leaderboardTab === 'global' ? "border-neon-gold text-neon-gold" : "border-transparent text-gray-400 hover:text-gray-200"
+                )}
+              >
+                <Trophy className="w-4 h-4" /> Global Community
+              </button>
+            </div>
+
+            {/* Leaderboard List */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 custom-scrollbar">
+              {isGlobalLoading && leaderboardTab === 'global' ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-2 border-neon-gold border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                (leaderboardTab === 'friends' ? sortedFriendsLeaderboard : globalLeaderboard).map((item, index) => {
+                  const rankNum = index + 1;
+                  const isMe = item.uid === currentUid || item.uid === 'me';
+                  const rankInfo = getRankInfo(item.profile?.level || 1);
+                  const weeklyEp = item.profile?.weeklyEp || 0;
+
+                  let rewardTag = null;
+                  if (rankNum === 1) rewardTag = { label: '+500 EP Bonus', color: 'text-yellow-400 border-yellow-500/40 bg-yellow-500/10', icon: '👑' };
+                  else if (rankNum === 2) rewardTag = { label: '+300 EP Bonus', color: 'text-slate-300 border-slate-400/40 bg-slate-400/10', icon: '🥈' };
+                  else if (rankNum === 3) rewardTag = { label: '+150 EP Bonus', color: 'text-amber-400 border-amber-600/40 bg-amber-600/10', icon: '🥉' };
+
+                  return (
+                    <div 
+                      key={item.uid || index}
+                      className={clsx(
+                        "p-3 sm:p-4 rounded-xl border flex items-center justify-between gap-3 sm:gap-4 transition-all",
+                        isMe 
+                          ? "bg-neon-gold/10 border-neon-gold/60 shadow-[0_0_15px_rgba(255,215,0,0.15)]" 
+                          : "bg-tactical-800/80 border-tactical-700 hover:border-tactical-600"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        {/* Rank Place */}
+                        <div className={clsx(
+                          "w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-rajdhani font-black text-base sm:text-xl shrink-0",
+                          rankNum === 1 ? "bg-neon-gold text-black shadow-[0_0_10px_rgba(255,215,0,0.4)]" :
+                          rankNum === 2 ? "bg-slate-300 text-black" :
+                          rankNum === 3 ? "bg-amber-700 text-white" :
+                          "bg-tactical-900 text-gray-400 border border-tactical-700"
+                        )}>
+                          #{rankNum}
+                        </div>
+
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <img 
+                            src={typeof item.profile?.avatar === 'string' ? item.profile.avatar : '/images/avatar_3d.png'} 
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-tactical-600 object-cover bg-tactical-900"
+                            alt={item.username}
+                          />
+                          <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-bold px-1 rounded border border-tactical-600">
+                            L{item.profile?.level || 1}
+                          </span>
+                        </div>
+
+                        {/* User Info */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={clsx("font-rajdhani font-bold text-sm sm:text-lg truncate tracking-wider", isMe ? "text-neon-gold" : "text-white")}>
+                              {item.username}
+                            </span>
+                            {isMe && <span className="bg-neon-gold text-black text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded font-rajdhani uppercase shrink-0">YOU</span>}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                            <span className={rankInfo.color}>{rankInfo.tier} {rankInfo.division}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* EP & Rewards */}
+                      <div className="text-right shrink-0">
+                        <span className="block text-base sm:text-xl font-rajdhani font-bold text-neon-green">
+                          {weeklyEp.toLocaleString()} <span className="text-xs font-normal text-gray-400">EP</span>
+                        </span>
+                        {rewardTag && (
+                          <span className={clsx("text-[9px] sm:text-[10px] font-rajdhani font-bold uppercase px-2 py-0.5 rounded border inline-flex items-center gap-1 mt-0.5", rewardTag.color)}>
+                            <span>{rewardTag.icon}</span> {rewardTag.label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
