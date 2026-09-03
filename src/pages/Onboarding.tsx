@@ -82,6 +82,50 @@ export const Onboarding: React.FC = () => {
     setStep(7);
   };
 
+  const handleSkipAll = () => {
+    const selectedGoal = goal || 'Cut';
+    const daysCount = workoutsPerWeek || 3;
+    const defaultDays = [1, 3, 5].slice(0, daysCount);
+    if (defaultDays.length < daysCount) {
+      const pool = [1, 3, 5, 2, 4, 6, 0];
+      for (const d of pool) {
+        if (defaultDays.length >= daysCount) break;
+        if (!defaultDays.includes(d)) defaultDays.push(d);
+      }
+      defaultDays.sort((a, b) => a - b);
+    }
+    const defaultSplit: Record<number, string> = {};
+    defaultDays.forEach(day => { defaultSplit[day] = 'Workout'; });
+
+    const defaultBio: Biometrics = bio.weightLbs ? bio : {
+      gender: 'Male', age: 25, heightFeet: 5, heightInches: 10, weightLbs: 180
+    };
+
+    const defaultMacros: DailyNutrition = macros.calories.target ? macros : {
+      calories: { current: 0, target: 2200 },
+      protein: { current: 0, target: 180 },
+      carbs: { current: 0, target: 220 },
+      fat: { current: 0, target: 65 }
+    };
+
+    completeOnboarding(selectedGoal, daysCount, defaultDays, defaultSplit, defaultMacros, defaultBio);
+  };
+
+  const handleAdvanceStep3 = () => {
+    let finalDays = [...scheduledDays];
+    const daysTarget = workoutsPerWeek || 3;
+    if (finalDays.length < daysTarget) {
+      const defaultDayPool = [1, 3, 5, 2, 4, 6, 0];
+      for (const d of defaultDayPool) {
+        if (finalDays.length >= daysTarget) break;
+        if (!finalDays.includes(d)) finalDays.push(d);
+      }
+      finalDays.sort((a, b) => a - b);
+      setScheduledDays(finalDays);
+    }
+    setStep(5);
+  };
+
   const handleComplete = () => {
     // Fill in any missing split labels with default "Workout" if left empty
     const finalSplit = { ...workoutSplit };
@@ -91,17 +135,22 @@ export const Onboarding: React.FC = () => {
     completeOnboarding(goal as 'Cut' | 'Bulk' | 'Maintenance', workoutsPerWeek, scheduledDays, finalSplit, macros, bio);
   };
 
-
-
   return (
     <div className="min-h-screen bg-tactical-950 flex flex-col items-center justify-center p-4 sm:p-6 text-white font-inter">
       <div className="max-w-xl sm:max-w-2xl w-full esports-panel p-6 sm:p-10 fade-in relative">
-        {profile && (
+        {profile ? (
           <button 
             onClick={cancelRecalibration}
             className="absolute top-4 right-4 text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 p-2 rounded-full transition-colors z-20"
           >
             <X className="w-5 h-5" />
+          </button>
+        ) : (
+          <button 
+            onClick={handleSkipAll}
+            className="absolute top-4 right-4 text-xs font-rajdhani uppercase font-bold text-gray-400 hover:text-white bg-tactical-800 hover:bg-tactical-700 px-3 py-1.5 rounded transition-colors z-20"
+          >
+            Skip Setup
           </button>
         )}
         {step > 1 && (
@@ -156,10 +205,16 @@ export const Onboarding: React.FC = () => {
             </button>
 
             <button 
-              onClick={handleNext}
-              className="w-full mt-8 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
+              onClick={() => { if (!goal) setGoal('Cut'); handleNext(); }}
+              className="w-full mt-6 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
             >
               Continue <ChevronRight className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => { setGoal('Cut'); handleNext(); }}
+              className="w-full text-center text-xs font-rajdhani uppercase tracking-wider text-gray-500 hover:text-gray-300 py-1 transition-colors"
+            >
+              Skip for now (Default to Cut)
             </button>
           </div>
         )}
@@ -189,9 +244,15 @@ export const Onboarding: React.FC = () => {
 
             <button 
               onClick={handleNext}
-              className="w-full mt-8 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
+              className="w-full mt-6 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
             >
               Continue <ChevronRight className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => { setWorkoutsPerWeek(3); handleNext(); }}
+              className="w-full text-center text-xs font-rajdhani uppercase tracking-wider text-gray-500 hover:text-gray-300 py-1 transition-colors"
+            >
+              Skip for now (Default 3 Days)
             </button>
           </div>
         )}
@@ -227,19 +288,19 @@ export const Onboarding: React.FC = () => {
             </p>
 
             <button 
-              onClick={() => setStep(5)}
-              disabled={scheduledDays.length !== workoutsPerWeek}
-              className={clsx(
-                "w-full mt-4 py-3 rounded font-rajdhani font-bold text-lg transition-colors flex justify-center items-center gap-2",
-                scheduledDays.length === workoutsPerWeek ? "bg-white text-tactical-900 hover:bg-gray-200" : "bg-tactical-800 text-gray-500 cursor-not-allowed"
-              )}
+              onClick={handleAdvanceStep3}
+              className="w-full mt-4 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
             >
               Next Step <ChevronRight className="w-5 h-5" />
             </button>
+            <button 
+              onClick={handleAdvanceStep3}
+              className="w-full text-center text-xs font-rajdhani uppercase tracking-wider text-gray-500 hover:text-gray-300 py-1 transition-colors"
+            >
+              Skip Scheduling (Auto-Assign Days)
+            </button>
           </div>
         )}
-
-
 
         {step === 5 && (
           <div className="space-y-6 fade-in">
@@ -312,9 +373,15 @@ export const Onboarding: React.FC = () => {
 
             <button 
               onClick={handleNext}
-              className="w-full mt-8 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
+              className="w-full mt-6 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
             >
               Continue <ChevronRight className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={handleNext}
+              className="w-full text-center text-xs font-rajdhani uppercase tracking-wider text-gray-500 hover:text-gray-300 py-1 transition-colors"
+            >
+              Skip for now (Use Standard Baseline)
             </button>
           </div>
         )}
@@ -358,9 +425,15 @@ export const Onboarding: React.FC = () => {
 
             <button 
               onClick={calculateAndAdvanceToMacros}
-              className="w-full mt-8 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
+              className="w-full mt-6 bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
             >
               Calibrate Fuel <ChevronRight className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => { setMacroPreference('HighCarb'); calculateAndAdvanceToMacros(); }}
+              className="w-full text-center text-xs font-rajdhani uppercase tracking-wider text-gray-500 hover:text-gray-300 py-1 transition-colors"
+            >
+              Skip for now (Default High Carb)
             </button>
           </div>
         )}
