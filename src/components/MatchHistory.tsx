@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
-import type { WorkoutLog } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2, Calendar } from 'lucide-react';
+import type { WorkoutLog, WorkoutPreset } from '../types';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2, Calendar, BookmarkPlus, Check } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const getGradeColor = (grade?: string) => {
@@ -19,8 +19,25 @@ interface MatchHistoryProps {
 }
 
 export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
-  const { workoutHistory, deleteWorkout, setEditingWorkout } = useUser();
+  const { workoutHistory, deleteWorkout, setEditingWorkout, saveCustomPreset } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
+  const [presetSavedNotice, setPresetSavedNotice] = useState<string | null>(null);
+
+  const handleSaveAsPreset = () => {
+    if (!selectedWorkout) return;
+    const presetName = window.prompt("Save this workout as a custom preset. Enter preset name:", selectedWorkout.name);
+    if (!presetName || !presetName.trim()) return;
+
+    const newPreset: WorkoutPreset = {
+      id: 'preset-' + Date.now(),
+      name: presetName.trim(),
+      exercises: selectedWorkout.exercises
+    };
+
+    saveCustomPreset(newPreset);
+    setPresetSavedNotice(`Saved "${presetName.trim()}" to Presets!`);
+    setTimeout(() => setPresetSavedNotice(null), 3500);
+  };
 
   // Sort history newest first
   const sortedHistory = [...workoutHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -132,6 +149,13 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                 </span>
               </div>
               <div className="flex items-center space-x-1 sm:space-x-2 bg-tactical-900 p-1 rounded-lg border border-tactical-800">
+                <button 
+                  onClick={handleSaveAsPreset}
+                  className="text-gray-400 hover:text-neon-gold hover:bg-tactical-800 p-2 rounded-md transition-all cursor-pointer"
+                  title="Save as Preset Workout"
+                >
+                  <BookmarkPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
                 {setActiveTab && (
                   <button 
                     onClick={() => {
@@ -139,7 +163,7 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                       setActiveTab('workout');
                       setSelectedWorkout(null);
                     }}
-                    className="text-gray-400 hover:text-neon-blue hover:bg-tactical-800 p-2 rounded-md transition-all"
+                    className="text-gray-400 hover:text-neon-blue hover:bg-tactical-800 p-2 rounded-md transition-all cursor-pointer"
                     title="Edit Workout"
                   >
                     <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -152,7 +176,7 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                       setSelectedWorkout(null);
                     }
                   }}
-                  className="text-gray-400 hover:text-neon-red hover:bg-tactical-800 p-2 rounded-md transition-all"
+                  className="text-gray-400 hover:text-neon-red hover:bg-tactical-800 p-2 rounded-md transition-all cursor-pointer"
                   title="Delete Workout"
                 >
                   <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -160,12 +184,19 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                 <div className="w-px h-6 bg-tactical-800 mx-1"></div>
                 <button 
                   onClick={() => setSelectedWorkout(null)}
-                  className="text-gray-400 hover:text-white hover:bg-tactical-800 p-2 rounded-md transition-all"
+                  className="text-gray-400 hover:text-white hover:bg-tactical-800 p-2 rounded-md transition-all cursor-pointer"
                 >
                   <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
+            
+            {presetSavedNotice && (
+              <div className="bg-neon-gold/10 border-b border-neon-gold/40 text-neon-gold px-4 py-2 text-xs font-rajdhani font-bold flex items-center justify-center gap-2 animate-in fade-in duration-150 shrink-0">
+                <Check className="w-4 h-4 text-neon-gold" />
+                <span>{presetSavedNotice}</span>
+              </div>
+            )}
             
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-3 p-4 sm:p-5 bg-tactical-900/30 border-b border-tactical-800/50">
