@@ -5,6 +5,7 @@ import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Cro
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import { getTimeUntilNextReset } from '../utils/dateUtils';
+import { getCosmeticItem } from '../utils/cosmeticsRegistry';
 import { clsx } from 'clsx';
 
 import { FriendProfile } from '../components/social/FriendProfile';
@@ -692,30 +693,43 @@ export const Social: React.FC = () => {
                           #{rankNum}
                         </div>
 
-                        {/* Avatar */}
-                        <div className="relative shrink-0">
-                          <img 
-                            src={typeof item.profile?.avatar === 'string' ? item.profile.avatar : '/images/avatar_3d.png'} 
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-tactical-600 object-cover bg-tactical-900"
-                            alt={item.username}
-                          />
-                          <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-bold px-1 rounded border border-tactical-600">
-                            L{item.profile?.level || 1}
-                          </span>
-                        </div>
+                        {/* Avatar & User Info */}
+                        {(() => {
+                          const equippedBorderItem = getCosmeticItem(item.profile?.equippedCosmetics?.border);
+                          const equippedTitleItem = getCosmeticItem(item.profile?.equippedCosmetics?.title);
 
-                        {/* User Info */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={clsx("font-rajdhani font-bold text-sm sm:text-lg truncate tracking-wider", isMe ? "text-neon-gold" : "text-white")}>
-                              {item.username}
-                            </span>
-                            {isMe && <span className="bg-neon-gold text-black text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded font-rajdhani uppercase shrink-0">YOU</span>}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
-                            <span className={rankInfo.color}>{rankInfo.tier} {rankInfo.division}</span>
-                          </div>
-                        </div>
+                          return (
+                            <>
+                              <div className={clsx("relative shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden bg-tactical-900", equippedBorderItem?.cssClass || 'border border-tactical-600')}>
+                                <img 
+                                  src={typeof item.profile?.avatar === 'string' ? item.profile.avatar : '/images/avatar_3d.png'} 
+                                  className="w-full h-full object-cover"
+                                  alt={item.username}
+                                />
+                                <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-bold px-1 rounded border border-tactical-600 z-10">
+                                  L{item.profile?.level || 1}
+                                </span>
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={clsx("font-rajdhani font-bold text-sm sm:text-lg truncate tracking-wider", isMe ? "text-neon-gold" : "text-white")}>
+                                    {item.username}
+                                  </span>
+                                  {equippedTitleItem && (
+                                    <span className={clsx("px-2 py-0.5 rounded font-rajdhani font-bold text-[10px] uppercase tracking-widest shrink-0", equippedTitleItem.badgeClass || 'bg-neon-blue/20 border border-neon-blue text-neon-blue')}>
+                                      {equippedTitleItem.badgeText || equippedTitleItem.name}
+                                    </span>
+                                  )}
+                                  {isMe && <span className="bg-neon-gold text-black text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded font-rajdhani uppercase shrink-0">YOU</span>}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                                  <span className={rankInfo.color}>{rankInfo.tier} {rankInfo.division}</span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       {/* EP & Rewards */}

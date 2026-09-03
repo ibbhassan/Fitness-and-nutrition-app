@@ -37,6 +37,7 @@ interface UserContextType {
   saveCustomPreset: (preset: WorkoutPreset) => void;
   deleteCustomPreset: (id: string) => void;
   updateAvatar: (avatar: AvatarConfig) => void;
+  equipCosmetic: (type: 'border' | 'banner' | 'title', id: string | undefined) => void;
   workoutHistory: WorkoutLog[];
   logWorkout: (log: WorkoutLog) => void;
   deleteWorkout: (id: string) => void;
@@ -481,6 +482,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProfile(prev => ({ ...prev, avatar }));
   };
 
+  const equipCosmetic = (type: 'border' | 'banner' | 'title', id: string | undefined) => {
+    setProfile(prev => ({
+      ...prev,
+      equippedCosmetics: {
+        ...(prev?.equippedCosmetics || {}),
+        [type]: id
+      }
+    }));
+  };
+
   const addEp = (amount: number) => {
     setProfile(prev => {
       let newLp = prev.lp + amount;
@@ -795,6 +806,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveCustomPreset,
       deleteCustomPreset,
       updateAvatar,
+      equipCosmetic,
       workoutHistory,
       logWorkout,
       deleteWorkout,

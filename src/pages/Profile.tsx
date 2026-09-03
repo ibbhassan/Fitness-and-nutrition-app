@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2 } from 'lucide-react';
+import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2, Sparkles } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
+import { CosmeticsLockerModal } from '../components/CosmeticsLockerModal';
+import { getCosmeticItem } from '../utils/cosmeticsRegistry';
 import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
 
@@ -14,6 +16,7 @@ export const Profile: React.FC = () => {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showCosmeticsModal, setShowCosmeticsModal] = useState(false);
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || '');
   
@@ -119,11 +122,15 @@ export const Profile: React.FC = () => {
     setShowMacroModal(false);
   };
 
+  const equippedBorder = getCosmeticItem(profile?.equippedCosmetics?.border) || getCosmeticItem('border_default');
+  const equippedBanner = getCosmeticItem(profile?.equippedCosmetics?.banner) || getCosmeticItem('banner_default');
+  const equippedTitle = getCosmeticItem(profile?.equippedCosmetics?.title);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 fade-in pb-20">
       
       {/* Top Banner: Agent ID Card */}
-      <div className="esports-panel p-6 relative overflow-hidden">
+      <div className={clsx("esports-panel p-6 relative overflow-hidden transition-all duration-300", equippedBanner?.cssClass || 'border-tactical-700')}>
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-neon-blue/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-neon-gold/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
@@ -134,7 +141,8 @@ export const Profile: React.FC = () => {
             <div className="flex items-center gap-4 mb-4">
               <button 
                 onClick={() => setShowAvatarModal(true)}
-                className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neon-blue flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)] shrink-0 bg-tactical-800 group"
+                className={clsx("relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-tactical-800 group transition-all duration-300", equippedBorder?.cssClass || 'border-2 border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.3)]')}
+                title="Change Avatar"
               >
                 <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110 group-hover:opacity-50 transition-opacity" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -142,23 +150,37 @@ export const Profile: React.FC = () => {
                 </div>
               </button>
               <div>
-                <h1 className="esports-heading text-3xl text-white tracking-widest break-all">
-                  {user?.username || 'AGENT'}
-                </h1>
-                <button onClick={() => {
-                  setNewUsername(user?.username || '');
-                  setShowUsernameModal(true);
-                }} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-gray-400 hover:text-neon-blue transition-colors focus:outline-none mt-2">
-                  <Edit2 className="w-3 h-3" /> Edit Username
-                </button>
-                <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                  <h1 className="esports-heading text-3xl text-white tracking-widest break-all">
+                    {user?.username || 'AGENT'}
+                  </h1>
+                  {equippedTitle && (
+                    <span className={clsx("px-2.5 py-0.5 rounded font-rajdhani font-bold text-xs uppercase tracking-widest shrink-0", equippedTitle.badgeClass || 'bg-neon-blue/20 border border-neon-blue text-neon-blue')}>
+                      {equippedTitle.badgeText || equippedTitle.name}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 mt-2 flex-wrap justify-center md:justify-start">
+                  <button onClick={() => {
+                    setNewUsername(user?.username || '');
+                    setShowUsernameModal(true);
+                  }} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-gray-400 hover:text-neon-blue transition-colors focus:outline-none">
+                    <Edit2 className="w-3 h-3" /> Edit Username
+                  </button>
+                  <span className="text-tactical-700">•</span>
+                  <button onClick={() => setShowCosmeticsModal(true)} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-neon-purple hover:text-white transition-colors focus:outline-none font-bold">
+                    <Sparkles className="w-3.5 h-3.5" /> Locker & Cosmetics
+                  </button>
+                </div>
+
+                <p className="text-neon-blue font-rajdhani font-bold tracking-wider uppercase flex items-center gap-2 mt-3 justify-center md:justify-start">
                   <Star className="w-4 h-4 text-neon-gold" /> Level {profile?.level || 1}
                 </p>
               </div>
             </div>
 
           </div>
-
 
         </div>
 
@@ -521,6 +543,10 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
+      {/* Cosmetics Locker Modal */}
+      {showCosmeticsModal && (
+        <CosmeticsLockerModal onClose={() => setShowCosmeticsModal(false)} />
+      )}
     </div>
   );
 };

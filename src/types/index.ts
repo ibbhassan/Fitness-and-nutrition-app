@@ -22,6 +22,12 @@ export interface MatchHistoryEntry {
 
 export type AvatarConfig = string;
 
+export interface EquippedCosmetics {
+  border?: string;
+  banner?: string;
+  title?: string;
+}
+
 export interface UserProfile {
   name: string;
   avatar?: AvatarConfig;
@@ -36,6 +42,8 @@ export interface UserProfile {
   lastSeenPatchVersion?: string;
   friends?: string[];
   weeklyEp?: number;
+  equippedCosmetics?: EquippedCosmetics;
+  unlockedCosmetics?: string[];
 }
 
 export interface FriendRequest {
