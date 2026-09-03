@@ -129,14 +129,8 @@ export const Dashboard: React.FC = () => {
   const [tempSteps, setTempSteps] = useState(targetSteps);
   const [tempWater, setTempWater] = useState(targetWater);
 
-  const stepsEpReward = Math.round(targetSteps / 1000);
-  const getWaterEpReward = (w: string) => {
-    if (w === '0.5 Gallon') return 5;
-    if (w === '0.75 Gallon') return 7;
-    if (w === '1.5 Gallons') return 15;
-    return 10;
-  };
-  const waterEpReward = getWaterEpReward(targetWater);
+  const stepsEpReward = 10;
+  const waterEpReward = 10;
 
   const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
   const isDailyStepsComplete = dailySteps >= targetSteps || !!manualQuestCompletions[dailyStepsKey];
@@ -520,7 +514,7 @@ export const Dashboard: React.FC = () => {
                       )}
                     >
                       <span className="block text-base sm:text-lg font-bold">{s / 1000}k</span>
-                      <span className="text-[10px] text-neon-green font-bold">+{s / 1000} EP</span>
+                      <span className="text-[10px] text-neon-green font-bold">+10 EP</span>
                     </button>
                   ))}
                 </div>
@@ -540,7 +534,7 @@ export const Dashboard: React.FC = () => {
                       )}
                     >
                       <span className="block text-sm font-bold truncate">{w}</span>
-                      <span className="text-[10px] text-neon-green font-bold">+{getWaterEpReward(w)} EP</span>
+                      <span className="text-[10px] text-neon-green font-bold">+10 EP</span>
                     </button>
                   ))}
                 </div>
