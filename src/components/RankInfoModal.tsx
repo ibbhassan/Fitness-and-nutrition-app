@@ -133,6 +133,81 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
             </div>
           </section>
 
+          {/* Section: Streak Rewards & Milestones */}
+          <section>
+            <h3 className="text-lg font-rajdhani font-bold text-yellow-400 uppercase tracking-wider mb-4 border-b border-tactical-700 pb-2 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-yellow-400" /> Streak Tier Multipliers & Milestone Rewards
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Daily Streak Bonus per workout */}
+              <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700">
+                <h4 className="font-rajdhani font-bold text-white uppercase text-sm mb-3">Per-Workout EP Bonus by Active Streak</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-rajdhani">
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">3–6 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+5 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">7–13 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+10 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">14–29 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+20 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">30–59 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+35 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">60–89 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+50 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-center">
+                    <span className="block text-gray-400 font-mono">90–179 Days</span>
+                    <span className="text-neon-gold font-bold text-sm">+75 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-yellow-500/40 bg-yellow-500/10 text-center">
+                    <span className="block text-yellow-300 font-mono font-bold">180–364 Days (6 Mo)</span>
+                    <span className="text-yellow-400 font-bold text-sm">+150 EP / workout</span>
+                  </div>
+                  <div className="bg-tactical-950 p-2.5 rounded border border-yellow-400 bg-yellow-400/20 text-center shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                    <span className="block text-yellow-300 font-bold uppercase tracking-wider">365+ Days (1 Yr) 👑</span>
+                    <span className="text-yellow-300 font-extrabold text-sm">+300 EP / workout</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Major Milestone Instant Claim Bonuses */}
+              <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700">
+                <h4 className="font-rajdhani font-bold text-white uppercase text-sm mb-3">Instant Major Milestone EP Bonuses</h4>
+                <ul className="text-xs sm:text-sm text-gray-300 space-y-2 font-inter">
+                  <li className="flex justify-between items-center bg-tactical-950 p-2 rounded border border-tactical-800">
+                    <span className="flex items-center gap-1.5 font-rajdhani font-bold"><span className="text-base">🛡️</span> 30-Day Milestone (1 Month)</span>
+                    <span className="text-neon-green font-bold font-mono">+100 EP Bonus</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-tactical-950 p-2 rounded border border-tactical-800">
+                    <span className="flex items-center gap-1.5 font-rajdhani font-bold"><span className="text-base">💥</span> 60-Day Milestone (2 Months)</span>
+                    <span className="text-neon-green font-bold font-mono">+250 EP Bonus</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-tactical-950 p-2 rounded border border-tactical-800">
+                    <span className="flex items-center gap-1.5 font-rajdhani font-bold"><span className="text-base">🌟</span> 90-Day Milestone (Quarter-Year)</span>
+                    <span className="text-neon-green font-bold font-mono">+500 EP Bonus</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-tactical-950 p-2 rounded border border-yellow-500/40 bg-yellow-500/10">
+                    <span className="flex items-center gap-1.5 font-rajdhani font-bold text-yellow-300"><span className="text-base">🔥</span> 180-Day Milestone (Half-Year Titan)</span>
+                    <span className="text-yellow-400 font-extrabold font-mono text-base">+1,000 EP Bonus</span>
+                  </li>
+                  <li className="flex justify-between items-center bg-tactical-950 p-2 rounded border border-yellow-400 bg-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                    <span className="flex items-center gap-1.5 font-rajdhani font-bold text-yellow-300"><span className="text-base">👑</span> 365-Day Milestone (IMMORTAL 365 LEGEND)</span>
+                    <span className="text-yellow-300 font-black font-mono text-base sm:text-lg">+2,500 EP Bonus</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
           {/* Section: Max Weekly Potential */}
           <section>
             <h3 className="text-lg font-rajdhani font-bold text-neon-purple uppercase tracking-wider mb-4 border-b border-tactical-700 pb-2">Max Weekly Potential</h3>

@@ -13,7 +13,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         clientsClaim: true,
-        skipWaiting: true
+        skipWaiting: true,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
       },
       includeAssets: ['apple-touch-icon-v3.png'],
       manifest: {
