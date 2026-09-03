@@ -46,10 +46,10 @@ export const Profile: React.FC = () => {
 
     // Activity Multiplier based on workouts per week
     let multiplier = 1.2;
-    if (targetWorkoutsPerWeek === 3) multiplier = 1.375;
+    if (targetWorkoutsPerWeek >= 1 && targetWorkoutsPerWeek <= 3) multiplier = 1.375;
     if (targetWorkoutsPerWeek === 4) multiplier = 1.465;
     if (targetWorkoutsPerWeek === 5) multiplier = 1.55;
-    if (targetWorkoutsPerWeek === 6) multiplier = 1.725;
+    if (targetWorkoutsPerWeek >= 6) multiplier = 1.725;
 
     let tdee = bmr * multiplier;
 

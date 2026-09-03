@@ -224,20 +224,20 @@ export const Onboarding: React.FC = () => {
             <h2 className="esports-heading text-2xl text-center mb-2">Training Frequency</h2>
             <p className="text-gray-400 text-center text-sm mb-6">How many days per week are you committed to training?</p>
             
-            <div className="grid grid-cols-2 gap-4">
-              {[3, 4, 5, 6].map((days) => (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[2, 3, 4, 5, 6].map((days) => (
                 <button
                   key={days}
                   onClick={() => setWorkoutsPerWeek(days)}
                   className={clsx(
-                    "p-6 rounded-lg border-2 transition-all duration-300",
+                    "p-4 sm:p-6 rounded-lg border-2 transition-all duration-300 flex flex-col items-center justify-center",
                     workoutsPerWeek === days 
                       ? "border-neon-blue bg-neon-blue/10 shadow-[0_0_15px_rgba(0,240,255,0.2)]" 
                       : "border-tactical-700 bg-tactical-900 hover:border-tactical-600"
                   )}
                 >
                   <span className="text-3xl font-rajdhani font-bold text-white block mb-1">{days}</span>
-                  <span className="text-xs text-gray-400 uppercase tracking-wider font-rajdhani">Days / Week</span>
+                  <span className="text-xs text-gray-400 uppercase tracking-wider font-rajdhani">Days / Wk</span>
                 </button>
               ))}
             </div>
