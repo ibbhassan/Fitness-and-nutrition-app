@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import { RankDisplay } from '../components/RankDisplay';
-import { seedSteps } from '../utils/seedData';
 import { useUser } from '../context/UserContext';
 import { Flame, Target, Wheat, Footprints, Calendar, Dumbbell, Droplet, Activity, Award, CheckCircle, TrendingDown, Settings, X } from 'lucide-react';
 import { getWeekString } from '../utils/dateUtils';
