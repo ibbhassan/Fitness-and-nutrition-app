@@ -151,4 +151,5 @@ export interface HighlightEvent {
   type: 'WORKOUT_COMPLETED' | 'PR_BROKEN' | 'RANK_UP' | 'STREAK';
   data: any;
   timestamp: number;
+  fistBumps?: string[];
 }

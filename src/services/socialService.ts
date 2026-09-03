@@ -166,3 +166,24 @@ export const getNetworkHighlights = async (friendUids: string[], limitCount: num
   results.sort((a, b) => b.timestamp - a.timestamp);
   return results.slice(0, limitCount);
 };
+
+export const toggleFistBump = async (highlightId: string, userIdentifier: string) => {
+  if (!highlightId || !userIdentifier) return;
+  const highlightRef = doc(db, 'highlights', highlightId);
+  const docSnap = await getDoc(highlightRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    const fistBumps: string[] = data.fistBumps || [];
+    const hasBumped = fistBumps.includes(userIdentifier);
+    
+    if (hasBumped) {
+      await updateDoc(highlightRef, {
+        fistBumps: arrayRemove(userIdentifier)
+      });
+    } else {
+      await updateDoc(highlightRef, {
+        fistBumps: arrayUnion(userIdentifier)
+      });
+    }
+  }
+};

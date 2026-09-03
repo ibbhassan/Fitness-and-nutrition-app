@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
-import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights } from '../services/socialService';
+import { searchUsersByUsername, sendFriendRequest, getPendingRequests, respondToRequest, getFriendsProfiles, removeFriend, getNetworkHighlights, toggleFistBump } from '../services/socialService';
 import { Search, UserPlus, Check, X, Users, Trophy, Activity, Flame, Shield, Crosshair, ArrowUpCircle, Zap } from 'lucide-react';
 import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
@@ -23,6 +23,20 @@ export const Social: React.FC = () => {
   const [highlights, setHighlights] = useState<HighlightEvent[]>([]);
 
   const currentUid = user?.uid;
+  const userIdentifier = user?.uid || user?.username || 'me';
+
+  const handleFistBump = (highlightId: string) => {
+    setHighlights(prev => prev.map(h => {
+      if (h.id !== highlightId) return h;
+      const bumps = h.fistBumps || [];
+      const hasBumped = bumps.includes(userIdentifier);
+      const newBumps = hasBumped 
+        ? bumps.filter(id => id !== userIdentifier)
+        : [...bumps, userIdentifier];
+      return { ...h, fistBumps: newBumps };
+    }));
+    toggleFistBump(highlightId, userIdentifier).catch(err => console.error("Failed to update fist bump:", err));
+  };
 
   const loadSocialData = async () => {
     if (!currentUid) return;
@@ -314,7 +328,27 @@ export const Social: React.FC = () => {
                               {new Date(highlight.timestamp).toLocaleString()}
                             </span>
                          </div>
-                         <button className="p-2 bg-tactical-800 hover:bg-tactical-700 rounded-lg transition-colors border border-tactical-600 text-lg sm:text-xl grayscale hover:grayscale-0" title="Hype">👊</button>
+                         {(() => {
+                           const bumps = highlight.fistBumps || [];
+                           const hasBumped = bumps.includes(userIdentifier);
+                           const count = bumps.length;
+
+                           return (
+                             <button 
+                               onClick={() => handleFistBump(highlight.id)}
+                               className={clsx(
+                                 "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg transition-all border flex items-center gap-1.5 font-rajdhani font-bold text-xs sm:text-sm select-none active:scale-95 cursor-pointer shrink-0",
+                                 hasBumped 
+                                   ? "bg-neon-purple/20 border-neon-purple text-white shadow-[0_0_12px_rgba(181,53,245,0.4)]" 
+                                   : "bg-tactical-800 hover:bg-tactical-700 border-tactical-600 text-gray-400 hover:text-white"
+                               )}
+                               title={hasBumped ? "Remove Fist Bump" : "Fist Bump!"}
+                             >
+                               <span className={clsx("text-base sm:text-lg transition-transform", hasBumped ? "scale-110" : "grayscale hover:grayscale-0")}>👊</span>
+                               {count > 0 && <span className="text-neon-purple font-bold font-mono">{count}</span>}
+                             </button>
+                           );
+                         })()}
                       </div>
                     )})
                   )}
