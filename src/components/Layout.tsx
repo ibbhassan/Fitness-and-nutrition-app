@@ -1,7 +1,6 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users } from 'lucide-react';
-import { playLevelUpSound } from '../utils/audioUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
@@ -81,15 +80,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
   useEffect(() => {
     if (showLevelUp) {
-      // Play level up sound
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-        audio.volume = 0.7;
-        audio.play().catch(() => {});
-      } catch (e) {
-        // Ignore audio errors
-      }
-
       // Big initial center explosion
       confetti({
         particleCount: 150,
@@ -128,9 +118,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
   useEffect(() => {
     if (rankUpData) {
-      // Play retro level up sound
-      playLevelUpSound();
-
       // Delay confetti to match the "slam" (2.7s total delay now)
       const slamDelay = 2700;
       
