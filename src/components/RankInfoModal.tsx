@@ -138,10 +138,10 @@ export const RankInfoModal: React.FC<RankInfoModalProps> = ({ onClose }) => {
             <div className="bg-tactical-900 rounded-lg p-4 border border-tactical-700">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-rajdhani font-bold text-gray-300 text-lg uppercase tracking-wider">Total Maximum</span>
-                <span className="text-neon-purple font-bold text-xl">710 EP / Week</span>
+                <span className="text-neon-purple font-bold text-xl">930 EP / Week</span>
               </div>
               <p className="text-sm text-gray-400 font-inter">
-                Assuming daily S+ workouts (350), 10k daily steps (70), hitting 2 leg days (20), maintaining a 20+ day streak (70), and completing all 3 weekly quests (200).
+                Assuming daily S+ workouts (350), daily step & water quests (140), hitting 2 leg days (20), maintaining a streak (70), and completing all 3 weekly quests (350).
               </p>
             </div>
           </section>
