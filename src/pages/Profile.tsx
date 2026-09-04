@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext';
 
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
 import { CosmeticsLockerModal } from '../components/CosmeticsLockerModal';
+import { CosmeticFrame } from '../components/CosmeticFrame';
 import { getCosmeticItem } from '../utils/cosmeticsRegistry';
 import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
@@ -139,16 +140,21 @@ export const Profile: React.FC = () => {
           
           <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex items-center gap-4 mb-4">
-              <button 
-                onClick={() => setShowAvatarModal(true)}
-                className={clsx("relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-tactical-800 group transition-all duration-300", equippedBorder?.cssClass || 'border-2 border-neon-blue shadow-[0_0_15px_rgba(0,240,255,0.3)]')}
+              <div 
+                onClick={() => setShowAvatarModal(true)} 
+                className="cursor-pointer group relative"
                 title="Change Avatar"
               >
-                <img src={avatarUrl} alt="Personal Avatar" className="w-full h-full object-cover scale-110 group-hover:opacity-50 transition-opacity" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <CosmeticFrame 
+                  borderId={equippedBorder?.id} 
+                  avatarUrl={avatarUrl} 
+                  sizeClassName="w-20 h-20" 
+                  alt="Personal Avatar" 
+                />
+                <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full">
                   <Edit2 className="w-6 h-6 text-white drop-shadow-md" />
                 </div>
-              </button>
+              </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
                   <h1 className="esports-heading text-3xl text-white tracking-widest break-all">

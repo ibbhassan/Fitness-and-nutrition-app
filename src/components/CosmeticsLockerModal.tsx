@@ -6,6 +6,7 @@ import { COSMETIC_ITEMS, isCosmeticUnlocked, getCosmeticItem } from '../utils/co
 import type { CosmeticType } from '../utils/cosmeticsRegistry';
 import { calculateStreak } from '../utils/streakUtils';
 import { getRankInfo } from '../utils/rankUtils';
+import { CosmeticFrame } from './CosmeticFrame';
 
 interface CosmeticsLockerModalProps {
   onClose: () => void;
@@ -91,10 +92,13 @@ export const CosmeticsLockerModal: React.FC<CosmeticsLockerModalProps> = ({ onCl
           
           <div className={clsx("p-4 rounded-xl border relative overflow-hidden transition-all duration-300", activeBanner?.cssClass || 'bg-tactical-900 border-tactical-700')}>
             <div className="flex items-center gap-4 relative z-10">
-              {/* Avatar with Active Border */}
-              <div className={clsx("w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 transition-all duration-300 bg-tactical-900 flex items-center justify-center", activeBorder?.cssClass || 'border-2 border-neon-blue')}>
-                <img src={avatarUrl} alt="Preview Avatar" className="w-full h-full object-cover scale-110" />
-              </div>
+              {/* Avatar with Active Border & Tiered Overlay */}
+              <CosmeticFrame 
+                borderId={activeBorder?.id} 
+                avatarUrl={avatarUrl} 
+                sizeClassName="w-16 h-16 sm:w-20 sm:h-20" 
+                alt="Preview Avatar" 
+              />
 
               {/* Username & Title */}
               <div className="flex-1 min-w-0">

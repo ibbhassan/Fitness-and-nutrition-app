@@ -6,6 +6,7 @@ import type { FriendRequest, HighlightEvent } from '../types';
 import { getRankInfo } from '../utils/rankUtils';
 import { getTimeUntilNextReset } from '../utils/dateUtils';
 import { getCosmeticItem } from '../utils/cosmeticsRegistry';
+import { CosmeticFrame } from '../components/CosmeticFrame';
 import { clsx } from 'clsx';
 
 import { FriendProfile } from '../components/social/FriendProfile';
@@ -700,13 +701,14 @@ export const Social: React.FC = () => {
 
                           return (
                             <>
-                              <div className={clsx("relative shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden bg-tactical-900", equippedBorderItem?.cssClass || 'border border-tactical-600')}>
-                                <img 
-                                  src={typeof item.profile?.avatar === 'string' ? item.profile.avatar : '/images/avatar_3d.png'} 
-                                  className="w-full h-full object-cover"
-                                  alt={item.username}
+                              <div className="relative shrink-0">
+                                <CosmeticFrame 
+                                  borderId={equippedBorderItem?.id} 
+                                  avatarUrl={typeof item.profile?.avatar === 'string' ? item.profile.avatar : '/images/avatar_3d.png'} 
+                                  sizeClassName="w-10 h-10 sm:w-12 sm:h-12" 
+                                  alt={item.username} 
                                 />
-                                <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-bold px-1 rounded border border-tactical-600 z-10">
+                                <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-bold px-1 rounded border border-tactical-600 z-30">
                                   L{item.profile?.level || 1}
                                 </span>
                               </div>
