@@ -439,7 +439,7 @@ interface WorkoutLoggerProps {
 }
 
 export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) => {
-  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, getMacrosForDate, scheduledWorkoutDays, editingWorkout, setEditingWorkout, updateWorkout } = useUser();
+  const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, scheduledWorkoutDays, editingWorkout, setEditingWorkout, updateWorkout } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const isFinishingRef = useRef(false);
   const [finalDuration, setFinalDuration] = useState<string>('');
@@ -736,20 +736,23 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       }
 
       // Check if any completed set in current workout breaks historical max weight or reps at max weight
+      // CRITICAL: Only count as a PR if there is an ESTABLISHED baseline (count > 0) to prevent inaugural exercises from triggering fake PRs
       ex.sets.forEach(s => {
         if (s.completed && (s.weight || 0) > 0) {
           const wVal = s.weight || 0;
           const rVal = s.reps || 0;
-          if (wVal > maxWeight) {
-            isPr = true;
-          } else if (wVal === maxWeight && rVal > maxRepsAtMaxWeight && count > 0) {
-            isPr = true;
+          if (count > 0) {
+            if (wVal > maxWeight) {
+              isPr = true;
+            } else if (wVal === maxWeight && rVal > maxRepsAtMaxWeight) {
+              isPr = true;
+            }
           }
         }
       });
     });
 
-    // Fair Grading Algorithm (Not penalizing targeted/short sessions like Neck/Abs/Arms)
+    // Rewarding & Balanced Grading Algorithm
     const totalPlannedSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
     const totalCompletedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
     const completionRate = totalPlannedSets > 0 ? (totalCompletedSets / totalPlannedSets) : 1;
@@ -757,32 +760,28 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
 
     let grade: 'S+' | 'S' | 'A' | 'B' | 'C' = 'A';
 
+    // Base grade by completion percentage
     if (totalCompletedSets === 0 || completionRate < 0.4) {
       grade = 'C';
     } else if (completionRate < 0.7) {
       grade = 'B';
     } else {
-      // Completed 70%+ of planned workout -> Base Grade 'A'
       grade = 'A';
     }
 
-    // Upgrade to S for high set completion or volume target reached
-    if (grade === 'A') {
-      if (completionRate >= 0.85 || (targetVolume > 0 && totalVolume >= targetVolume * 0.9) || completedExercises.length >= 3) {
+    // Heavy Push / S+ Qualification:
+    // A. Genuine PR on an established exercise (count > 0)
+    // B. High Volume Workout: 12+ total completed sets (e.g. Chest/Back day with 20 sets)
+    // C. Long / Deep Workout: 4+ completed exercises & 40+ minutes
+    // D. High Completion Rate (80%+) on planned workout
+    const isMonsterWorkout = totalCompletedSets >= 12 || (completedExercises.length >= 4 && durationMinutes >= 40) || completionRate >= 0.80;
+
+    if (completionRate >= 0.70) {
+      if (isPr || isMonsterWorkout) {
+        grade = 'S+';
+      } else if (completionRate >= 0.75 || completedExercises.length >= 3) {
         grade = 'S';
       }
-    }
-
-    // Nutrition synergy boost
-    const macros = getMacrosForDate(viewDate);
-    const nutritionSynergy = macros.protein.current >= macros.protein.target && macros.calories.current <= macros.calories.target;
-    if (grade === 'S' && (nutritionSynergy || (targetVolume > 0 && totalVolume > targetVolume * 1.05))) {
-      grade = 'S+';
-    }
-
-    // 🌟 UNCONDITIONAL RULE: Personal Records (PRs) AUTOMATICALLY GUARANTEE S+ GRADE!
-    if (isPr) {
-      grade = 'S+';
     }
 
     let baseEp = 20;

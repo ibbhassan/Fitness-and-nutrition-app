@@ -251,7 +251,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.customPresets !== undefined) setCustomPresets(data.customPresets);
             if (data.workoutHistory !== undefined) {
               const sanitizedHistory = (data.workoutHistory as WorkoutLog[]).map(w => {
-                if (w.isPr && w.grade !== 'S+') {
+                const completedSets = w.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0) || 0;
+                const completedExCount = w.exercises?.filter(ex => ex.sets?.some(s => s.completed)).length || 0;
+                const isHeavySession = completedSets >= 12 || completedExCount >= 4;
+                if ((w.isPr || isHeavySession) && w.grade !== 'S+') {
                   return { ...w, grade: 'S+' as const };
                 }
                 return w;
