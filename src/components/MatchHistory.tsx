@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
 import type { WorkoutLog, WorkoutPreset } from '../types';
-import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2, Calendar, BookmarkPlus, Check } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, X, Activity, Clock, Dumbbell, Trash2, Edit2, Calendar, BookmarkPlus, Check, FileText } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 const getGradeColor = (grade?: string) => {
@@ -19,9 +19,25 @@ interface MatchHistoryProps {
 }
 
 export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
-  const { workoutHistory, deleteWorkout, setEditingWorkout, saveCustomPreset } = useUser();
+  const { workoutHistory, deleteWorkout, setEditingWorkout, saveCustomPreset, updateWorkout } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutLog | null>(null);
   const [presetSavedNotice, setPresetSavedNotice] = useState<string | null>(null);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [noteInput, setNoteInput] = useState('');
+
+  const handleOpenModal = (workout: WorkoutLog) => {
+    setSelectedWorkout(workout);
+    setNoteInput(workout.notes || '');
+    setIsEditingNotes(false);
+  };
+
+  const handleSaveNotes = () => {
+    if (!selectedWorkout) return;
+    const updated = { ...selectedWorkout, notes: noteInput.trim() || undefined };
+    updateWorkout(updated);
+    setSelectedWorkout(updated);
+    setIsEditingNotes(false);
+  };
 
   const handleSaveAsPreset = () => {
     if (!selectedWorkout) return;
@@ -65,7 +81,7 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
               return (
                 <div 
                   key={match.id} 
-                  onClick={() => setSelectedWorkout(match)}
+                  onClick={() => handleOpenModal(match)}
                   className="flex items-center py-6 px-4 sm:p-6 bg-tactical-900 rounded-xl border border-tactical-700 hover:border-tactical-500 hover:shadow-[0_0_15px_rgba(0,255,170,0.1)] transition-all cursor-pointer group"
                 >
                   {/* Grade Column */}
@@ -106,6 +122,14 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
                     <p className="text-[10px] sm:text-xs text-gray-500 font-inter line-clamp-2 pr-2">
                       {exerciseNames}
                     </p>
+
+                    {/* Session Note Preview */}
+                    {match.notes && (
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] sm:text-xs text-neon-blue font-inter bg-neon-blue/10 border border-neon-blue/30 px-2.5 py-1 rounded-md w-fit max-w-full">
+                        <FileText className="w-3 h-3 shrink-0" />
+                        <span className="truncate italic">"{match.notes}"</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* EP & Date Column */}
@@ -219,6 +243,49 @@ export const MatchHistory: React.FC<MatchHistoryProps> = ({ setActiveTab }) => {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+
+              {/* Session Notes Section */}
+              <div className="p-4 bg-tactical-900/60 rounded-xl border border-tactical-800">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-neon-blue font-rajdhani font-bold text-sm uppercase tracking-wider">
+                    <FileText className="w-4 h-4" />
+                    <span>Session Notes & Journal</span>
+                  </div>
+                  {!isEditingNotes ? (
+                    <button
+                      onClick={() => setIsEditingNotes(true)}
+                      className="text-xs font-rajdhani font-bold text-gray-400 hover:text-white flex items-center gap-1 bg-tactical-800 px-2 py-1 rounded border border-tactical-700 cursor-pointer"
+                    >
+                      <Edit2 className="w-3 h-3" /> {selectedWorkout.notes ? 'Edit Note' : '+ Add Note'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSaveNotes}
+                      className="text-xs font-rajdhani font-bold text-neon-green hover:brightness-110 flex items-center gap-1 bg-neon-green/10 border border-neon-green/40 px-2.5 py-1 rounded cursor-pointer"
+                    >
+                      <Check className="w-3 h-3 text-neon-green" /> Save Note
+                    </button>
+                  )}
+                </div>
+
+                {isEditingNotes ? (
+                  <textarea
+                    rows={2}
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                    placeholder="Add session notes (e.g. Tried fasted training, felt super focused...)"
+                    className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none"
+                  />
+                ) : selectedWorkout.notes ? (
+                  <p className="text-sm text-gray-300 font-inter italic bg-tactical-950/60 p-3 rounded-lg border border-tactical-800/60 leading-relaxed">
+                    "{selectedWorkout.notes}"
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 font-inter italic">
+                    No notes added for this session. Click "+ Add Note" to record your thoughts!
+                  </p>
+                )}
+              </div>
               {/* Exercises List */}
               {selectedWorkout.exercises.map((ex, exIdx) => {
                 const completedSets = ex.sets.filter(s => s.completed);

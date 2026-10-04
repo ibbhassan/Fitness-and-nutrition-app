@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown, Clock } from 'lucide-react';
+import { Plus, Play, Pause, Check, Save, X, Trash2, Trophy, Dumbbell, ArrowLeft, GripVertical, ChevronLeft, ChevronRight, Calendar, ChevronDown, Clock, FileText } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { getLocalDateString } from '../utils/dateUtils';
 import { calculateStreak, getStreakBonusEp } from '../utils/streakUtils';
@@ -489,11 +489,15 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     }
   ]);
 
+  // Workout Notes State
+  const [workoutNotes, setWorkoutNotes] = useState<string>('');
+
   // History Edit State
   const [editExercises, setEditExercises] = useState<ActiveExercise[]>([]);
   const [editName, setEditName] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editDuration, setEditDuration] = useState('');
+  const [editNotes, setEditNotes] = useState('');
   const isEditingRef = useRef(false);
 
   React.useEffect(() => {
@@ -501,6 +505,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       setEditName(editingWorkout.name);
       setEditDate(editingWorkout.date.split('T')[0]);
       setEditDuration(editingWorkout.durationMinutes.toString());
+      setEditNotes(editingWorkout.notes || '');
       setEditExercises(JSON.parse(JSON.stringify(editingWorkout.exercises))); // Deep copy
       isEditingRef.current = true;
     }
@@ -812,9 +817,11 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       volume: totalVolume,
       grade,
       epChange: calculatedEp,
-      isPr
+      isPr,
+      notes: workoutNotes.trim() || undefined
     });
     
+    setWorkoutNotes('');
     setFinalGrade(grade);
     setFinalEp(calculatedEp);
     setShowCelebration(true);
@@ -965,7 +972,8 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       date: new Date(editDate + 'T12:00:00').toISOString(),
       durationMinutes: parseInt(editDuration) || editingWorkout.durationMinutes,
       exercises: editExercises,
-      volume: totalVolume
+      volume: totalVolume,
+      notes: editNotes.trim() || undefined
     };
 
     updateWorkout(updatedLog);
@@ -1021,6 +1029,21 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
                 <ArrowLeft className="w-5 h-5 mr-2" /> Cancel
               </button>
             </div>
+          </div>
+
+          {/* Session Notes Input */}
+          <div className="bg-tactical-900/80 p-3 sm:p-4 rounded-xl border border-tactical-700/80 mb-6">
+            <div className="flex items-center gap-2 mb-2 text-neon-blue font-rajdhani font-bold text-xs uppercase tracking-wider">
+              <FileText className="w-4 h-4" />
+              <span>Session Notes</span>
+            </div>
+            <textarea
+              rows={2}
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              placeholder="Session notes (e.g. Tried fasted training, felt great, heavy leg focus...)"
+              className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none"
+            />
           </div>
 
           <div className="space-y-4">
@@ -1287,6 +1310,21 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
             </button>
           </p>
         </div>
+      </div>
+
+      {/* Active Workout Session Notes Input */}
+      <div className="bg-tactical-900/80 p-3 sm:p-4 rounded-xl border border-tactical-700/80 mb-6">
+        <div className="flex items-center gap-2 mb-2 text-neon-blue font-rajdhani font-bold text-xs uppercase tracking-wider">
+          <FileText className="w-4 h-4 text-neon-blue" />
+          <span>Session Notes & Journal</span>
+        </div>
+        <textarea
+          rows={2}
+          value={workoutNotes}
+          onChange={(e) => setWorkoutNotes(e.target.value)}
+          placeholder="Add session notes (e.g. Tried fasted training, felt super focused, heavy leg day focus...)"
+          className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none"
+        />
       </div>
 
       <div className="space-y-6 mt-4">

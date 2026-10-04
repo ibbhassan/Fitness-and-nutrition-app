@@ -150,6 +150,7 @@ export interface WorkoutLog {
   grade?: 'S+' | 'S' | 'A' | 'B' | 'C';
   epChange?: number;
   isPr?: boolean;
+  notes?: string;
 }
 
 export interface HighlightEvent {
