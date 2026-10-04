@@ -700,40 +700,32 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     setFinalDuration(fDuration);
 
 
-    // Grading Algorithm
-    let grade: 'S+' | 'S' | 'A' | 'B' | 'C' = 'A';
+    // Historical Averages & PR calculation across all recorded history
+    let targetVolume = 0;
     let isPr = false;
 
-    const completedExercises = exercises.filter(ex => ex.sets.some(s => s.completed));
-    if (durationMinutes < 15 && completedExercises.length < 3) {
-      grade = 'C';
-    } else if (durationMinutes < 30 && completedExercises.length < 4) {
-      grade = 'B';
-    } else {
-      grade = 'A';
-    }
-
-    // Historical Averages calculation
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentWorkouts = workoutHistory.filter(w => new Date(w.date) >= thirtyDaysAgo);
-
-    let targetVolume = 0;
     exercises.forEach(ex => {
       let totalExVolume = 0;
       let count = 0;
       let maxWeight = 0;
-      let maxReps = 0;
+      let maxRepsAtMaxWeight = 0;
 
-      recentWorkouts.forEach(w => {
-        const histEx = w.exercises?.find(e => e.name === ex.name);
+      // Search all previous workouts for this exercise to find true historical records
+      workoutHistory.forEach(w => {
+        const histEx = w.exercises?.find(e => e.name.trim().toLowerCase() === ex.name.trim().toLowerCase());
         if (histEx) {
           count++;
           histEx.sets.forEach(s => {
             if (s.completed) {
-              totalExVolume += (s.weight || 0) * (s.reps || 0);
-              if ((s.weight || 0) > maxWeight) maxWeight = s.weight || 0;
-              if ((s.reps || 0) > maxReps) maxReps = s.reps || 0;
+              const wVal = s.weight || 0;
+              const rVal = s.reps || 0;
+              totalExVolume += wVal * rVal;
+              if (wVal > maxWeight) {
+                maxWeight = wVal;
+                maxRepsAtMaxWeight = rVal;
+              } else if (wVal === maxWeight && rVal > maxRepsAtMaxWeight) {
+                maxRepsAtMaxWeight = rVal;
+              }
             }
           });
         }
@@ -743,30 +735,54 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
         targetVolume += (totalExVolume / count);
       }
 
-      // Check PRs
+      // Check if any completed set in current workout breaks historical max weight or reps at max weight
       ex.sets.forEach(s => {
-        if (s.completed) {
-          if ((s.weight || 0) > maxWeight && (s.weight || 0) > 0) isPr = true;
-          if ((s.weight || 0) === maxWeight && (s.reps || 0) > maxReps && (s.weight || 0) > 0) isPr = true;
+        if (s.completed && (s.weight || 0) > 0) {
+          const wVal = s.weight || 0;
+          const rVal = s.reps || 0;
+          if (wVal > maxWeight) {
+            isPr = true;
+          } else if (wVal === maxWeight && rVal > maxRepsAtMaxWeight && count > 0) {
+            isPr = true;
+          }
         }
       });
     });
 
+    // Fair Grading Algorithm (Not penalizing targeted/short sessions like Neck/Abs/Arms)
+    const totalPlannedSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+    const totalCompletedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
+    const completionRate = totalPlannedSets > 0 ? (totalCompletedSets / totalPlannedSets) : 1;
+    const completedExercises = exercises.filter(ex => ex.sets.some(s => s.completed));
+
+    let grade: 'S+' | 'S' | 'A' | 'B' | 'C' = 'A';
+
+    if (totalCompletedSets === 0 || completionRate < 0.4) {
+      grade = 'C';
+    } else if (completionRate < 0.7) {
+      grade = 'B';
+    } else {
+      // Completed 70%+ of planned workout -> Base Grade 'A'
+      grade = 'A';
+    }
+
+    // Upgrade to S for high set completion or volume target reached
     if (grade === 'A') {
-      if (targetVolume > 0 && totalVolume >= targetVolume * 0.9) {
-        grade = 'S';
-      } else if (completedExercises.length >= 4) {
+      if (completionRate >= 0.85 || (targetVolume > 0 && totalVolume >= targetVolume * 0.9) || completedExercises.length >= 3) {
         grade = 'S';
       }
     }
 
-    if (grade === 'S' || grade === 'A') {
-      const macros = getMacrosForDate(viewDate);
-      const nutritionSynergy = macros.protein.current >= macros.protein.target && macros.calories.current <= macros.calories.target;
-      
-      if (isPr || (targetVolume > 0 && totalVolume > targetVolume * 1.05) || nutritionSynergy) {
-        grade = 'S+';
-      }
+    // Nutrition synergy boost
+    const macros = getMacrosForDate(viewDate);
+    const nutritionSynergy = macros.protein.current >= macros.protein.target && macros.calories.current <= macros.calories.target;
+    if (grade === 'S' && (nutritionSynergy || (targetVolume > 0 && totalVolume > targetVolume * 1.05))) {
+      grade = 'S+';
+    }
+
+    // 🌟 UNCONDITIONAL RULE: Personal Records (PRs) AUTOMATICALLY GUARANTEE S+ GRADE!
+    if (isPr) {
+      grade = 'S+';
     }
 
     let baseEp = 20;

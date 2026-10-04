@@ -249,7 +249,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.weightHistory !== undefined) setWeightHistory(data.weightHistory);
             if (data.bodyFatHistory !== undefined) setBodyFatHistory(data.bodyFatHistory);
             if (data.customPresets !== undefined) setCustomPresets(data.customPresets);
-            if (data.workoutHistory !== undefined) setWorkoutHistory(data.workoutHistory);
+            if (data.workoutHistory !== undefined) {
+              const sanitizedHistory = (data.workoutHistory as WorkoutLog[]).map(w => {
+                if (w.isPr && w.grade !== 'S+') {
+                  return { ...w, grade: 'S+' as const };
+                }
+                return w;
+              });
+              setWorkoutHistory(sanitizedHistory);
+            }
             if (data.manualQuestCompletions !== undefined) setManualQuestCompletions(data.manualQuestCompletions);
             if (data.customExercises !== undefined) setCustomExercises(data.customExercises);
             if (data.healthSyncEnabled !== undefined) setHealthSyncEnabled(data.healthSyncEnabled);
