@@ -97,7 +97,14 @@ export interface FoodItem {
   };
 }
 
-export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+export type MealType = string;
+
+export interface CustomMealCategory {
+  id: string;
+  name: string;
+  iconName: 'Coffee' | 'Sun' | 'Moon' | 'Apple' | 'Flame' | 'Dumbbell' | 'Utensils' | 'Zap' | 'Shield' | 'Heart' | 'Cookie' | 'Salad';
+  colorClass?: string;
+}
 
 export interface FoodLogEntry {
   id: string;

@@ -1,25 +1,28 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useUser } from '../context/UserContext';
-import { Flame, Plus, Coffee, Sun, Moon, Apple, Trash2, ChevronLeft, ChevronRight, Calendar, Star, Copy } from 'lucide-react';
+import { Flame, Plus, Trash2, ChevronLeft, ChevronRight, Calendar, Star, Copy, Utensils } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { clsx } from 'clsx';
 import { MealLoggerModal } from '../components/MealLoggerModal';
 import { FoodEntryModal } from '../components/FoodEntryModal';
 import { CalendarModal } from '../components/CalendarModal';
+import { CustomizeMealsModal, MEAL_ICON_MAP } from '../components/CustomizeMealsModal';
 import type { MealType, FoodLogEntry } from '../types';
 
 export const Nutrition: React.FC = () => {
-  const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites, addFoodLog } = useUser();
+  const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites, addFoodLog, customMealCategories } = useUser();
   
   const [activeMeal, setActiveMeal] = useState<MealType | null>(null);
   const [editingLog, setEditingLog] = useState<FoodLogEntry | null>(null);
   const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [copyingMeal, setCopyingMeal] = useState<{ sourceLogs: FoodLogEntry[], sourceMeal: MealType } | null>(null);
   const [copyTargetDate, setCopyTargetDate] = useState(getLocalDateString());
-  const [copyTargetMeal, setCopyTargetMeal] = useState<MealType>('Lunch');
+  const [copyTargetMeal, setCopyTargetMeal] = useState<MealType>(customMealCategories[0]?.name || 'Breakfast');
 
   const dailyNutrition = getMacrosForDate(viewDate);
   const { calories, protein, carbs, fat } = dailyNutrition;
@@ -271,16 +274,33 @@ export const Nutrition: React.FC = () => {
         </div>
       </div>
 
+      {/* Header Action Portal */}
+      {document.getElementById('global-header-actions') && createPortal(
+        <button
+          onClick={() => setShowCustomizeModal(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tactical-700 hover:bg-tactical-600 border border-tactical-600 text-neon-blue font-rajdhani font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+          title="Customize Meal Categories"
+        >
+          <Utensils className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Customize Meals</span>
+        </button>,
+        document.getElementById('global-header-actions')!
+      )}
+
       {/* Meal Cards */}
       <div className="space-y-4">
-        {renderMealCard('Breakfast', Coffee, "text-neon-blue")}
-        {renderMealCard('Lunch', Sun, "text-neon-gold")}
-        {renderMealCard('Dinner', Moon, "text-neon-purple")}
-        {renderMealCard('Snack', Apple, "text-neon-red")}
+        {customMealCategories.map((cat) => {
+          const IconComponent = MEAL_ICON_MAP[cat.iconName] || Utensils;
+          return renderMealCard(cat.name, IconComponent, cat.colorClass || 'text-neon-blue');
+        })}
       </div>
       </motion.div>
 
       {/* Modals */}
+      {showCustomizeModal && (
+        <CustomizeMealsModal onClose={() => setShowCustomizeModal(false)} />
+      )}
+
       {activeMeal && (
         <MealLoggerModal 
           mealType={activeMeal} 
@@ -339,10 +359,9 @@ export const Nutrition: React.FC = () => {
                   onChange={e => setCopyTargetMeal(e.target.value as MealType)}
                   className="w-full bg-tactical-800 border border-tactical-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-neon-blue"
                 >
-                  <option value="Breakfast">Breakfast</option>
-                  <option value="Lunch">Lunch</option>
-                  <option value="Dinner">Dinner</option>
-                  <option value="Snack">Snack</option>
+                  {customMealCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

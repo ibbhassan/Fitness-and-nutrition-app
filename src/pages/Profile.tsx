@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2, Sparkles } from 'lucide-react';
+import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2, Sparkles, Utensils } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
 import { CosmeticsLockerModal } from '../components/CosmeticsLockerModal';
 import { CosmeticFrame } from '../components/CosmeticFrame';
+import { CustomizeMealsModal } from '../components/CustomizeMealsModal';
 import { getCosmeticItem } from '../utils/cosmeticsRegistry';
 import type { DailyNutrition } from '../types';
 import clsx from 'clsx';
@@ -19,6 +20,7 @@ export const Profile: React.FC = () => {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showCosmeticsModal, setShowCosmeticsModal] = useState(false);
   const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [showCustomizeMealsModal, setShowCustomizeMealsModal] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || '');
   
   const [newWeight, setNewWeight] = useState(biometrics?.weightLbs?.toString() || '');
@@ -344,12 +346,20 @@ export const Profile: React.FC = () => {
             
             <div className="flex justify-between items-center mt-6 mb-4 border-b border-tactical-700 pb-2">
               <h3 className="text-sm font-rajdhani font-bold text-gray-400 uppercase tracking-wider">Macro Targets</h3>
-              <button 
-                onClick={() => setShowMacroModal(true)}
-                className="text-xs font-rajdhani font-bold uppercase tracking-wider text-neon-blue hover:text-white transition-colors bg-neon-blue/10 hover:bg-neon-blue/30 px-3 py-1 rounded"
-              >
-                Edit Macros
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowCustomizeMealsModal(true)}
+                  className="text-xs font-rajdhani font-bold uppercase tracking-wider text-neon-gold hover:text-white transition-colors bg-neon-gold/10 hover:bg-neon-gold/30 px-3 py-1 rounded flex items-center gap-1 cursor-pointer"
+                >
+                  <Utensils className="w-3 h-3" /> Customize Meals
+                </button>
+                <button 
+                  onClick={() => setShowMacroModal(true)}
+                  className="text-xs font-rajdhani font-bold uppercase tracking-wider text-neon-blue hover:text-white transition-colors bg-neon-blue/10 hover:bg-neon-blue/30 px-3 py-1 rounded cursor-pointer"
+                >
+                  Edit Macros
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="bg-neon-red/10 text-neon-red px-3 py-1.5 rounded border border-neon-red/30 text-sm font-bold">{nutrition?.calories?.target || 0} kcal</span>
@@ -552,6 +562,11 @@ export const Profile: React.FC = () => {
       {/* Cosmetics Locker Modal */}
       {showCosmeticsModal && (
         <CosmeticsLockerModal onClose={() => setShowCosmeticsModal(false)} />
+      )}
+
+      {/* Customize Meal Categories Modal */}
+      {showCustomizeMealsModal && (
+        <CustomizeMealsModal onClose={() => setShowCustomizeMealsModal(false)} />
       )}
     </div>
   );

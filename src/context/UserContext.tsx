@@ -1,7 +1,7 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal } from '../types';
+import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal, CustomMealCategory } from '../types';
 import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 import { auth, db } from '../config/firebase';
@@ -10,6 +10,13 @@ import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { publishHighlight, deleteHighlightsForWorkout } from '../services/socialService';
 import { calculateStreak, getStreakMilestoneBonus } from '../utils/streakUtils';
 import { useRef } from 'react';
+
+export const DEFAULT_MEAL_CATEGORIES: CustomMealCategory[] = [
+  { id: 'breakfast', name: 'Breakfast', iconName: 'Coffee', colorClass: 'text-amber-400' },
+  { id: 'lunch', name: 'Lunch', iconName: 'Sun', colorClass: 'text-yellow-400' },
+  { id: 'dinner', name: 'Dinner', iconName: 'Moon', colorClass: 'text-purple-400' },
+  { id: 'snack', name: 'Snack', iconName: 'Apple', colorClass: 'text-emerald-400' }
+];
 
 interface UserContextType {
   user: { username: string, uid?: string } | null;
@@ -78,6 +85,8 @@ interface UserContextType {
   toggleFavoriteFood: (food: FoodItem) => void;
   saveToFavorites: (food: FoodItem) => void;
   removeFavoriteFood: (foodName: string) => void;
+  customMealCategories: CustomMealCategory[];
+  saveCustomMealCategories: (categories: CustomMealCategory[]) => void;
   devAdvanceDay?: () => void;
   getMacrosForDate: (dateStr: string) => DailyNutrition;
 }
@@ -112,6 +121,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       favoriteFoods: [] as FoodItem[],
       foodLogs: [] as FoodLogEntry[],
       savedMeals: [] as Meal[],
+      customMealCategories: DEFAULT_MEAL_CATEGORIES,
       lastStepDate: getLocalDateString(),
       dailyStepsTarget: 10000,
       dailyWaterTarget: '1 Gallon',
@@ -150,6 +160,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [favoriteFoods, setFavoriteFoods] = useState<FoodItem[]>(initialState.favoriteFoods || []);
   const [foodLogs, setFoodLogs] = useState<FoodLogEntry[]>(initialState.foodLogs || []);
   const [savedMeals, setSavedMeals] = useState<Meal[]>(initialState.savedMeals || []);
+  const [customMealCategories, setCustomMealCategories] = useState<CustomMealCategory[]>(initialState.customMealCategories && initialState.customMealCategories.length > 0 ? initialState.customMealCategories : DEFAULT_MEAL_CATEGORIES);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutLog | null>(null);
 
   // Set up an interval to check for date rollover (midnight)
@@ -213,6 +224,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       favoriteFoods,
       foodLogs,
       savedMeals,
+      customMealCategories,
       dailyStepsTarget,
       dailyWaterTarget,
       dailyWaterIntake,
@@ -228,7 +240,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }, 2000);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, dailyStepsTarget, dailyWaterTarget, dailyWaterIntake, dailyWorkoutDurationTarget, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals]);
+  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, dailyStepsTarget, dailyWaterTarget, dailyWaterIntake, dailyWorkoutDurationTarget, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals, customMealCategories]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -276,6 +288,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.favoriteFoods !== undefined) setFavoriteFoods(data.favoriteFoods);
             if (data.foodLogs !== undefined) setFoodLogs(data.foodLogs);
             if (data.savedMeals !== undefined) setSavedMeals(data.savedMeals);
+            if (data.customMealCategories !== undefined) setCustomMealCategories(data.customMealCategories);
           }
         } catch (err) {
           console.error("Error fetching user data from Firestore:", err);
@@ -865,6 +878,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toggleFavoriteFood,
       saveToFavorites,
       removeFavoriteFood,
+      customMealCategories,
+      saveCustomMealCategories: (categories: CustomMealCategory[]) => setCustomMealCategories(categories),
       devAdvanceDay: () => setCurrentDate('2099-01-01'),
       getMacrosForDate
     }}>
