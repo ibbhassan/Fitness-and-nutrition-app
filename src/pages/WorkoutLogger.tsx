@@ -491,6 +491,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
 
   // Workout Notes State
   const [workoutNotes, setWorkoutNotes] = useState<string>('');
+  const [showNotesDropdown, setShowNotesDropdown] = useState<boolean>(false);
 
   // History Edit State
   const [editExercises, setEditExercises] = useState<ActiveExercise[]>([]);
@@ -498,6 +499,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
   const [editDate, setEditDate] = useState('');
   const [editDuration, setEditDuration] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [showEditNotesDropdown, setShowEditNotesDropdown] = useState<boolean>(false);
   const isEditingRef = useRef(false);
 
   React.useEffect(() => {
@@ -1031,19 +1033,38 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
             </div>
           </div>
 
-          {/* Session Notes Input */}
-          <div className="bg-tactical-900/80 p-3 sm:p-4 rounded-xl border border-tactical-700/80 mb-6">
-            <div className="flex items-center gap-2 mb-2 text-neon-blue font-rajdhani font-bold text-xs uppercase tracking-wider">
-              <FileText className="w-4 h-4" />
-              <span>Session Notes</span>
-            </div>
-            <textarea
-              rows={2}
-              value={editNotes}
-              onChange={(e) => setEditNotes(e.target.value)}
-              placeholder="Session notes (e.g. Tried fasted training, felt great, heavy leg focus...)"
-              className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none"
-            />
+          {/* Collapsible Session Notes & Journal Dropdown */}
+          <div className="bg-tactical-900/80 rounded-xl border border-tactical-700/80 overflow-hidden mb-6 transition-all">
+            <button
+              type="button"
+              onClick={() => setShowEditNotesDropdown(prev => !prev)}
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-tactical-800/60 transition-colors text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-neon-blue" />
+                <span className="font-rajdhani font-bold text-sm text-white uppercase tracking-wider">
+                  Session Notes & Journal
+                </span>
+                {editNotes.trim().length > 0 && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-neon-green/20 text-neon-green border border-neon-green/40 rounded flex items-center gap-1 ml-2">
+                    <Check className="w-3 h-3 text-neon-green" /> Note Added
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={clsx("w-5 h-5 text-gray-400 transition-transform duration-200", showEditNotesDropdown && "rotate-180")} />
+            </button>
+
+            {showEditNotesDropdown && (
+              <div className="p-3 sm:p-4 pt-0 border-t border-tactical-800/80 animate-in fade-in duration-200">
+                <textarea
+                  rows={3}
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Add session notes (e.g. Tried fasted training, felt great, heavy leg focus...)"
+                  className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none mt-2"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -1312,19 +1333,38 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
         </div>
       </div>
 
-      {/* Active Workout Session Notes Input */}
-      <div className="bg-tactical-900/80 p-3 sm:p-4 rounded-xl border border-tactical-700/80 mb-6">
-        <div className="flex items-center gap-2 mb-2 text-neon-blue font-rajdhani font-bold text-xs uppercase tracking-wider">
-          <FileText className="w-4 h-4 text-neon-blue" />
-          <span>Session Notes & Journal</span>
-        </div>
-        <textarea
-          rows={2}
-          value={workoutNotes}
-          onChange={(e) => setWorkoutNotes(e.target.value)}
-          placeholder="Add session notes (e.g. Tried fasted training, felt super focused, heavy leg day focus...)"
-          className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none"
-        />
+      {/* Collapsible Active Workout Session Notes Dropdown */}
+      <div className="bg-tactical-900/80 rounded-xl border border-tactical-700/80 overflow-hidden mb-6 transition-all">
+        <button
+          type="button"
+          onClick={() => setShowNotesDropdown(prev => !prev)}
+          className="w-full flex items-center justify-between p-3.5 sm:p-4 hover:bg-tactical-800/60 transition-colors text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-neon-blue" />
+            <span className="font-rajdhani font-bold text-sm text-white uppercase tracking-wider">
+              Session Notes & Journal
+            </span>
+            {workoutNotes.trim().length > 0 && (
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-neon-green/20 text-neon-green border border-neon-green/40 rounded flex items-center gap-1 ml-2">
+                <Check className="w-3 h-3 text-neon-green" /> Note Added
+              </span>
+            )}
+          </div>
+          <ChevronDown className={clsx("w-5 h-5 text-gray-400 transition-transform duration-200", showNotesDropdown && "rotate-180")} />
+        </button>
+
+        {showNotesDropdown && (
+          <div className="p-3 sm:p-4 pt-0 border-t border-tactical-800/80 animate-in fade-in duration-200">
+            <textarea
+              rows={3}
+              value={workoutNotes}
+              onChange={(e) => setWorkoutNotes(e.target.value)}
+              placeholder="Add session notes (e.g. Tried fasted training, felt super focused, heavy leg day focus...)"
+              className="w-full bg-tactical-950 border border-tactical-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue transition-colors resize-none mt-2"
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-6 mt-4">
