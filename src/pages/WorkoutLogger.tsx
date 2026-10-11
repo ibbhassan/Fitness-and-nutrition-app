@@ -442,6 +442,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
   const { customPresets, saveCustomPreset, deleteCustomPreset, logWorkout, activeWorkout, activeExercises: exercises, startWorkout: handleStartWorkout, abortWorkout, togglePauseWorkout, setActiveExercises: setExercises, workoutHistory, customExercises, saveCustomExercise, scheduledWorkoutDays, editingWorkout, setEditingWorkout, updateWorkout } = useUser();
   const [showCelebration, setShowCelebration] = useState(false);
   const isFinishingRef = useRef(false);
+  const [completedWorkoutName, setCompletedWorkoutName] = useState<string>('');
   const [finalDuration, setFinalDuration] = useState<string>('');
   const [finalGrade, setFinalGrade] = useState<'S+' | 'S' | 'A' | 'B' | 'C' | null>(null);
   const [finalEp, setFinalEp] = useState<number>(0);
@@ -809,11 +810,13 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     baseEp += streakBonusEp;
     
     const calculatedEp = baseEp;
+    const workoutName = activeWorkout.name;
+    setCompletedWorkoutName(workoutName);
 
     logWorkout({
       id: `log-${Date.now()}`,
       date: viewDate === getLocalDateString() ? new Date().toISOString() : new Date(viewDate + 'T12:00:00').toISOString(),
-      name: activeWorkout.name,
+      name: workoutName,
       durationMinutes,
       exercises: exercises,
       volume: totalVolume,
@@ -823,6 +826,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
       notes: workoutNotes.trim() || undefined
     });
     
+    abortWorkout(); // Instantly clears activeWorkout in state & storage
     setWorkoutNotes('');
     setFinalGrade(grade);
     setFinalEp(calculatedEp);
@@ -832,7 +836,6 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
   const closeCelebration = () => {
     setShowCelebration(false);
     isFinishingRef.current = false;
-    abortWorkout();
   };
 
   const saveNewPreset = () => {
@@ -1096,6 +1099,65 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
     );
   }
 
+  const renderCelebrationModal = () => (
+    <AnimatePresence>
+      {showCelebration && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-tactical-900/90 backdrop-blur-sm"
+        >
+          <motion.div 
+            initial={{ scale: 0.8, y: 50 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.8, y: 50 }}
+            transition={{ type: "spring", bounce: 0.5 }}
+            className="bg-tactical-800 border-2 border-neon-gold p-8 rounded-xl shadow-[0_0_50px_rgba(255,215,0,0.3)] max-w-md w-full text-center relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iI2ZmZCIvPjwvc3ZnPg==')] opacity-20 animate-pulse pointer-events-none" />
+            
+            <motion.div
+              initial={{ rotate: -180, scale: 0 }}
+              animate={{ rotate: 0, scale: 1 }}
+              transition={{ type: "spring", damping: 10, delay: 0.2 }}
+              className="w-24 h-24 mx-auto bg-neon-gold rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,215,0,0.6)]"
+            >
+              <Trophy className="w-12 h-12 text-tactical-900" />
+            </motion.div>
+
+            <h2 className="esports-heading text-2xl sm:text-3xl text-white mb-2 w-full text-center">Workout Summary</h2>
+            <div className="inline-block bg-tactical-900 border border-tactical-600 rounded-full px-4 py-1 mb-6">
+              <span className={clsx("font-rajdhani font-bold text-xl", finalGrade === 'S+' ? "text-neon-gold" : "text-neon-purple")}>Rank: {finalGrade || 'C'}</span>
+            </div>
+            
+            <p className="text-gray-300 font-inter mb-6">
+              Incredible consistency! You completed <span className="text-neon-blue font-bold">{completedWorkoutName || activeWorkout?.name || 'Workout'}</span>.
+            </p>
+
+            <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-3 flex justify-between items-center">
+              <span className="text-gray-400 font-rajdhani uppercase">Duration</span>
+              <span className="text-xl font-rajdhani font-bold text-white">{finalDuration}</span>
+            </div>
+
+            <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-8 flex justify-between items-center">
+              <span className="text-gray-400 font-rajdhani uppercase">Evoke Points</span>
+              <span className="text-2xl font-rajdhani font-bold text-neon-green">+{finalEp} EP</span>
+            </div>
+
+            <button 
+              type="button"
+              onClick={closeCelebration}
+              className="relative z-10 w-full bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors cursor-pointer"
+            >
+              Continue Grind
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   if (!activeWorkout) {
     return (
       <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 fade-in pb-24 mt-4">
@@ -1284,6 +1346,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
             })}
           </div>
         </div>
+        {renderCelebrationModal()}
       </div>
     );
   }
@@ -1390,62 +1453,7 @@ export const WorkoutLogger: React.FC<WorkoutLoggerProps> = ({ setActiveTab }) =>
 
       <RestTimer lastCompletedSetTime={lastCompletedSetTime} />
 
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-tactical-900/90 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              transition={{ type: "spring", bounce: 0.5 }}
-              className="bg-tactical-800 border-2 border-neon-gold p-8 rounded-xl shadow-[0_0_50px_rgba(255,215,0,0.3)] max-w-md w-full text-center relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iI2ZmZCIvPjwvc3ZnPg==')] opacity-20 animate-pulse pointer-events-none" />
-              
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", damping: 10, delay: 0.2 }}
-                className="w-24 h-24 mx-auto bg-neon-gold rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,215,0,0.6)]"
-              >
-                <Trophy className="w-12 h-12 text-tactical-900" />
-              </motion.div>
-
-              <h2 className="esports-heading text-2xl sm:text-3xl text-white mb-2 w-full text-center">Workout Summary</h2>
-              <div className="inline-block bg-tactical-900 border border-tactical-600 rounded-full px-4 py-1 mb-6">
-                <span className={clsx("font-rajdhani font-bold text-xl", finalGrade === 'S+' ? "text-neon-gold" : "text-neon-purple")}>Rank: {finalGrade || 'C'}</span>
-              </div>
-              
-              <p className="text-gray-300 font-inter mb-6">
-                Incredible consistency! You completed <span className="text-neon-blue font-bold">{activeWorkout?.name || 'Workout'}</span>.
-              </p>
-
-              <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-3 flex justify-between items-center">
-                <span className="text-gray-400 font-rajdhani uppercase">Duration</span>
-                <span className="text-xl font-rajdhani font-bold text-white">{finalDuration}</span>
-              </div>
-
-              <div className="bg-tactical-900 p-4 rounded-lg border border-tactical-700 mb-8 flex justify-between items-center">
-                <span className="text-gray-400 font-rajdhani uppercase">Evoke Points</span>
-                <span className="text-2xl font-rajdhani font-bold text-neon-green">+{finalEp} EP</span>
-              </div>
-
-              <button 
-                type="button"
-                onClick={closeCelebration}
-                className="relative z-10 w-full bg-white text-tactical-900 py-3 rounded font-rajdhani font-bold text-lg hover:bg-gray-200 transition-colors cursor-pointer"
-              >
-                Continue Grind
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {renderCelebrationModal()}
       {renderLibraryModal()}
     </div>
   );

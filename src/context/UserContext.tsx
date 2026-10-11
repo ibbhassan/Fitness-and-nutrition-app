@@ -1,5 +1,5 @@
 import { getLocalDateString } from '../utils/dateUtils';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal, CustomMealCategory } from '../types';
 import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
@@ -9,7 +9,6 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { publishHighlight, deleteHighlightsForWorkout } from '../services/socialService';
 import { calculateStreak, getStreakMilestoneBonus } from '../utils/streakUtils';
-import { useRef } from 'react';
 
 export const DEFAULT_MEAL_CATEGORIES: CustomMealCategory[] = [
   { id: 'breakfast', name: 'Breakfast', iconName: 'Coffee', colorClass: 'text-amber-400' },
@@ -100,7 +99,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loadState = () => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          lastUpdated: parsed.lastUpdated || Date.now()
+        };
+      } catch (e) {
+        console.error("Failed to parse localStorage:", e);
+      }
     }
     return {
       user: null,
@@ -126,7 +133,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       dailyStepsTarget: 10000,
       dailyWaterTarget: '1 Gallon',
       dailyWaterIntake: 0,
-      dailyWorkoutDurationTarget: 30
+      dailyWorkoutDurationTarget: 30,
+      lastUpdated: Date.now()
     };
   };
 
@@ -163,6 +171,140 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [customMealCategories, setCustomMealCategories] = useState<CustomMealCategory[]>(initialState.customMealCategories && initialState.customMealCategories.length > 0 ? initialState.customMealCategories : DEFAULT_MEAL_CATEGORIES);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutLog | null>(null);
 
+  // Reference holding the absolute latest state synchronously for safe persistence
+  const stateRef = useRef({
+    user,
+    hasCompletedOnboarding,
+    targetWorkoutsPerWeek,
+    scheduledWorkoutDays,
+    workoutSplit,
+    profile,
+    nutrition,
+    biometrics,
+    weightHistory,
+    bodyFatHistory,
+    customPresets,
+    workoutHistory,
+    manualQuestCompletions,
+    customExercises,
+    healthSyncEnabled,
+    dailySteps,
+    lastStepDate,
+    activeWorkout,
+    activeExercises,
+    recentFoods,
+    favoriteFoods,
+    foodLogs,
+    savedMeals,
+    customMealCategories,
+    dailyStepsTarget,
+    dailyWaterTarget,
+    dailyWaterIntake,
+    dailyWorkoutDurationTarget,
+    lastUpdated: initialState.lastUpdated || Date.now()
+  });
+
+  stateRef.current = {
+    user,
+    hasCompletedOnboarding,
+    targetWorkoutsPerWeek,
+    scheduledWorkoutDays,
+    workoutSplit,
+    profile,
+    nutrition,
+    biometrics,
+    weightHistory,
+    bodyFatHistory,
+    customPresets,
+    workoutHistory,
+    manualQuestCompletions,
+    customExercises,
+    healthSyncEnabled,
+    dailySteps,
+    lastStepDate,
+    activeWorkout,
+    activeExercises,
+    recentFoods,
+    favoriteFoods,
+    foodLogs,
+    savedMeals,
+    customMealCategories,
+    dailyStepsTarget,
+    dailyWaterTarget,
+    dailyWaterIntake,
+    dailyWorkoutDurationTarget,
+    lastUpdated: stateRef.current.lastUpdated
+  };
+
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistState = useCallback((overrides?: Record<string, any>, immediate: boolean = false) => {
+    const now = Date.now();
+    const currentState = {
+      ...stateRef.current,
+      ...overrides,
+      lastUpdated: now
+    };
+    stateRef.current = currentState;
+
+    // 1. Write synchronously to LocalStorage
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentState));
+    } catch (e) {
+      console.error("Failed to write to localStorage:", e);
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    const uid = currentState.user?.uid;
+    if (!uid) return;
+
+    if (immediate) {
+      setDoc(doc(db, 'users', uid), currentState, { merge: true }).catch(err => {
+        console.error("Immediate Firestore sync error:", err);
+      });
+    } else {
+      saveTimeoutRef.current = setTimeout(() => {
+        setDoc(doc(db, 'users', uid), currentState, { merge: true }).catch(err => {
+          console.error("Debounced Firestore sync error:", err);
+        });
+        saveTimeoutRef.current = null;
+      }, 1000);
+    }
+  }, []);
+
+  // Flush any pending save on backgrounding or before unload
+  useEffect(() => {
+    const flushSave = () => {
+      if (stateRef.current?.user?.uid) {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = null;
+        }
+        setDoc(doc(db, 'users', stateRef.current.user.uid), stateRef.current, { merge: true }).catch(err => {
+          console.error("Flush save error:", err);
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', flushSave);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', flushSave);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Set up an interval to check for date rollover (midnight)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -198,49 +340,40 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [currentDate, lastStepDate]);
 
-  // Sync to local storage whenever state changes
+  // Sync to local storage & Firestore whenever state changes
   useEffect(() => {
-    const stateToSave = {
-      user,
-      hasCompletedOnboarding,
-      targetWorkoutsPerWeek,
-      scheduledWorkoutDays,
-      workoutSplit,
-      profile,
-      nutrition,
-      biometrics,
-      weightHistory,
-      bodyFatHistory,
-      customPresets,
-      workoutHistory,
-      manualQuestCompletions,
-      customExercises,
-      healthSyncEnabled,
-      dailySteps,
-      lastStepDate,
-      activeWorkout,
-      activeExercises,
-      recentFoods,
-      favoriteFoods,
-      foodLogs,
-      savedMeals,
-      customMealCategories,
-      dailyStepsTarget,
-      dailyWaterTarget,
-      dailyWaterIntake,
-      dailyWorkoutDurationTarget
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
-
-    if (user?.uid) {
-      const timeoutId = setTimeout(() => {
-        setDoc(doc(db, 'users', user.uid!), stateToSave, { merge: true }).catch(err => {
-          console.error("Failed to sync to Firestore:", err);
-        });
-      }, 2000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [user, hasCompletedOnboarding, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, profile, nutrition, biometrics, weightHistory, bodyFatHistory, customPresets, workoutHistory, manualQuestCompletions, customExercises, healthSyncEnabled, dailySteps, dailyStepsTarget, dailyWaterTarget, dailyWaterIntake, dailyWorkoutDurationTarget, lastStepDate, activeWorkout, activeExercises, recentFoods, favoriteFoods, foodLogs, savedMeals, customMealCategories]);
+    persistState();
+  }, [
+    user,
+    hasCompletedOnboarding,
+    targetWorkoutsPerWeek,
+    scheduledWorkoutDays,
+    workoutSplit,
+    profile,
+    nutrition,
+    biometrics,
+    weightHistory,
+    bodyFatHistory,
+    customPresets,
+    workoutHistory,
+    manualQuestCompletions,
+    customExercises,
+    healthSyncEnabled,
+    dailySteps,
+    dailyStepsTarget,
+    dailyWaterTarget,
+    dailyWaterIntake,
+    dailyWorkoutDurationTarget,
+    lastStepDate,
+    activeWorkout,
+    activeExercises,
+    recentFoods,
+    favoriteFoods,
+    foodLogs,
+    savedMeals,
+    customMealCategories,
+    persistState
+  ]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -251,54 +384,198 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data();
-            if (data.hasCompletedOnboarding !== undefined) setHasCompletedOnboarding(data.hasCompletedOnboarding);
-            if (data.targetWorkoutsPerWeek !== undefined) setTargetWorkoutsPerWeek(data.targetWorkoutsPerWeek);
-            if (data.scheduledWorkoutDays !== undefined) setScheduledWorkoutDays(data.scheduledWorkoutDays);
-            if (data.workoutSplit !== undefined) setWorkoutSplit(data.workoutSplit);
-            if (data.profile !== undefined) setProfile(data.profile);
-            if (data.nutrition !== undefined) setNutrition(data.nutrition);
-            if (data.biometrics !== undefined) setBiometrics(data.biometrics);
-            if (data.weightHistory !== undefined) setWeightHistory(data.weightHistory);
-            if (data.bodyFatHistory !== undefined) setBodyFatHistory(data.bodyFatHistory);
-            if (data.customPresets !== undefined) setCustomPresets(data.customPresets);
-            if (data.workoutHistory !== undefined) {
-              const sanitizedHistory = (data.workoutHistory as WorkoutLog[]).map(w => {
-                const completedSets = w.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0) || 0;
-                const completedExCount = w.exercises?.filter(ex => ex.sets?.some(s => s.completed)).length || 0;
-                const isHeavySession = completedSets >= 12 || completedExCount >= 4;
-                if ((w.isPr || isHeavySession) && w.grade !== 'S+') {
-                  return { ...w, grade: 'S+' as const };
-                }
-                return w;
-              });
-              setWorkoutHistory(sanitizedHistory);
+            const remoteLastUpdated = (data.lastUpdated as number) || 0;
+
+            let localData: any = null;
+            try {
+              const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+              if (saved) localData = JSON.parse(saved);
+            } catch (e) {
+              console.error("Error reading local state for reconciliation:", e);
             }
-            if (data.manualQuestCompletions !== undefined) setManualQuestCompletions(data.manualQuestCompletions);
-            if (data.customExercises !== undefined) setCustomExercises(data.customExercises);
-            if (data.healthSyncEnabled !== undefined) setHealthSyncEnabled(data.healthSyncEnabled);
-            if (data.dailySteps !== undefined) setDailySteps(data.dailySteps);
+            const localLastUpdated = (localData?.lastUpdated as number) || 0;
+
+            // 1. RECONCILE WORKOUT HISTORY (Union by ID - NEVER delete workouts)
+            const remoteWorkouts: WorkoutLog[] = Array.isArray(data.workoutHistory) ? data.workoutHistory : [];
+            const localWorkouts: WorkoutLog[] = Array.isArray(localData?.workoutHistory) ? localData.workoutHistory : workoutHistory;
+            const workoutMap = new Map<string, WorkoutLog>();
+            remoteWorkouts.forEach(w => { if (w?.id) workoutMap.set(w.id, w); });
+            localWorkouts.forEach(w => { if (w?.id) workoutMap.set(w.id, w); });
+
+            const mergedWorkouts = Array.from(workoutMap.values()).map(w => {
+              const completedSets = w.exercises?.reduce((acc, ex) => acc + (ex.sets?.filter(s => s.completed).length || 0), 0) || 0;
+              const completedExCount = w.exercises?.filter(ex => ex.sets?.some(s => s.completed)).length || 0;
+              const isHeavySession = completedSets >= 12 || completedExCount >= 4;
+              if ((w.isPr || isHeavySession) && w.grade !== 'S+') {
+                return { ...w, grade: 'S+' as const };
+              }
+              return w;
+            }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+            setWorkoutHistory(mergedWorkouts);
+
+            // 2. RECONCILE ACTIVE WORKOUT (Prevent ghost active workouts)
+            const remoteActive = data.activeWorkout;
+            const localActive = localData?.activeWorkout !== undefined ? localData.activeWorkout : activeWorkout;
+
+            let activeToSet: any = null;
+            let activeExToSet: any = [];
+
+            if (remoteActive && remoteActive.id) {
+              const isAlreadyFinished = mergedWorkouts.some(w =>
+                w.id === remoteActive.id ||
+                (w.name === remoteActive.name && Math.abs(new Date(w.date).getTime() - (remoteActive.startTime || 0)) < 24 * 60 * 60 * 1000)
+              );
+              const isStale24Hours = (Date.now() - (remoteActive.startTime || 0)) > 24 * 60 * 60 * 1000;
+              const hasWorkoutAfterStart = mergedWorkouts.some(w => new Date(w.date).getTime() > (remoteActive.startTime || 0));
+
+              if (isAlreadyFinished || isStale24Hours || hasWorkoutAfterStart) {
+                activeToSet = null;
+              } else if (localActive === null && localLastUpdated >= remoteLastUpdated) {
+                activeToSet = null;
+              } else if (localActive && localLastUpdated >= remoteLastUpdated) {
+                activeToSet = localActive;
+                activeExToSet = localData?.activeExercises || activeExercises;
+              } else {
+                activeToSet = remoteActive;
+                activeExToSet = data.activeExercises || [];
+              }
+            } else {
+              if (localActive && localLastUpdated > remoteLastUpdated) {
+                const isAlreadyFinished = mergedWorkouts.some(w => w.id === localActive.id);
+                const isStale = (Date.now() - (localActive.startTime || 0)) > 24 * 60 * 60 * 1000;
+                if (!isAlreadyFinished && !isStale) {
+                  activeToSet = localActive;
+                  activeExToSet = localData?.activeExercises || activeExercises;
+                }
+              }
+            }
+
+            setActiveWorkout(activeToSet);
+            setActiveExercises(activeExToSet);
+
+            // 3. RECONCILE FOOD LOGS (Union by ID - NEVER delete today's food logs)
+            const remoteFoodLogs: FoodLogEntry[] = Array.isArray(data.foodLogs) ? data.foodLogs : [];
+            const localFoodLogs: FoodLogEntry[] = Array.isArray(localData?.foodLogs) ? localData.foodLogs : foodLogs;
+            const foodMap = new Map<string, FoodLogEntry>();
+            remoteFoodLogs.forEach(f => { if (f?.id) foodMap.set(f.id, f); });
+            localFoodLogs.forEach(f => { if (f?.id) foodMap.set(f.id, f); });
+            const mergedFoodLogs = Array.from(foodMap.values());
+            setFoodLogs(mergedFoodLogs);
+
+            // 4. RECONCILE FAVORITES & SAVED MEALS
+            if (Array.isArray(data.favoriteFoods)) {
+              const favMap = new Map<string, FoodItem>();
+              data.favoriteFoods.forEach((f: FoodItem) => { if (f?.name) favMap.set(f.name.toLowerCase(), f); });
+              (localData?.favoriteFoods || favoriteFoods).forEach((f: FoodItem) => { if (f?.name) favMap.set(f.name.toLowerCase(), f); });
+              setFavoriteFoods(Array.from(favMap.values()));
+            }
+            if (Array.isArray(data.savedMeals)) {
+              const mealMap = new Map<string, Meal>();
+              data.savedMeals.forEach((m: Meal) => { if (m?.id) mealMap.set(m.id, m); });
+              (localData?.savedMeals || savedMeals).forEach((m: Meal) => { if (m?.id) mealMap.set(m.id, m); });
+              setSavedMeals(Array.from(mealMap.values()));
+            }
+
+            // 5. RECONCILE WEIGHT & BODY FAT HISTORY
+            if (Array.isArray(data.weightHistory)) {
+              const weightMap = new Map<string, WeightEntry>();
+              data.weightHistory.forEach((w: WeightEntry) => { if (w?.date) weightMap.set(w.date, w); });
+              (localData?.weightHistory || weightHistory).forEach((w: WeightEntry) => { if (w?.date) weightMap.set(w.date, w); });
+              setWeightHistory(Array.from(weightMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+            }
+            if (Array.isArray(data.bodyFatHistory)) {
+              const bfMap = new Map<string, BodyFatEntry>();
+              data.bodyFatHistory.forEach((b: BodyFatEntry) => { if (b?.date) bfMap.set(b.date, b); });
+              (localData?.bodyFatHistory || bodyFatHistory).forEach((b: BodyFatEntry) => { if (b?.date) bfMap.set(b.date, b); });
+              setBodyFatHistory(Array.from(bfMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+            }
+
+            // 6. RECONCILE CUSTOM PRESETS & EXERCISES
+            if (Array.isArray(data.customPresets)) {
+              const presetMap = new Map<string, WorkoutPreset>();
+              data.customPresets.forEach((p: WorkoutPreset) => { if (p?.id) presetMap.set(p.id, p); });
+              (localData?.customPresets || customPresets).forEach((p: WorkoutPreset) => { if (p?.id) presetMap.set(p.id, p); });
+              setCustomPresets(Array.from(presetMap.values()));
+            }
+            if (Array.isArray(data.customExercises)) {
+              const exMap = new Map<string, ExerciseDefinition>();
+              data.customExercises.forEach((e: ExerciseDefinition) => { if (e?.id) exMap.set(e.id, e); });
+              (localData?.customExercises || customExercises).forEach((e: ExerciseDefinition) => { if (e?.id) exMap.set(e.id, e); });
+              setCustomExercises(Array.from(exMap.values()));
+            }
+
+            // 7. RECONCILE PROFILE & LEVEL/STATS
+            if (data.profile) {
+              const localProf = localData?.profile || profile;
+              const bestLevel = Math.max(localProf.level || 1, data.profile.level || 1);
+              const bestLp = localProf.level > data.profile.level
+                ? (localProf.lp || 0)
+                : data.profile.level > localProf.level
+                  ? (data.profile.lp || 0)
+                  : Math.max(localProf.lp || 0, data.profile.lp || 0);
+
+              const mergedStats = {
+                strength: Math.max(localProf.stats?.strength || 0, data.profile.stats?.strength || 0),
+                endurance: Math.max(localProf.stats?.endurance || 0, data.profile.stats?.endurance || 0),
+                consistency: Math.max(localProf.stats?.consistency || 0, data.profile.stats?.consistency || 0),
+                power: Math.max(localProf.stats?.power || 0, data.profile.stats?.power || 0),
+                hypertrophy: Math.max(localProf.stats?.hypertrophy || 0, data.profile.stats?.hypertrophy || 0),
+                volume: Math.max(localProf.stats?.volume || 0, data.profile.stats?.volume || 0),
+              };
+              const { tier } = getRankInfo(bestLevel);
+
+              setProfile({
+                ...data.profile,
+                ...localProf,
+                level: bestLevel,
+                lp: bestLp,
+                rank: tier,
+                stats: mergedStats,
+                unlockedCosmetics: Array.from(new Set([...(localProf.unlockedCosmetics || []), ...(data.profile.unlockedCosmetics || [])]))
+              });
+            }
+
+            const preferRemote = remoteLastUpdated >= localLastUpdated;
+            if (data.hasCompletedOnboarding !== undefined && (preferRemote || localData?.hasCompletedOnboarding === undefined)) setHasCompletedOnboarding(data.hasCompletedOnboarding);
+            if (data.targetWorkoutsPerWeek !== undefined && (preferRemote || !localData?.targetWorkoutsPerWeek)) setTargetWorkoutsPerWeek(data.targetWorkoutsPerWeek);
+            if (data.scheduledWorkoutDays !== undefined && (preferRemote || !localData?.scheduledWorkoutDays)) setScheduledWorkoutDays(data.scheduledWorkoutDays);
+            if (data.workoutSplit !== undefined && (preferRemote || !localData?.workoutSplit)) setWorkoutSplit(data.workoutSplit);
+            if (data.nutrition !== undefined && (preferRemote || !localData?.nutrition)) setNutrition(data.nutrition);
+            if (data.biometrics !== undefined && (preferRemote || !localData?.biometrics)) setBiometrics(data.biometrics);
+            if (data.manualQuestCompletions !== undefined) setManualQuestCompletions({ ...(data.manualQuestCompletions || {}), ...(localData?.manualQuestCompletions || {}) });
+            if (data.healthSyncEnabled !== undefined) setHealthSyncEnabled(preferRemote ? data.healthSyncEnabled : (localData?.healthSyncEnabled ?? data.healthSyncEnabled));
+            if (data.dailySteps !== undefined && preferRemote) setDailySteps(data.dailySteps);
             if (data.dailyStepsTarget !== undefined) setDailyStepsTarget(data.dailyStepsTarget);
             if (data.dailyWaterTarget !== undefined) setDailyWaterTarget(data.dailyWaterTarget);
-            if (data.dailyWaterIntake !== undefined) setDailyWaterIntake(data.dailyWaterIntake);
+            if (data.dailyWaterIntake !== undefined && preferRemote) setDailyWaterIntake(data.dailyWaterIntake);
             if (data.dailyWorkoutDurationTarget !== undefined) setDailyWorkoutDurationTarget(data.dailyWorkoutDurationTarget);
-            if (data.lastStepDate !== undefined) setLastStepDate(data.lastStepDate);
-            if (data.activeWorkout !== undefined) setActiveWorkout(data.activeWorkout);
-            if (data.activeExercises !== undefined) setActiveExercises(data.activeExercises);
-            if (data.recentFoods !== undefined) setRecentFoods(data.recentFoods);
-            if (data.favoriteFoods !== undefined) setFavoriteFoods(data.favoriteFoods);
-            if (data.foodLogs !== undefined) setFoodLogs(data.foodLogs);
-            if (data.savedMeals !== undefined) setSavedMeals(data.savedMeals);
-            if (data.customMealCategories !== undefined) setCustomMealCategories(data.customMealCategories);
+            if (data.lastStepDate !== undefined && preferRemote) setLastStepDate(data.lastStepDate);
+            if (data.recentFoods !== undefined && Array.isArray(data.recentFoods)) {
+              const recMap = new Map();
+              data.recentFoods.forEach((f: FoodItem) => recMap.set(f.name, f));
+              (localData?.recentFoods || recentFoods).forEach((f: FoodItem) => recMap.set(f.name, f));
+              setRecentFoods(Array.from(recMap.values()).slice(0, 50));
+            }
+            if (data.customMealCategories !== undefined && Array.isArray(data.customMealCategories)) setCustomMealCategories(data.customMealCategories);
+
+            // Persist the reconciled state back to Firestore & LocalStorage immediately
+            persistState({
+              workoutHistory: mergedWorkouts,
+              activeWorkout: activeToSet,
+              activeExercises: activeExToSet,
+              foodLogs: mergedFoodLogs
+            }, true);
           }
         } catch (err) {
-          console.error("Error fetching user data from Firestore:", err);
+          console.error("Error fetching and reconciling user data from Firestore:", err);
         }
       } else {
         setUser(null);
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [persistState]);
 
   const login = (username: string) => {
     // Left for local dev or backward compatibility before they hook up real Auth UI
@@ -408,23 +685,27 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addFoodLog = (log: FoodLogEntry) => {
-    setFoodLogs(prev => [...prev, log]);
+    const nextLogs = [...foodLogs, log];
+    setFoodLogs(nextLogs);
     // Also add to recent foods
-    setRecentFoods(prev => {
-      const filtered = prev.filter(f => f.name !== log.food.name);
-      return [log.food, ...filtered].slice(0, 50);
-    });
+    const filtered = recentFoods.filter(f => f.name !== log.food.name);
+    const nextRecent = [log.food, ...filtered].slice(0, 50);
+    setRecentFoods(nextRecent);
+    persistState({ foodLogs: nextLogs, recentFoods: nextRecent }, true);
   };
 
   const updateFoodLog = (id: string, updatedFood: FoodItem) => {
-    setFoodLogs(prev => prev.map(log => 
+    const nextLogs = foodLogs.map(log => 
       log.id === id ? { ...log, food: updatedFood } : log
-    ));
+    );
+    setFoodLogs(nextLogs);
+    persistState({ foodLogs: nextLogs }, true);
   };
 
-
   const removeFoodLog = (id: string) => {
-    setFoodLogs(prev => prev.filter(log => log.id !== id));
+    const nextLogs = foodLogs.filter(log => log.id !== id);
+    setFoodLogs(nextLogs);
+    persistState({ foodLogs: nextLogs }, true);
   };
 
   const saveMeal = (meal: Meal) => {
@@ -570,6 +851,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logWorkout = (log: WorkoutLog) => {
+    // 1. Immediately terminate active workout state
+    setActiveWorkout(null);
+    setActiveExercises([]);
+
     if (user?.uid && user.username) {
       const avatarConfig = profile.avatar || { type: 'avatar', style: 'default' } as any;
 
@@ -640,7 +925,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    setWorkoutHistory(prev => [...prev, log]);
+    const nextHistory = [...workoutHistory, log];
+    setWorkoutHistory(nextHistory);
     if (log.epChange) {
       addEp(log.epChange);
     }
@@ -677,7 +963,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     setProfile(prev => {
       const currentStats = prev.stats || { strength: 0, endurance: 0, consistency: 0, power: 0, hypertrophy: 0, volume: 0 };
-      return {
+      const updatedProfile = {
         ...prev,
         stats: {
           strength: Math.min(100, Math.round((currentStats.strength + strengthGain) * 10) / 10),
@@ -688,6 +974,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           volume: Math.min(100, Math.round((currentStats.volume + volumeGain) * 10) / 10)
         }
       };
+      // Immediately write to LocalStorage & Firestore
+      persistState({
+        activeWorkout: null,
+        activeExercises: [],
+        workoutHistory: nextHistory,
+        profile: updatedProfile
+      }, true);
+      return updatedProfile;
     });
   };
 
@@ -701,7 +995,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Remove highlights
     deleteHighlightsForWorkout(id).catch(err => console.error("Failed to delete highlights:", err));
 
-    setWorkoutHistory(prev => prev.filter(w => w.id !== id));
+    const updated = workoutHistory.filter(w => w.id !== id);
+    setWorkoutHistory(updated);
+    persistState({ workoutHistory: updated }, true);
   };
 
   const updateWorkout = (log: WorkoutLog) => {
@@ -715,6 +1011,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       epDiff = (log.epChange || 0) - (oldLog.epChange || 0);
 
       newHistory[idx] = log;
+      persistState({ workoutHistory: newHistory }, true);
       return newHistory;
     });
     
@@ -779,6 +1076,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const abortWorkout = () => {
     setActiveWorkout(null);
     setActiveExercises([]);
+    persistState({
+      activeWorkout: null,
+      activeExercises: []
+    }, true);
   };
 
   const togglePauseWorkout = () => {
