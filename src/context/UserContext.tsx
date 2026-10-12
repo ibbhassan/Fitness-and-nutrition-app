@@ -80,6 +80,8 @@ interface UserContextType {
   removeFoodLog: (id: string) => void;
   updateFoodLog: (id: string, updatedFood: FoodItem) => void;
   saveMeal: (meal: Meal) => void;
+  updateMeal?: (meal: Meal) => void;
+  deleteMeal: (id: string) => void;
   logFood: (food: FoodItem) => void;
   toggleFavoriteFood: (food: FoodItem) => void;
   saveToFavorites: (food: FoodItem) => void;
@@ -709,7 +711,20 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const saveMeal = (meal: Meal) => {
-    setSavedMeals(prev => [...prev, meal]);
+    setSavedMeals(prev => {
+      const exists = prev.some(m => m.id === meal.id);
+      const next = exists ? prev.map(m => m.id === meal.id ? meal : m) : [...prev, meal];
+      persistState({ savedMeals: next }, true);
+      return next;
+    });
+  };
+
+  const deleteMeal = (id: string) => {
+    setSavedMeals(prev => {
+      const next = prev.filter(m => m.id !== id);
+      persistState({ savedMeals: next }, true);
+      return next;
+    });
   };
 
   // Dynamically calculate macros for a specific date
@@ -1175,6 +1190,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateFoodLog,
       removeFoodLog,
       saveMeal,
+      updateMeal: saveMeal,
+      deleteMeal,
       logFood,
       toggleFavoriteFood,
       saveToFavorites,

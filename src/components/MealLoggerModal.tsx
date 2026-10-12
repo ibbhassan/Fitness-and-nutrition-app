@@ -1,6 +1,6 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useMemo } from 'react';
-import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2, Search } from 'lucide-react';
+import { X, ScanBarcode, Plus, Sparkles, Send, Loader2, History, Star, Bookmark, Trash2, Search, Pencil, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '../context/UserContext';
 import { BarcodeScanner } from './BarcodeScanner';
@@ -9,7 +9,7 @@ import { parseMealText } from '../utils/aiLogger';
 import { CreateMealModal } from './CreateMealModal';
 import { FoodLookupModal } from './FoodLookupModal';
 import { clsx } from 'clsx';
-import type { MealType, FoodItem, FoodLogEntry } from '../types';
+import type { MealType, FoodItem, FoodLogEntry, Meal } from '../types';
 
 interface MealLoggerModalProps {
   mealType: MealType;
@@ -18,11 +18,14 @@ interface MealLoggerModalProps {
 }
 
 export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, selectedDate, onClose }) => {
-  const { addFoodLog, updateFoodLog, removeFoodLog, recentFoods, favoriteFoods, savedMeals, foodLogs, saveToFavorites, removeFavoriteFood } = useUser();
+  const { addFoodLog, updateFoodLog, removeFoodLog, recentFoods, favoriteFoods, savedMeals, deleteMeal, foodLogs, saveToFavorites, removeFavoriteFood } = useUser();
   const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'saved'>('recent');
   const [showScanner, setShowScanner] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [showCreateMeal, setShowCreateMeal] = useState(false);
+  const [editingSavedMeal, setEditingSavedMeal] = useState<Meal | undefined>(undefined);
+  const [expandedSavedMealId, setExpandedSavedMealId] = useState<string | null>(null);
+  const [deletingSavedMealId, setDeletingSavedMealId] = useState<string | null>(null);
   const [scannedFood, setScannedFood] = useState<Partial<FoodItem> | undefined>(undefined);
   const [editingLog, setEditingLog] = useState<FoodLogEntry | undefined>(undefined);
   const [pendingItems, setPendingItems] = useState<FoodItem[] | undefined>(undefined);
@@ -121,7 +124,15 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
   }
 
   if (showCreateMeal) {
-    return <CreateMealModal onClose={() => setShowCreateMeal(false)} />;
+    return (
+      <CreateMealModal 
+        initialMeal={editingSavedMeal}
+        onClose={() => {
+          setShowCreateMeal(false);
+          setEditingSavedMeal(undefined);
+        }} 
+      />
+    );
   }
 
   if (showFoodLookup) {
@@ -570,32 +581,156 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
 
                 {savedMeals.filter(m => m.name.toLowerCase().includes(localSearchQuery.toLowerCase())).map((meal) => {
                   const totalCal = meal.items.reduce((sum, item) => sum + (item.macrosPerUnit.calories * item.amount), 0);
+                  const totalProtein = meal.items.reduce((sum, item) => sum + (item.macrosPerUnit.protein * item.amount), 0);
+                  const totalCarbs = meal.items.reduce((sum, item) => sum + (item.macrosPerUnit.carbs * item.amount), 0);
+                  const totalFat = meal.items.reduce((sum, item) => sum + (item.macrosPerUnit.fat * item.amount), 0);
+                  const isExpanded = expandedSavedMealId === meal.id;
+                  const isDeleting = deletingSavedMealId === meal.id;
+
                   return (
-                    <div key={meal.id} className="bg-tactical-900 border border-tactical-700 p-3 rounded-lg flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-white text-sm">{meal.name}</div>
-                        <div className="text-xs text-gray-400">
-                          {meal.items.length} items • {Math.round(totalCal)} kcal
+                    <div key={meal.id} className="bg-tactical-900 border border-tactical-700 rounded-xl overflow-hidden shadow-sm transition-all">
+                      {/* Main Header Row */}
+                      <div className="p-3.5 flex items-center justify-between gap-3">
+                        <div 
+                          className="flex-1 min-w-0 cursor-pointer"
+                          onClick={() => setExpandedSavedMealId(isExpanded ? null : meal.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-sm truncate">{meal.name}</span>
+                            <span className="bg-tactical-800 text-gray-400 text-[10px] px-1.5 py-0.5 rounded font-mono">
+                              {meal.items.length} item{meal.items.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          
+                          <div className="text-[11px] text-gray-400 flex items-center gap-1.5 mt-1 font-mono">
+                            <span className="text-neon-red font-semibold">{Math.round(totalCal)} kcal</span>
+                            <span className="text-tactical-600">|</span>
+                            <span className="text-neon-blue">{Math.round(totalProtein)}g P</span>
+                            <span className="text-tactical-600">|</span>
+                            <span className="text-neon-gold">{Math.round(totalCarbs)}g C</span>
+                            <span className="text-tactical-600">|</span>
+                            <span className="text-neon-purple">{Math.round(totalFat)}g F</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Toggle Expand */}
+                          <button
+                            type="button"
+                            onClick={() => setExpandedSavedMealId(isExpanded ? null : meal.id)}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-tactical-800 rounded-lg transition-colors"
+                            title={isExpanded ? "Collapse" : "View ingredients"}
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+
+                          {/* Edit Meal Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSavedMeal(meal);
+                              setShowCreateMeal(true);
+                            }}
+                            className="bg-tactical-800 hover:bg-neon-blue/20 text-neon-blue p-2 rounded-lg transition-colors"
+                            title="Edit this meal"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+
+                          {/* Delete Meal Button */}
+                          <button
+                            type="button"
+                            onClick={() => setDeletingSavedMealId(isDeleting ? null : meal.id)}
+                            className="bg-tactical-800 hover:bg-neon-red/20 text-gray-400 hover:text-neon-red p-2 rounded-lg transition-colors"
+                            title="Delete meal"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+
+                          {/* Log Meal Button */}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const today = getLocalDateString();
+                              meal.items.forEach(item => {
+                                addFoodLog({
+                                  id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                  date: today,
+                                  mealType,
+                                  food: item
+                                });
+                              });
+                              setLogSuccess(`Added ${meal.name} (${meal.items.length} items)`);
+                              setTimeout(() => setLogSuccess(''), 3000);
+                            }}
+                            className="bg-tactical-800 hover:bg-neon-purple/20 text-neon-purple p-2 rounded-lg transition-colors"
+                            title="Log to today"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => {
-                          const today = getLocalDateString();
-                          meal.items.forEach(item => {
-                            addFoodLog({
-                              id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                              date: today,
-                              mealType,
-                              food: item
-                            });
-                          });
-                          setLogSuccess(`Added ${meal.name}`);
-                          setTimeout(() => setLogSuccess(''), 3000);
-                        }}
-                        className="bg-tactical-800 hover:bg-neon-purple/20 text-neon-purple p-2 rounded-lg transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+
+                      {/* Delete Confirmation Banner */}
+                      {isDeleting && (
+                        <div className="bg-neon-red/10 border-t border-neon-red/30 p-2.5 px-3 flex items-center justify-between animate-in fade-in duration-150">
+                          <span className="text-xs text-neon-red font-rajdhani font-bold flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5" /> Delete this saved meal?
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDeletingSavedMealId(null)}
+                              className="text-[11px] bg-tactical-800 text-gray-300 hover:text-white px-2.5 py-1 rounded font-rajdhani font-bold uppercase transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                deleteMeal(meal.id);
+                                setDeletingSavedMealId(null);
+                              }}
+                              className="text-[11px] bg-neon-red text-tactical-900 px-2.5 py-1 rounded font-rajdhani font-bold uppercase hover:bg-red-500 transition-colors"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Expanded Ingredients List */}
+                      {isExpanded && (
+                        <div className="bg-tactical-950/60 border-t border-tactical-800 p-3 space-y-2 animate-in fade-in duration-150">
+                          <div className="text-[10px] font-rajdhani uppercase font-bold text-gray-500 tracking-wider flex items-center justify-between">
+                            <span>Included Foods</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingSavedMeal(meal);
+                                setShowCreateMeal(true);
+                              }}
+                              className="text-neon-blue hover:underline flex items-center gap-1"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit in Meal Builder
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            {meal.items.map((item, i) => (
+                              <div key={`${item.id || item.name}-${i}`} className="bg-tactical-900/80 px-2.5 py-1.5 rounded-lg flex items-center justify-between text-xs">
+                                <span className="text-gray-300 font-medium truncate pr-2">{item.name}</span>
+                                <div className="text-[11px] text-gray-400 font-mono shrink-0">
+                                  <span>{item.amount} {item.unit}</span>
+                                  <span className="text-tactical-600 mx-1.5">•</span>
+                                  <span className="text-neon-red">{Math.round(item.macrosPerUnit.calories * item.amount)} kcal</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

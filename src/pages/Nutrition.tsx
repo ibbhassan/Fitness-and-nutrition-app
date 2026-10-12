@@ -2,7 +2,7 @@ import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useUser } from '../context/UserContext';
-import { Flame, Plus, Trash2, ChevronLeft, ChevronRight, Calendar, Star, Copy, Utensils } from 'lucide-react';
+import { Flame, Plus, Trash2, ChevronLeft, ChevronRight, Calendar, Star, Copy, Utensils, BookmarkPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -10,7 +10,8 @@ import { MealLoggerModal } from '../components/MealLoggerModal';
 import { FoodEntryModal } from '../components/FoodEntryModal';
 import { CalendarModal } from '../components/CalendarModal';
 import { CustomizeMealsModal, MEAL_ICON_MAP } from '../components/CustomizeMealsModal';
-import type { MealType, FoodLogEntry } from '../types';
+import { CreateMealModal } from '../components/CreateMealModal';
+import type { MealType, FoodLogEntry, Meal } from '../types';
 
 export const Nutrition: React.FC = () => {
   const { foodLogs, updateFoodLog, removeFoodLog, getMacrosForDate, saveToFavorites, addFoodLog, customMealCategories } = useUser();
@@ -20,6 +21,7 @@ export const Nutrition: React.FC = () => {
   const [viewDate, setViewDate] = useState(getLocalDateString());
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [savedMealModalData, setSavedMealModalData] = useState<Meal | null>(null);
   const [copyingMeal, setCopyingMeal] = useState<{ sourceLogs: FoodLogEntry[], sourceMeal: MealType } | null>(null);
   const [copyTargetDate, setCopyTargetDate] = useState(getLocalDateString());
   const [copyTargetMeal, setCopyTargetMeal] = useState<MealType>(customMealCategories[0]?.name || 'Breakfast');
@@ -82,16 +84,32 @@ export const Nutrition: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             {logs.length > 0 && (
-              <button 
-                onClick={() => {
-                  setCopyingMeal({ sourceLogs: logs, sourceMeal: title as MealType });
-                  setCopyTargetDate(viewDate);
-                  setCopyTargetMeal(title as MealType);
-                }}
-                className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-neon-blue flex items-center justify-center transition-colors"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
+              <>
+                <button 
+                  onClick={() => {
+                    setCopyingMeal({ sourceLogs: logs, sourceMeal: title as MealType });
+                    setCopyTargetDate(viewDate);
+                    setCopyTargetMeal(title as MealType);
+                  }}
+                  className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-neon-blue flex items-center justify-center transition-colors"
+                  title="Copy meal to another day"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    setSavedMealModalData({
+                      id: `meal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                      name: `${title} Preset`,
+                      items: logs.map(l => ({ ...l.food }))
+                    });
+                  }}
+                  className="w-8 h-8 rounded-full bg-tactical-800 hover:bg-tactical-700 text-[#39ff14] flex items-center justify-center transition-colors"
+                  title="Save as Preset Meal"
+                >
+                  <BookmarkPlus className="w-4 h-4" />
+                </button>
+              </>
             )}
             <button 
               onClick={() => setActiveMeal(title as MealType)}
@@ -299,6 +317,13 @@ export const Nutrition: React.FC = () => {
       {/* Modals */}
       {showCustomizeModal && (
         <CustomizeMealsModal onClose={() => setShowCustomizeModal(false)} />
+      )}
+
+      {savedMealModalData && (
+        <CreateMealModal 
+          initialMeal={savedMealModalData} 
+          onClose={() => setSavedMealModalData(null)} 
+        />
       )}
 
       {activeMeal && (
