@@ -687,44 +687,66 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addFoodLog = (log: FoodLogEntry) => {
-    const nextLogs = [...foodLogs, log];
-    setFoodLogs(nextLogs);
-    // Also add to recent foods
-    const filtered = recentFoods.filter(f => f.name !== log.food.name);
+    const currentLogs = stateRef.current.foodLogs || [];
+    const nextLogs = [...currentLogs, log];
+    const currentRecent = stateRef.current.recentFoods || [];
+    const filtered = currentRecent.filter((f: FoodItem) => f.name !== log.food.name);
     const nextRecent = [log.food, ...filtered].slice(0, 50);
-    setRecentFoods(nextRecent);
+
+    stateRef.current = {
+      ...stateRef.current,
+      foodLogs: nextLogs,
+      recentFoods: nextRecent
+    };
+
+    setFoodLogs(prev => [...prev, log]);
+    setRecentFoods(prev => {
+      const f = prev.filter(item => item.name !== log.food.name);
+      return [log.food, ...f].slice(0, 50);
+    });
     persistState({ foodLogs: nextLogs, recentFoods: nextRecent }, true);
   };
 
   const updateFoodLog = (id: string, updatedFood: FoodItem) => {
-    const nextLogs = foodLogs.map(log => 
+    const currentLogs = stateRef.current.foodLogs || [];
+    const nextLogs = currentLogs.map((log: FoodLogEntry) => 
       log.id === id ? { ...log, food: updatedFood } : log
     );
-    setFoodLogs(nextLogs);
+    stateRef.current = { ...stateRef.current, foodLogs: nextLogs };
+    setFoodLogs(prev => prev.map(log => 
+      log.id === id ? { ...log, food: updatedFood } : log
+    ));
     persistState({ foodLogs: nextLogs }, true);
   };
 
   const removeFoodLog = (id: string) => {
-    const nextLogs = foodLogs.filter(log => log.id !== id);
-    setFoodLogs(nextLogs);
+    const currentLogs = stateRef.current.foodLogs || [];
+    const nextLogs = currentLogs.filter((log: FoodLogEntry) => log.id !== id);
+    stateRef.current = { ...stateRef.current, foodLogs: nextLogs };
+    setFoodLogs(prev => prev.filter(log => log.id !== id));
     persistState({ foodLogs: nextLogs }, true);
   };
 
   const saveMeal = (meal: Meal) => {
+    const currentMeals = stateRef.current.savedMeals || [];
+    const exists = currentMeals.some((m: Meal) => m.id === meal.id);
+    const nextMeals = exists
+      ? currentMeals.map((m: Meal) => m.id === meal.id ? meal : m)
+      : [...currentMeals, meal];
+    stateRef.current = { ...stateRef.current, savedMeals: nextMeals };
     setSavedMeals(prev => {
-      const exists = prev.some(m => m.id === meal.id);
-      const next = exists ? prev.map(m => m.id === meal.id ? meal : m) : [...prev, meal];
-      persistState({ savedMeals: next }, true);
-      return next;
+      const ex = prev.some(m => m.id === meal.id);
+      return ex ? prev.map(m => m.id === meal.id ? meal : m) : [...prev, meal];
     });
+    persistState({ savedMeals: nextMeals }, true);
   };
 
   const deleteMeal = (id: string) => {
-    setSavedMeals(prev => {
-      const next = prev.filter(m => m.id !== id);
-      persistState({ savedMeals: next }, true);
-      return next;
-    });
+    const currentMeals = stateRef.current.savedMeals || [];
+    const nextMeals = currentMeals.filter((m: Meal) => m.id !== id);
+    stateRef.current = { ...stateRef.current, savedMeals: nextMeals };
+    setSavedMeals(prev => prev.filter(m => m.id !== id));
+    persistState({ savedMeals: nextMeals }, true);
   };
 
   // Dynamically calculate macros for a specific date

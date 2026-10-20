@@ -97,7 +97,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
   };
 
   const handleSameAsYesterday = () => {
-    const items = yesterdayLogs.map(log => ({ ...log.food, id: `prev-${Date.now()}-${log.food.id}` }));
+    const items = yesterdayLogs.map((log, index) => ({ ...log.food, id: `prev-${Date.now()}-${index}-${log.food.id}` }));
     setPendingItems(items);
     setPendingReviewTitle("Yesterday's Logs Review");
   };
@@ -652,11 +652,11 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                           <button 
                             type="button"
                             onClick={() => {
-                              const today = getLocalDateString();
-                              meal.items.forEach(item => {
+                              const targetDate = selectedDate || getLocalDateString();
+                              meal.items.forEach((item, idx) => {
                                 addFoodLog({
-                                  id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                                  date: today,
+                                  id: `log-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+                                  date: targetDate,
                                   mealType,
                                   food: item
                                 });
@@ -665,7 +665,7 @@ export const MealLoggerModal: React.FC<MealLoggerModalProps> = ({ mealType, sele
                               setTimeout(() => setLogSuccess(''), 3000);
                             }}
                             className="bg-tactical-800 hover:bg-neon-purple/20 text-neon-purple p-2 rounded-lg transition-colors"
-                            title="Log to today"
+                            title="Log to meal"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
