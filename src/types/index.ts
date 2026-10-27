@@ -42,8 +42,19 @@ export interface UserProfile {
   lastSeenPatchVersion?: string;
   friends?: string[];
   weeklyEp?: number;
+  weeklyEpWeek?: string;
+  weeklyEpByWeek?: Record<string, number>;
+  lastClaimedLeaderboardWeek?: string;
   equippedCosmetics?: EquippedCosmetics;
   unlockedCosmetics?: string[];
+}
+
+export interface LeaderboardRewardData {
+  weekStr: string;
+  place: 1 | 2 | 3;
+  placeLabel: '1st' | '2nd' | '3rd';
+  bonusEp: number;
+  weeklyEpEarned: number;
 }
 
 export interface FriendRequest {

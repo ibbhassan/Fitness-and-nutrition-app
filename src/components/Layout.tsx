@@ -1,6 +1,6 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users } from 'lucide-react';
+import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
@@ -15,7 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) => {
-  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout } = useUser();
+  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout, pendingLeaderboardReward, claimLeaderboardReward } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [prevLevel, setPrevLevel] = useState(profile.level);
   const [prevRank, setPrevRank] = useState(profile.rank);
@@ -160,6 +160,42 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       return () => clearTimeout(timer);
     }
   }, [rankUpData]);
+
+  useEffect(() => {
+    if (pendingLeaderboardReward) {
+      confetti({
+        particleCount: 150,
+        spread: 160,
+        origin: { y: 0.5 },
+        colors: ['#ffd700', '#00f0ff', '#ffffff', '#39ff14'],
+        gravity: 1.2,
+        scalar: 1.5,
+        ticks: 300
+      });
+
+      const end = Date.now() + 2200;
+      const frame = () => {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.8 },
+          colors: ['#ffd700', '#00f0ff']
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.8 },
+          colors: ['#ffd700', '#00f0ff']
+        });
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    }
+  }, [pendingLeaderboardReward]);
   
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
@@ -308,6 +344,118 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           </div>
         </div>
       )}
+
+      {/* Weekly Leaderboard Reward Overlay */}
+      <AnimatePresence>
+        {pendingLeaderboardReward && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.4 } }}
+            className="fixed inset-0 z-[115] flex items-center justify-center bg-black/85 backdrop-blur-xl px-4"
+          >
+            {/* Pulsing light rays behind */}
+            <motion.div
+              animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+              transition={{ rotate: { duration: 20, repeat: Infinity, ease: "linear" }, scale: { duration: 2, repeat: Infinity } }}
+              className="absolute w-[200vw] h-[200vw] sm:w-[150vw] sm:h-[150vw] rounded-full border-[10vw] border-dashed border-neon-gold/15 opacity-50 pointer-events-none"
+            />
+
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: [0, 1.2, 0.95, 1.05, 1],
+                opacity: 1,
+                rotate: [-6, 6, -3, 3, 0]
+              }}
+              transition={{ duration: 0.75, type: "spring", bounce: 0.55 }}
+              className={clsx(
+                "bg-tactical-800 border-4 p-8 sm:p-10 rounded-3xl text-center relative max-w-sm w-full overflow-hidden",
+                pendingLeaderboardReward.place === 1
+                  ? "border-neon-gold shadow-[0_0_100px_rgba(255,215,0,0.8)]"
+                  : pendingLeaderboardReward.place === 2
+                  ? "border-slate-300 shadow-[0_0_100px_rgba(203,213,225,0.6)]"
+                  : "border-amber-500 shadow-[0_0_100px_rgba(245,158,11,0.6)]"
+              )}
+            >
+              <div className="absolute inset-0 bg-gradient-to-tr from-neon-gold/10 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-neon-gold/35 blur-3xl rounded-full pointer-events-none" />
+
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+                className="relative mx-auto mb-4 w-28 h-28 flex items-center justify-center"
+              >
+                <Trophy
+                  className={clsx(
+                    "w-24 h-24 relative z-10",
+                    pendingLeaderboardReward.place === 1
+                      ? "text-neon-gold drop-shadow-[0_0_25px_rgba(255,215,0,1)]"
+                      : pendingLeaderboardReward.place === 2
+                      ? "text-slate-200 drop-shadow-[0_0_20px_rgba(226,232,240,0.9)]"
+                      : "text-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]"
+                  )}
+                />
+                <span className="absolute -top-2 -right-1 text-3xl z-20 drop-shadow-lg">
+                  {pendingLeaderboardReward.place === 1 ? '👑' : pendingLeaderboardReward.place === 2 ? '🥈' : '🥉'}
+                </span>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="inline-block bg-tactical-900 border border-neon-gold/40 rounded-full px-4 py-1 mb-2 relative z-10"
+              >
+                <span className="font-rajdhani font-bold text-xs uppercase tracking-[0.2em] text-neon-gold">
+                  Weekly Leaderboard
+                </span>
+              </motion.div>
+
+              <motion.h2
+                initial={{ y: -30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, type: "spring" }}
+                className="text-4xl sm:text-5xl font-rajdhani font-black text-white uppercase tracking-widest mb-3 relative z-10 drop-shadow-xl"
+              >
+                {pendingLeaderboardReward.placeLabel} Place!
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.45 }}
+                className="text-gray-300 font-inter text-sm sm:text-base mb-6 relative z-10 leading-relaxed"
+              >
+                You have placed <span className="text-neon-gold font-bold">{pendingLeaderboardReward.placeLabel}</span> this week on the leaderboard! You have received <span className="text-neon-green font-bold">{pendingLeaderboardReward.bonusEp} EP</span>.
+              </motion.p>
+
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.6, type: "spring", bounce: 0.6 }}
+                className="bg-tactical-900/90 border border-neon-gold/40 rounded-2xl p-4 mb-7 relative z-10 shadow-inner"
+              >
+                <div className="text-[11px] font-rajdhani font-bold uppercase tracking-widest text-gray-400 mb-1">
+                  Weekly Podium Bonus
+                </div>
+                <div className="text-4xl font-rajdhani font-black text-neon-green drop-shadow-[0_0_15px_rgba(57,255,20,0.6)]">
+                  +{pendingLeaderboardReward.bonusEp} EP
+                </div>
+              </motion.div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={claimLeaderboardReward}
+                className="w-full bg-neon-gold text-black py-4 rounded-xl font-rajdhani font-black text-xl uppercase tracking-[0.2em] hover:bg-[#ffdf00] transition-all relative z-10 shadow-[0_0_30px_rgba(255,215,0,0.6)] cursor-pointer"
+              >
+                Claim +{pendingLeaderboardReward.bonusEp} EP
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Level Up Overlay */}
       <AnimatePresence>

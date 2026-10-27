@@ -1,13 +1,13 @@
-import { getLocalDateString } from '../utils/dateUtils';
+import { getLocalDateString, getWeekString, getPreviousWeekString, calculateWeeklyEpForWeek } from '../utils/dateUtils';
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
-import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal, CustomMealCategory } from '../types';
+import type { UserProfile, WorkoutPreset, WorkoutLog, AvatarConfig, DailyNutrition, ExerciseDefinition, LoggedSet, ActiveExercise, Biometrics, WeightEntry, BodyFatEntry, FoodItem, FoodLogEntry, Meal, CustomMealCategory, LeaderboardRewardData } from '../types';
 import { getRequiredEpForLevel, getRankInfo } from '../utils/rankUtils';
 import { seedProfile, seedNutrition } from '../utils/seedData';
 import { auth, db } from '../config/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
-import { publishHighlight, deleteHighlightsForWorkout } from '../services/socialService';
+import { publishHighlight, deleteHighlightsForWorkout, getFriendsProfiles } from '../services/socialService';
 import { calculateStreak, getStreakMilestoneBonus } from '../utils/streakUtils';
 
 export const DEFAULT_MEAL_CATEGORIES: CustomMealCategory[] = [
@@ -88,6 +88,8 @@ interface UserContextType {
   removeFavoriteFood: (foodName: string) => void;
   customMealCategories: CustomMealCategory[];
   saveCustomMealCategories: (categories: CustomMealCategory[]) => void;
+  pendingLeaderboardReward: LeaderboardRewardData | null;
+  claimLeaderboardReward: () => void;
   devAdvanceDay?: () => void;
   getMacrosForDate: (dateStr: string) => DailyNutrition;
 }
@@ -172,6 +174,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [savedMeals, setSavedMeals] = useState<Meal[]>(initialState.savedMeals || []);
   const [customMealCategories, setCustomMealCategories] = useState<CustomMealCategory[]>(initialState.customMealCategories && initialState.customMealCategories.length > 0 ? initialState.customMealCategories : DEFAULT_MEAL_CATEGORIES);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutLog | null>(null);
+  const [pendingLeaderboardReward, setPendingLeaderboardReward] = useState<LeaderboardRewardData | null>(null);
+  const [isFirestoreSynced, setIsFirestoreSynced] = useState<boolean>(false);
 
   // Reference holding the absolute latest state synchronously for safe persistence
   const stateRef = useRef({
@@ -526,6 +530,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 volume: Math.max(localProf.stats?.volume || 0, data.profile.stats?.volume || 0),
               };
               const { tier } = getRankInfo(bestLevel);
+              const mergedClaimedWeek = [localProf.lastClaimedLeaderboardWeek, data.profile.lastClaimedLeaderboardWeek]
+                .filter(Boolean)
+                .sort()
+                .pop();
+              const mergedWeeklyEpByWeek = {
+                ...(data.profile.weeklyEpByWeek || {}),
+                ...(localProf.weeklyEpByWeek || {})
+              };
 
               setProfile({
                 ...data.profile,
@@ -534,6 +546,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 lp: bestLp,
                 rank: tier,
                 stats: mergedStats,
+                lastClaimedLeaderboardWeek: mergedClaimedWeek,
+                weeklyEpByWeek: mergedWeeklyEpByWeek,
                 unlockedCosmetics: Array.from(new Set([...(localProf.unlockedCosmetics || []), ...(data.profile.unlockedCosmetics || [])]))
               });
             }
@@ -571,9 +585,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         } catch (err) {
           console.error("Error fetching and reconciling user data from Firestore:", err);
+        } finally {
+          setIsFirestoreSynced(true);
         }
       } else {
         setUser(null);
+        setIsFirestoreSynced(true);
       }
     });
     return () => unsubscribe();
@@ -857,10 +874,153 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       const { tier } = getRankInfo(newLevel);
-      const currentWeeklyEp = prev.weeklyEp || 0;
-      const newWeeklyEp = Math.max(0, currentWeeklyEp + amount);
+      const currentWeek = getWeekString();
+      const baseWeeklyEp = prev.weeklyEpWeek === currentWeek ? (prev.weeklyEp || 0) : calculateWeeklyEpForWeek(stateRef.current.workoutHistory, stateRef.current.manualQuestCompletions, currentWeek, prev);
+      const newWeeklyEp = Math.max(0, baseWeeklyEp + amount);
+      const updatedByWeek = {
+        ...(prev.weeklyEpByWeek || {}),
+        [currentWeek]: newWeeklyEp
+      };
       
-      return { ...prev, lp: newLp, level: newLevel, rank: tier, weeklyEp: newWeeklyEp };
+      return {
+        ...prev,
+        lp: newLp,
+        level: newLevel,
+        rank: tier,
+        weeklyEp: newWeeklyEp,
+        weeklyEpWeek: currentWeek,
+        weeklyEpByWeek: updatedByWeek
+      };
+    });
+  };
+
+  // Sync current week's weeklyEp on week rollover and evaluate completed week's leaderboard placement
+  const checkingLeaderboardWeekRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isFirestoreSynced || !user) return;
+    const currentWeek = getWeekString(currentDate);
+    const prevWeek = getPreviousWeekString(currentDate);
+
+    const computedCurrentWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, currentWeek, profile);
+    const computedPrevWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, prevWeek, profile);
+
+    if (profile.weeklyEpWeek !== currentWeek || profile.weeklyEp !== computedCurrentWeekEp) {
+      setProfile(prev => {
+        const legacyFallback = (!prev.weeklyEpWeek && computedPrevWeekEp === 0 && (prev.weeklyEp || 0) > 0)
+          ? (prev.weeklyEp || 0)
+          : computedPrevWeekEp;
+        const updatedByWeek = {
+          ...(prev.weeklyEpByWeek || {}),
+          ...(legacyFallback > 0 ? { [prevWeek]: Math.max(prev.weeklyEpByWeek?.[prevWeek] || 0, legacyFallback) } : {}),
+          [currentWeek]: computedCurrentWeekEp
+        };
+        return {
+          ...prev,
+          weeklyEp: computedCurrentWeekEp,
+          weeklyEpWeek: currentWeek,
+          weeklyEpByWeek: updatedByWeek
+        };
+      });
+    }
+  }, [isFirestoreSynced, user, currentDate, workoutHistory, manualQuestCompletions, profile.weeklyEpWeek, profile.weeklyEp]);
+
+  useEffect(() => {
+    if (!isFirestoreSynced || !user) return;
+    const prevWeek = getPreviousWeekString(currentDate);
+
+    if (profile.lastClaimedLeaderboardWeek === prevWeek) return;
+    if (pendingLeaderboardReward?.weekStr === prevWeek) return;
+    if (checkingLeaderboardWeekRef.current === prevWeek) return;
+
+    checkingLeaderboardWeekRef.current = prevWeek;
+
+    const evaluateWeeklyLeaderboard = async () => {
+      try {
+        const friendsList = profile.friends && profile.friends.length > 0
+          ? await getFriendsProfiles(profile.friends)
+          : [];
+
+        const myPrevWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, prevWeek, profile);
+        const myCurrentWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, getWeekString(currentDate), profile);
+        const myRawFallbackEp = !profile.lastClaimedLeaderboardWeek
+          ? Math.max(myPrevWeekEp, profile.weeklyEp || 0, myCurrentWeekEp)
+          : myPrevWeekEp;
+
+        const useFallback = !profile.lastClaimedLeaderboardWeek && myPrevWeekEp === 0 && myRawFallbackEp > 0;
+        const myEffectiveEp = useFallback ? myRawFallbackEp : myPrevWeekEp;
+
+        const uid = user.uid || user.username || 'me';
+        const participants = [
+          { uid, ep: myEffectiveEp },
+          ...friendsList.map((f: any) => ({
+            uid: f.uid,
+            ep: useFallback
+              ? Math.max(f.prevWeeklyEp || 0, f.rawWeeklyEp || 0, f.profile?.weeklyEp || 0)
+              : (f.prevWeeklyEp || 0)
+          }))
+        ];
+
+        const uniqueMap = new Map<string, { uid: string; ep: number }>();
+        participants.forEach(p => uniqueMap.set(p.uid, p));
+        const sorted = Array.from(uniqueMap.values()).sort((a, b) => b.ep - a.ep);
+
+        const myIndex = sorted.findIndex(p => p.uid === uid);
+        const myPlace = myIndex + 1;
+
+        if (myEffectiveEp > 0 && (myPlace === 1 || myPlace === 2 || myPlace === 3)) {
+          const bonusEp = myPlace === 1 ? 500 : myPlace === 2 ? 300 : 150;
+          const placeLabel = myPlace === 1 ? '1st' : myPlace === 2 ? '2nd' : '3rd';
+          setPendingLeaderboardReward({
+            weekStr: prevWeek,
+            place: myPlace as 1 | 2 | 3,
+            placeLabel,
+            bonusEp,
+            weeklyEpEarned: myEffectiveEp
+          });
+        } else {
+          setProfile(prev => {
+            const updated = { ...prev, lastClaimedLeaderboardWeek: prevWeek };
+            stateRef.current = { ...stateRef.current, profile: updated };
+            persistState({ profile: updated }, true);
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to evaluate weekly leaderboard reward:', err);
+        checkingLeaderboardWeekRef.current = null;
+      }
+    };
+
+    evaluateWeeklyLeaderboard();
+  }, [isFirestoreSynced, user, currentDate, profile.lastClaimedLeaderboardWeek, profile.friends, pendingLeaderboardReward, workoutHistory, manualQuestCompletions, persistState]);
+
+  const claimLeaderboardReward = () => {
+    if (!pendingLeaderboardReward) return;
+    const { bonusEp, weekStr } = pendingLeaderboardReward;
+    setPendingLeaderboardReward(null);
+
+    setProfile(prev => {
+      let newLp = prev.lp + bonusEp;
+      let newLevel = prev.level;
+
+      while (newLp >= getRequiredEpForLevel(newLevel)) {
+        newLp -= getRequiredEpForLevel(newLevel);
+        newLevel += 1;
+      }
+
+      const { tier } = getRankInfo(newLevel);
+      const updatedProfile: UserProfile = {
+        ...prev,
+        lp: newLp,
+        level: newLevel,
+        rank: tier,
+        lastClaimedLeaderboardWeek: weekStr
+      };
+
+      stateRef.current = { ...stateRef.current, profile: updatedProfile };
+      persistState({ profile: updatedProfile }, true);
+      return updatedProfile;
     });
   };
 
@@ -1220,6 +1380,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeFavoriteFood,
       customMealCategories,
       saveCustomMealCategories: (categories: CustomMealCategory[]) => setCustomMealCategories(categories),
+      pendingLeaderboardReward,
+      claimLeaderboardReward,
       devAdvanceDay: () => setCurrentDate('2099-01-01'),
       getMacrosForDate
     }}>

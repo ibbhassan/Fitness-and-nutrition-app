@@ -1,6 +1,7 @@
 import { db } from '../config/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import type { FriendRequest, HighlightEvent } from '../types';
+import { getWeekString, getPreviousWeekString, calculateWeeklyEpForWeek } from '../utils/dateUtils';
 
 export const searchUsersByUsername = async (username: string, currentUid: string) => {
   if (!username.trim()) return [];
@@ -82,6 +83,8 @@ export const respondToRequest = async (requestId: string, currentUid: string, se
 
 export const getFriendsProfiles = async (friendUids: string[]) => {
   if (!friendUids || friendUids.length === 0) return [];
+  const currentWeek = getWeekString();
+  const prevWeek = getPreviousWeekString();
   
   const profiles: any[] = [];
   for (const uid of friendUids) {
@@ -90,10 +93,17 @@ export const getFriendsProfiles = async (friendUids: string[]) => {
     if (snap.exists()) {
       const data = snap.data();
       if (data.profile && data.user) {
+        const currentWeekEp = calculateWeeklyEpForWeek(data.workoutHistory, data.manualQuestCompletions, currentWeek, data.profile);
+        const prevWeekEp = calculateWeeklyEpForWeek(data.workoutHistory, data.manualQuestCompletions, prevWeek, data.profile);
         profiles.push({
           uid,
           username: data.user.username,
-          profile: data.profile,
+          profile: {
+            ...data.profile,
+            weeklyEp: currentWeekEp
+          },
+          prevWeeklyEp: prevWeekEp,
+          rawWeeklyEp: data.profile.weeklyEp || 0,
           recentWorkout: data.workoutHistory?.length > 0 ? data.workoutHistory[data.workoutHistory.length - 1] : null
         });
       }
@@ -191,15 +201,20 @@ export const toggleFistBump = async (highlightId: string, userIdentifier: string
 export const getGlobalLeaderboard = async (limitCount: number = 50) => {
   const usersRef = collection(db, 'users');
   const snapshot = await getDocs(usersRef);
+  const currentWeek = getWeekString();
   
   const results: any[] = [];
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
     if (data.profile && data.user) {
+      const currentWeekEp = calculateWeeklyEpForWeek(data.workoutHistory, data.manualQuestCompletions, currentWeek, data.profile);
       results.push({
         uid: docSnap.id,
         username: data.user.username,
-        profile: data.profile,
+        profile: {
+          ...data.profile,
+          weeklyEp: currentWeekEp
+        },
         recentWorkout: data.workoutHistory?.length > 0 ? data.workoutHistory[data.workoutHistory.length - 1] : null
       });
     }
