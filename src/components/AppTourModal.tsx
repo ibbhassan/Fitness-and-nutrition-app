@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard,
   Dumbbell,
@@ -9,6 +9,11 @@ import {
   Users,
   User,
   PlayCircle,
+  Play,
+  Pause,
+  RotateCcw,
+  Volume2,
+  VolumeX,
   ChevronRight,
   ChevronLeft,
   X,
@@ -17,11 +22,12 @@ import {
   ExternalLink,
   Compass
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 
 /**
- * Configure your in-depth video tour URL here (YouTube, Loom, or direct video link).
- * Example: 'https://www.youtube.com/watch?v=YOUR_VIDEO_ID'
+ * Optional external video URL (YouTube, Loom, or MP4).
+ * When left empty, the built-in interactive Animated Video Walkthrough Player runs automatically!
  */
 export const VIDEO_TOUR_URL = '';
 
@@ -178,14 +184,132 @@ const TOUR_STEPS: TourStep[] = [
   }
 ];
 
-const VIDEO_CHAPTERS = [
-  { time: '0:00', title: 'Welcome to Evoke & Rank/EP System Overview', tab: 'dashboard' },
-  { time: '1:15', title: 'Logging Workouts, Presets, Grades & PRs', tab: 'workout' },
-  { time: '2:45', title: 'Nutrition Tracking, Barcode Scanner & Custom Meals', tab: 'nutrition' },
-  { time: '4:10', title: 'Biometrics, 7-Day Weight Average & Daily Steps', tab: 'biometrics' },
-  { time: '5:05', title: 'Analytics, 1RM Charts & Consistency Calendar', tab: 'analytics' },
-  { time: '6:00', title: 'Friends, Highlights Feed & Weekly Leaderboard Rewards', tab: 'social' },
-  { time: '7:00', title: 'Cosmetics Locker, Rank Borders & Plan Recalibration', tab: 'profile' }
+interface VideoScene {
+  id: string;
+  timeLabel: string;
+  durationSec: number;
+  tab: string;
+  title: string;
+  narration: string;
+  accent: string;
+  badge: string;
+  metrics: { label: string; value: string; sub: string }[];
+  actionCallout: string;
+}
+
+const VIDEO_SCENES: VideoScene[] = [
+  {
+    id: 'scene-dashboard',
+    timeLabel: '0:00',
+    durationSec: 12,
+    tab: 'dashboard',
+    title: 'Welcome to Evoke & Rank Progression',
+    narration: 'Every workout, daily step goal, and nutrition streak earns Evolution Points (EP) to rank you up from Iron V all the way to Challenger.',
+    accent: 'neon-blue',
+    badge: 'CHAPTER 1 • RANK & DAILY CHALLENGES',
+    metrics: [
+      { label: 'Rank Progression', value: 'Iron → Challenger', sub: '10 Competitive Tiers' },
+      { label: 'Daily Step Goal', value: '+10 EP / Day', sub: 'Customizable 5k–15k' },
+      { label: 'Quick Log "+" FAB', value: '1-Tap Logging', sub: 'Food, Steps, Weight, Gym' }
+    ],
+    actionCallout: 'Tap "Customize" on Active Challenges to set your daily step & workout duration goals.'
+  },
+  {
+    id: 'scene-workout',
+    timeLabel: '0:12',
+    durationSec: 12,
+    tab: 'workout',
+    title: 'Logging Workouts, Presets & S+ Grades',
+    narration: 'Start a Freestyle session or load your saved Push, Pull, or Legs preset. Your previous weights auto-fill so you can beat your numbers and earn an S+ grade.',
+    accent: 'neon-gold',
+    badge: 'CHAPTER 2 • WORKOUT LOGGER',
+    metrics: [
+      { label: 'Auto-Prefill Sets', value: 'Last Weight/Reps', sub: 'Progressive Overload' },
+      { label: 'Session Grades', value: 'S+ / S / A / B / C', sub: 'Based on sets & PRs' },
+      { label: 'Session Journal', value: 'Dropdown Notes', sub: 'Save cues per workout' }
+    ],
+    actionCallout: 'Complete 4+ exercises or hit a Personal Record to lock in an S+ Rank Grade!'
+  },
+  {
+    id: 'scene-nutrition',
+    timeLabel: '0:24',
+    durationSec: 12,
+    tab: 'nutrition',
+    title: 'Nutrition, Barcode Scanner & Custom Meals',
+    narration: 'Log macros in seconds with food search, camera barcode scanning, Same as Yesterday, or Saved Meals. Customize your meal slots to fit any bulk or cut.',
+    accent: 'neon-green',
+    badge: 'CHAPTER 3 • FUEL & CUSTOM MEALS',
+    metrics: [
+      { label: 'Meal Categories', value: '100% Customizable', sub: 'Rename or add Meal 1–6+' },
+      { label: 'Saved Meals', value: '1-Tap Multi-Log', sub: 'Edit items & amounts' },
+      { label: 'Weekly Fuel Quest', value: '+200 EP Bonus', sub: 'Log 7 days in a week' }
+    ],
+    actionCallout: 'Use "Customize Meals" in the top header to add extra meals or rename Breakfast/Lunch/Dinner.'
+  },
+  {
+    id: 'scene-biometrics',
+    timeLabel: '0:36',
+    durationSec: 10,
+    tab: 'biometrics',
+    title: 'Biometrics, 7-Day Weight Average & Steps',
+    narration: 'Log your morning scale weight and body fat percentage. Evoke calculates your 7-day rolling weekly average so daily water fluctuations never throw you off.',
+    accent: 'neon-purple',
+    badge: 'CHAPTER 4 • BODY INTEL',
+    metrics: [
+      { label: 'Weekly Weight Avg', value: '7-Day Rolling', sub: 'Filters water weight noise' },
+      { label: 'Body Composition', value: 'LBM & Fat Mass', sub: 'Auto-calculated' },
+      { label: 'Daily Step Sync', value: 'Resets Midnight', sub: 'Tracks daily step quest' }
+    ],
+    actionCallout: 'Swipe left or right on the date bar to log or inspect weight entries from earlier in the week.'
+  },
+  {
+    id: 'scene-analytics',
+    timeLabel: '0:46',
+    durationSec: 10,
+    tab: 'analytics',
+    title: 'Analytics, 1RM Charts & Consistency Calendar',
+    narration: 'Track your Estimated 1-Rep Max for every lift, inspect your 6-axis Stat Radar, and click any date on the Monthly Consistency Calendar to review your grades.',
+    accent: 'neon-blue',
+    badge: 'CHAPTER 5 • ANALYTICS & CALENDAR',
+    metrics: [
+      { label: 'Strength Curves', value: 'Est. 1RM & Max', sub: 'Per-exercise progression' },
+      { label: 'Consistency Grid', value: 'Monthly Calendar', sub: 'Shows S+/S/A grades' },
+      { label: '6-Axis Radar', value: 'Live Attribute Hex', sub: 'Grows with every session' }
+    ],
+    actionCallout: 'Tap any date in the Monthly Consistency Calendar to see the exact workouts logged that day.'
+  },
+  {
+    id: 'scene-social',
+    timeLabel: '0:56',
+    durationSec: 12,
+    tab: 'social',
+    title: 'Squad Feed & Weekly Leaderboard Rewards',
+    narration: 'Add friends to compete on the Weekly EP Leaderboard. Every Friday the leaderboard resets and awards +500 EP for 1st, +300 EP for 2nd, and +150 EP for 3rd place!',
+    accent: 'neon-gold',
+    badge: 'CHAPTER 6 • SOCIAL & LEADERBOARD',
+    metrics: [
+      { label: '1st Place Reward', value: '+500 Bonus EP', sub: 'Weekly Podium Crown' },
+      { label: '2nd & 3rd Place', value: '+300 / +150 EP', sub: 'Claim via popup modal' },
+      { label: 'Highlights Feed', value: 'PRs & Rank Ups', sub: 'React & comment on squad' }
+    ],
+    actionCallout: 'Finish in the Top 3 by Friday to trigger the Weekly Leaderboard Reward celebration popup!'
+  },
+  {
+    id: 'scene-profile',
+    timeLabel: '1:08',
+    durationSec: 12,
+    tab: 'profile',
+    title: 'Cosmetics Locker, Rank Borders & Recalibration',
+    narration: 'Visit your Profile to equip animated Rank Borders, Banners, and Titles in the Cosmetics Locker, or recalibrate your Cut, Bulk, and Maintenance macros anytime.',
+    accent: 'neon-purple',
+    badge: 'CHAPTER 7 • PROFILE & COSMETICS',
+    metrics: [
+      { label: 'Cosmetics Locker', value: 'Borders & Titles', sub: 'Unlocked via Ranks/Streaks' },
+      { label: 'Macro Calculator', value: 'Cut / Bulk / Maint', sub: 'Mifflin-St Jeor TDEE' },
+      { label: 'Tour & Guide', value: 'Replay Anytime', sub: 'Header & Profile buttons' }
+    ],
+    actionCallout: 'Open "Locker & Cosmetics" in your Profile to equip your highest unlocked Rank Border!'
+  }
 ];
 
 interface AppTourModalProps {
@@ -203,16 +327,67 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
 
-  const currentStep = TOUR_STEPS[currentStepIndex];
+  // Built-in Animated Video Player State
+  const [sceneIndex, setSceneIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [sceneElapsed, setSceneElapsed] = useState(0);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const speechSynthRef = useRef<SpeechSynthesis | null>(
+    typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null
+  );
 
+  const currentStep = TOUR_STEPS[currentStepIndex];
+  const currentScene = VIDEO_SCENES[sceneIndex];
+
+  // Switch live background tab during interactive tour OR video tour
   useEffect(() => {
-    if (isOpen && !showVideoModal) {
+    if (!isOpen) return;
+    if (showVideoModal) {
+      const targetTab = VIDEO_SCENES[sceneIndex]?.tab;
+      if (targetTab) setActiveTab(targetTab);
+    } else {
       const targetTab = TOUR_STEPS[currentStepIndex]?.tab;
-      if (targetTab) {
-        setActiveTab(targetTab);
-      }
+      if (targetTab) setActiveTab(targetTab);
     }
-  }, [isOpen, currentStepIndex, showVideoModal, setActiveTab]);
+  }, [isOpen, showVideoModal, sceneIndex, currentStepIndex, setActiveTab]);
+
+  // Optional Web Speech narration when voiceEnabled is toggled on
+  useEffect(() => {
+    if (!speechSynthRef.current) return;
+    speechSynthRef.current.cancel();
+
+    if (isOpen && showVideoModal && isPlaying && voiceEnabled && currentScene) {
+      const utterance = new SpeechSynthesisUtterance(`${currentScene.title}. ${currentScene.narration}`);
+      utterance.rate = 1.02;
+      speechSynthRef.current.speak(utterance);
+    }
+    return () => {
+      speechSynthRef.current?.cancel();
+    };
+  }, [isOpen, showVideoModal, isPlaying, voiceEnabled, sceneIndex, currentScene]);
+
+  // Auto-advance timer for the built-in video walkthrough player
+  useEffect(() => {
+    if (!isOpen || !showVideoModal || !isPlaying) return;
+
+    const interval = setInterval(() => {
+      setSceneElapsed(prev => {
+        const next = prev + 0.2;
+        if (next >= currentScene.durationSec) {
+          if (sceneIndex < VIDEO_SCENES.length - 1) {
+            setSceneIndex(s => s + 1);
+            return 0;
+          } else {
+            setIsPlaying(false);
+            return currentScene.durationSec;
+          }
+        }
+        return next;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isOpen, showVideoModal, isPlaying, sceneIndex, currentScene.durationSec]);
 
   if (!isOpen) return null;
 
@@ -233,21 +408,30 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
   };
 
   const handleSkip = () => {
+    speechSynthRef.current?.cancel();
     setActiveTab('dashboard');
     setCurrentStepIndex(0);
     setShowVideoModal(false);
+    setIsPlaying(false);
     onClose();
+  };
+
+  const openVideoWalkthrough = (startIdx: number = 0) => {
+    setSceneIndex(startIdx);
+    setSceneElapsed(0);
+    setIsPlaying(true);
+    setShowVideoModal(true);
   };
 
   const getEmbedUrl = (url: string) => {
     if (!url) return null;
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
     }
     if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
     }
     if (url.includes('loom.com/share/')) {
       return url.replace('loom.com/share/', 'loom.com/embed/');
@@ -258,17 +442,29 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
   const embedUrl = getEmbedUrl(VIDEO_TOUR_URL);
   const StepIcon = currentStep.icon;
 
+  const totalDurationSec = VIDEO_SCENES.reduce((acc, s) => acc + s.durationSec, 0);
+  const elapsedBeforeCurrentScene = VIDEO_SCENES.slice(0, sceneIndex).reduce((acc, s) => acc + s.durationSec, 0);
+  const totalElapsedSec = Math.min(totalDurationSec, elapsedBeforeCurrentScene + sceneElapsed);
+  const overallProgressPercent = Math.min(100, (totalElapsedSec / totalDurationSec) * 100);
+
+  const formatTime = (sec: number) => {
+    const s = Math.max(0, Math.floor(sec));
+    const mins = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
+  };
+
   return (
     <div className="fixed inset-0 z-[110] pointer-events-none flex flex-col justify-end sm:justify-center items-center p-3 sm:p-6">
-      {/* Backdrop: lighter so user can see the live tab changing behind the tour card */}
+      {/* Backdrop */}
       <div
         onClick={handleSkip}
         className="fixed inset-0 bg-black/65 backdrop-blur-[2px] pointer-events-auto transition-opacity animate-in fade-in duration-200"
       />
 
       {showVideoModal ? (
-        /* In-Depth Video Tour Modal */
-        <div className="relative z-10 w-full max-w-2xl bg-tactical-900 border-2 border-neon-blue/60 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.25)] overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200 max-h-[90dvh] flex flex-col">
+        /* In-Depth Video Tour Player Modal */
+        <div className="relative z-10 w-full max-w-2xl bg-tactical-900 border-2 border-neon-blue/60 rounded-2xl shadow-[0_0_50px_rgba(0,240,255,0.25)] overflow-hidden pointer-events-auto animate-in zoom-in-95 duration-200 max-h-[92dvh] flex flex-col">
           <div className="p-4 sm:p-5 bg-tactical-950 border-b border-tactical-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-neon-blue/15 border border-neon-blue/40 flex items-center justify-center">
@@ -284,14 +480,17 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
               </div>
             </div>
             <button
-              onClick={() => setShowVideoModal(false)}
+              onClick={() => {
+                speechSynthRef.current?.cancel();
+                setShowVideoModal(false);
+              }}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-tactical-800 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
+          <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
             {embedUrl ? (
               <div className="space-y-3">
                 <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-tactical-700 bg-black shadow-inner">
@@ -315,60 +514,236 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-tactical-700 bg-gradient-to-br from-tactical-950 via-tactical-900 to-tactical-950 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-neon-blue/15 border-2 border-neon-blue flex items-center justify-center mb-3 shadow-[0_0_25px_rgba(0,240,255,0.3)]">
-                  <PlayCircle className="w-8 h-8 text-neon-blue" />
+              /* Built-In Animated Interactive Walkthrough Player */
+              <div className="rounded-xl overflow-hidden border-2 border-tactical-700 bg-tactical-950 shadow-2xl flex flex-col">
+                {/* Video Viewport */}
+                <div
+                  onClick={() => setIsPlaying(p => !p)}
+                  className="relative w-full min-h-[250px] sm:min-h-[280px] p-5 sm:p-6 bg-gradient-to-br from-tactical-950 via-tactical-900 to-black flex flex-col justify-between cursor-pointer select-none overflow-hidden"
+                >
+                  {/* Animated Ambient Glow */}
+                  <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-neon-blue/10 blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-neon-gold/10 blur-3xl pointer-events-none" />
+
+                  {/* Top HUD Row */}
+                  <div className="relative z-10 flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-1 rounded bg-neon-blue/15 border border-neon-blue/40 text-neon-blue text-[10px] font-rajdhani font-extrabold uppercase tracking-widest">
+                      {currentScene.badge}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-black/60 border border-tactical-700 text-gray-300">
+                        <span className={clsx('w-2 h-2 rounded-full', isPlaying ? 'bg-neon-green animate-pulse' : 'bg-neon-gold')} />
+                        {isPlaying ? 'PLAYING' : 'PAUSED'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Animated Scene Content */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentScene.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.25 }}
+                      className="relative z-10 my-4 space-y-4"
+                    >
+                      <div>
+                        <h4 className="font-rajdhani font-extrabold text-xl sm:text-2xl text-white uppercase tracking-wide">
+                          {currentScene.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-300 font-inter mt-1 leading-relaxed">
+                          {currentScene.narration}
+                        </p>
+                      </div>
+
+                      {/* 3 Animated Feature Metric Cards */}
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                        {currentScene.metrics.map((m, i) => (
+                          <motion.div
+                            key={m.label}
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.08 }}
+                            className="bg-tactical-900/90 border border-tactical-700 rounded-lg p-2.5 text-left"
+                          >
+                            <span className="text-[9px] sm:text-[10px] font-rajdhani uppercase tracking-wider text-gray-400 block truncate">
+                              {m.label}
+                            </span>
+                            <span className="text-xs sm:text-sm font-rajdhani font-extrabold text-neon-blue block truncate mt-0.5">
+                              {m.value}
+                            </span>
+                            <span className="text-[9px] text-gray-500 font-inter block truncate">
+                              {m.sub}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Bottom Callout Strip inside Video */}
+                  <div className="relative z-10 bg-black/60 border border-tactical-800 rounded-lg px-3 py-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-neon-gold shrink-0" />
+                    <span className="text-[11px] sm:text-xs text-gray-200 font-inter">
+                      {currentScene.actionCallout}
+                    </span>
+                  </div>
                 </div>
-                <h4 className="font-rajdhani font-bold text-xl uppercase tracking-wider text-white mb-1">
-                  Full Video Walkthrough Player Ready
-                </h4>
-                <p className="text-xs sm:text-sm text-gray-400 max-w-md font-inter">
-                  Tap any chapter below to jump directly to that feature in the interactive tour, or link your recorded walkthrough video in <code className="text-neon-blue bg-tactical-800 px-1.5 py-0.5 rounded">VIDEO_TOUR_URL</code>.
-                </p>
+
+                {/* Video Player Controls Bar */}
+                <div className="bg-tactical-950 border-t border-tactical-800 p-3 space-y-2">
+                  {/* Scrubber Bar */}
+                  <div className="w-full h-1.5 bg-tactical-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-neon-blue to-neon-green transition-all duration-200"
+                      style={{ width: `${overallProgressPercent}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (totalElapsedSec >= totalDurationSec) {
+                            setSceneIndex(0);
+                            setSceneElapsed(0);
+                            setIsPlaying(true);
+                          } else {
+                            setIsPlaying(p => !p);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-neon-blue text-tactical-950 font-rajdhani font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 hover:bg-[#00d8e6] transition-colors cursor-pointer"
+                      >
+                        {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        <span>{isPlaying ? 'Pause' : 'Play'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSceneIndex(0);
+                          setSceneElapsed(0);
+                          setIsPlaying(true);
+                        }}
+                        className="p-1.5 rounded-lg bg-tactical-800 hover:bg-tactical-700 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                        title="Restart Video Tour"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+
+                      {speechSynthRef.current && (
+                        <button
+                          type="button"
+                          onClick={() => setVoiceEnabled(v => !v)}
+                          className={clsx(
+                            'px-2.5 py-1.5 rounded-lg border text-xs font-rajdhani font-bold uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer',
+                            voiceEnabled
+                              ? 'bg-neon-green/15 border-neon-green/50 text-neon-green'
+                              : 'bg-tactical-800 border-tactical-700 text-gray-400 hover:text-white'
+                          )}
+                          title="Toggle Voiceover Narration"
+                        >
+                          {voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                          <span className="hidden sm:inline">{voiceEnabled ? 'Voice On' : 'Voice Off'}</span>
+                        </button>
+                      )}
+
+                      <span className="text-xs font-mono text-gray-400 ml-1">
+                        {formatTime(totalElapsedSec)} / {formatTime(totalDurationSec)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={sceneIndex === 0}
+                        onClick={() => {
+                          setSceneIndex(s => Math.max(0, s - 1));
+                          setSceneElapsed(0);
+                        }}
+                        className="px-2 py-1 rounded bg-tactical-800 hover:bg-tactical-700 disabled:opacity-40 text-xs font-rajdhani font-bold uppercase text-gray-300 cursor-pointer"
+                      >
+                        Prev
+                      </button>
+                      <button
+                        type="button"
+                        disabled={sceneIndex === VIDEO_SCENES.length - 1}
+                        onClick={() => {
+                          setSceneIndex(s => Math.min(VIDEO_SCENES.length - 1, s + 1));
+                          setSceneElapsed(0);
+                        }}
+                        className="px-2 py-1 rounded bg-tactical-800 hover:bg-tactical-700 disabled:opacity-40 text-xs font-rajdhani font-bold uppercase text-gray-300 cursor-pointer"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Interactive Video Chapters / Feature Jump List */}
+            {/* Interactive Video Chapters List */}
             <div>
-              <h4 className="text-xs font-rajdhani font-bold uppercase tracking-widest text-gray-400 mb-2.5">
-                Walkthrough Chapters (Tap to Jump to Feature)
+              <h4 className="text-xs font-rajdhani font-bold uppercase tracking-widest text-gray-400 mb-2">
+                Walkthrough Chapters (Tap to Play Chapter)
               </h4>
-              <div className="grid grid-cols-1 gap-2">
-                {VIDEO_CHAPTERS.map((chapter, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      const stepIdx = TOUR_STEPS.findIndex(s => s.tab === chapter.tab);
-                      if (stepIdx !== -1) setCurrentStepIndex(stepIdx);
-                      setShowVideoModal(false);
-                    }}
-                    className="w-full text-left bg-tactical-950/80 hover:bg-tactical-800 border border-tactical-800 hover:border-neon-blue/40 rounded-lg px-3.5 py-2.5 flex items-center justify-between transition-all group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold text-neon-blue bg-neon-blue/10 border border-neon-blue/30 px-2 py-0.5 rounded">
-                        {chapter.time}
+              <div className="grid grid-cols-1 gap-1.5">
+                {VIDEO_SCENES.map((scene, idx) => {
+                  const isActiveScene = idx === sceneIndex;
+                  return (
+                    <button
+                      key={scene.id}
+                      type="button"
+                      onClick={() => {
+                        setSceneIndex(idx);
+                        setSceneElapsed(0);
+                        setIsPlaying(true);
+                      }}
+                      className={clsx(
+                        'w-full text-left border rounded-lg px-3 py-2 flex items-center justify-between transition-all cursor-pointer',
+                        isActiveScene
+                          ? 'bg-neon-blue/15 border-neon-blue text-white shadow-[0_0_10px_rgba(0,240,255,0.15)]'
+                          : 'bg-tactical-950/80 hover:bg-tactical-800 border-tactical-800 text-gray-300'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={clsx(
+                          'text-[11px] font-mono font-bold px-2 py-0.5 rounded shrink-0',
+                          isActiveScene ? 'bg-neon-blue text-tactical-950' : 'bg-tactical-800 text-neon-blue'
+                        )}>
+                          {scene.timeLabel}
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium truncate">
+                          {scene.title}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-rajdhani font-bold uppercase tracking-wider text-neon-blue shrink-0 ml-2">
+                        {isActiveScene && isPlaying ? 'Playing' : 'Play'}
                       </span>
-                      <span className="text-sm font-medium text-gray-200 group-hover:text-white">
-                        {chapter.title}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-neon-blue transition-colors shrink-0" />
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           <div className="p-4 bg-tactical-950 border-t border-tactical-800 flex justify-between items-center">
             <button
-              onClick={() => setShowVideoModal(false)}
-              className="px-4 py-2 rounded-lg bg-tactical-800 hover:bg-tactical-700 text-gray-200 text-sm font-rajdhani font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              type="button"
+              onClick={() => {
+                speechSynthRef.current?.cancel();
+                setShowVideoModal(false);
+              }}
+              className="px-4 py-2 rounded-lg bg-tactical-800 hover:bg-tactical-700 text-gray-200 text-xs sm:text-sm font-rajdhani font-bold uppercase tracking-wider transition-colors cursor-pointer"
             >
-              ← Back to Interactive Tour
+              ← Back to Step-by-Step Tour
             </button>
             <button
+              type="button"
               onClick={handleSkip}
-              className="px-5 py-2 rounded-lg bg-neon-blue text-tactical-950 text-sm font-rajdhani font-extrabold uppercase tracking-wider hover:bg-[#00d8e6] transition-colors cursor-pointer"
+              className="px-5 py-2 rounded-lg bg-neon-blue text-tactical-950 text-xs sm:text-sm font-rajdhani font-extrabold uppercase tracking-wider hover:bg-[#00d8e6] transition-colors cursor-pointer"
             >
               Done
             </button>
@@ -383,7 +758,7 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
           )}
         >
           {/* Ambient Top Gradient */}
-          <div className={clsx(' inset-x-0 top-0 h-1.5 bg-gradient-to-r', currentStep.bgGlow)} />
+          <div className={clsx('inset-x-0 top-0 h-1.5 bg-gradient-to-r', currentStep.bgGlow)} />
 
           {/* Header */}
           <div className="p-4 sm:p-5 bg-tactical-950/90 border-b border-tactical-800 flex items-center justify-between gap-2">
@@ -466,7 +841,7 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
             {/* In-Depth Video Tour Banner Button */}
             <button
               type="button"
-              onClick={() => setShowVideoModal(true)}
+              onClick={() => openVideoWalkthrough(0)}
               className="w-full bg-gradient-to-r from-neon-blue/15 via-neon-purple/15 to-neon-blue/15 hover:from-neon-blue/25 hover:to-neon-purple/25 border border-neon-blue/40 rounded-xl p-3 flex items-center justify-between transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-3">
@@ -478,7 +853,7 @@ export const AppTourModal: React.FC<AppTourModalProps> = ({
                     Watch In-Depth Video Tour
                   </span>
                   <span className="text-[11px] text-gray-400 font-inter block">
-                    Full video walkthrough & chapter guide of every Evoke feature
+                    Play animated 7-chapter walkthrough with optional voiceover
                   </span>
                 </div>
               </div>
