@@ -7,14 +7,20 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { useUser } from '../context/UserContext';
-import { TrendingUp, Activity, Hexagon, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { TrendingUp, Activity, Hexagon, Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Flame, Dumbbell, Award, Target } from 'lucide-react';
 import { clsx } from 'clsx';
+import { calculateStreak } from '../utils/streakUtils';
 
 export const Analytics: React.FC = () => {
-  const { workoutHistory, profile, weightHistory } = useUser();
+  const { workoutHistory, profile, weightHistory, scheduledWorkoutDays, targetWorkoutsPerWeek, workoutSplit } = useUser();
   const [selectedExercise, setSelectedExercise] = useState<string>('Bench Press');
   const [statType, setStatType] = useState<'1rm' | 'max_weight'>('1rm');
   const [graphRange, setGraphRange] = useState<'1M' | '3M' | '6M' | '1Y'>('1M');
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
   // 1. Volume Progression
   const volumeData = useMemo(() => {
@@ -95,31 +101,151 @@ export const Analytics: React.FC = () => {
     ];
   }, [profile.stats]);
 
-  // 4. Consistency Heatmap
-  const heatmapData = useMemo(() => {
-    // Generate last 90 days grid
-    const days = [];
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    // Create a set of dates where workouts occurred
-    const workoutDates = new Set(workoutHistory.map(w => {
-      const d = new Date(w.date);
-      d.setHours(0,0,0,0);
-      return d.getTime();
-    }));
+  // 4. Monthly Consistency Calendar & Stats
+  const formatLocalYMD = (d: Date | string) => {
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    const date = new Date(d);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
 
-    // Start 90 days ago
-    for (let i = 89; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      days.push({
-        date: d,
-        active: workoutDates.has(d.getTime())
+  const todayYMD = formatLocalYMD(new Date());
+  const currentStreak = useMemo(
+    () => calculateStreak(workoutHistory, scheduledWorkoutDays),
+    [workoutHistory, scheduledWorkoutDays]
+  );
+
+  const calendarData = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const startWeekday = firstDayOfMonth.getDay(); // 0 (Sun) - 6 (Sat)
+    const daysInMonth = lastDayOfMonth.getDate();
+
+    const workoutsByDate = new Map<string, typeof workoutHistory>();
+    workoutHistory.forEach(w => {
+      const ymd = formatLocalYMD(w.date);
+      const list = workoutsByDate.get(ymd) || [];
+      list.push(w);
+      workoutsByDate.set(ymd, list);
+    });
+
+    const gradeRank: Record<string, number> = { 'S+': 6, 'S': 5, 'A': 4, 'B': 3, 'C': 2 };
+
+    const cells: Array<{
+      ymd: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      isFuture: boolean;
+      isScheduled: boolean;
+      workouts: typeof workoutHistory;
+      bestGrade: string | null;
+      hasPr: boolean;
+    }> = [];
+
+    // Leading padding days from previous month
+    const prevMonthLastDate = new Date(year, month, 0).getDate();
+    for (let i = startWeekday - 1; i >= 0; i--) {
+      const d = new Date(year, month - 1, prevMonthLastDate - i);
+      const ymd = formatLocalYMD(d);
+      const dayWorkouts = workoutsByDate.get(ymd) || [];
+      cells.push({
+        ymd,
+        dayNumber: d.getDate(),
+        isCurrentMonth: false,
+        isToday: ymd === todayYMD,
+        isFuture: ymd > todayYMD,
+        isScheduled: scheduledWorkoutDays?.includes(d.getDay()) ?? false,
+        workouts: dayWorkouts,
+        bestGrade: null,
+        hasPr: false,
       });
     }
-    return days;
-  }, [workoutHistory]);
+
+    let monthWorkoutsCount = 0;
+    let activeDaysCount = 0;
+    let sTierCount = 0;
+    let elapsedScheduledDays = 0;
+    let completedScheduledOrActiveDays = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, month, day);
+      const ymd = formatLocalYMD(d);
+      const dayWorkouts = workoutsByDate.get(ymd) || [];
+      const isFuture = ymd > todayYMD;
+      const isScheduled = scheduledWorkoutDays?.includes(d.getDay()) ?? false;
+
+      let bestGrade: string | null = null;
+      let hasPr = false;
+
+      if (dayWorkouts.length > 0) {
+        activeDaysCount++;
+        monthWorkoutsCount += dayWorkouts.length;
+        dayWorkouts.forEach(w => {
+          const g = w.grade || 'A';
+          if (!bestGrade || (gradeRank[g] || 0) > (gradeRank[bestGrade] || 0)) {
+            bestGrade = g;
+          }
+          if (w.isPr) hasPr = true;
+          if (g === 'S+' || g === 'S') sTierCount++;
+        });
+      }
+
+      if (!isFuture) {
+        if (isScheduled) elapsedScheduledDays++;
+        if (dayWorkouts.length > 0) completedScheduledOrActiveDays++;
+      }
+
+      cells.push({
+        ymd,
+        dayNumber: day,
+        isCurrentMonth: true,
+        isToday: ymd === todayYMD,
+        isFuture,
+        isScheduled,
+        workouts: dayWorkouts,
+        bestGrade,
+        hasPr,
+      });
+    }
+
+    // Trailing padding days to complete the last week row
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      const ymd = formatLocalYMD(d);
+      cells.push({
+        ymd,
+        dayNumber: d.getDate(),
+        isCurrentMonth: false,
+        isToday: ymd === todayYMD,
+        isFuture: ymd > todayYMD,
+        isScheduled: scheduledWorkoutDays?.includes(d.getDay()) ?? false,
+        workouts: [],
+        bestGrade: null,
+        hasPr: false,
+      });
+    }
+
+    const targetDenominator = Math.max(elapsedScheduledDays, targetWorkoutsPerWeek || 4);
+    const consistencyPercent = elapsedScheduledDays > 0
+      ? Math.min(100, Math.round((completedScheduledOrActiveDays / elapsedScheduledDays) * 100))
+      : Math.min(100, Math.round((activeDaysCount / targetDenominator) * 100));
+
+    return {
+      cells,
+      monthWorkoutsCount,
+      activeDaysCount,
+      sTierCount,
+      consistencyPercent,
+    };
+  }, [calendarMonth, workoutHistory, scheduledWorkoutDays, targetWorkoutsPerWeek, todayYMD]);
+
+  const selectedDayInfo = useMemo(() => {
+    const targetYMD = selectedCalendarDate || todayYMD;
+    return calendarData.cells.find(c => c.ymd === targetYMD) || null;
+  }, [selectedCalendarDate, todayYMD, calendarData.cells]);
 
   // 5. Total Time Trained (Last 4 weeks)
   const timeTrainedData = useMemo(() => {
@@ -298,31 +424,226 @@ export const Analytics: React.FC = () => {
         </div>
       </div>
 
-      {/* Consistency Heatmap */}
+      {/* Monthly Consistency Calendar */}
       <div className="esports-panel p-6">
-        <h2 className="esports-heading text-xl text-white mb-6 flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-neon-green" /> 90-Day Consistency
-        </h2>
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-1" style={{ minWidth: 'max-content' }}>
-            {/* Wrapper flex container of small squares */}
-            <div className="flex flex-wrap gap-1.5 w-full">
-              {heatmapData.map((day, i) => (
-                <div 
-                  key={i} 
-                  title={day.date.toDateString()}
-                  className={clsx(
-                    "w-4 h-4 rounded-sm transition-colors",
-                    day.active ? "bg-neon-green shadow-[0_0_5px_rgba(0,255,0,0.5)]" : "bg-tactical-800"
-                  )}
-                />
-              ))}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="esports-heading text-xl text-white flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-neon-green" /> Consistency Tracker
+            </h2>
+            <p className="text-xs text-gray-400 font-inter mt-0.5">
+              Tap any day to inspect logged sessions & workout grades
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+              className="p-2 rounded-lg bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-gray-300 hover:text-white transition-colors cursor-pointer"
+              title="Previous Month"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="min-w-[140px] text-center font-rajdhani font-bold text-base uppercase tracking-wider text-white bg-tactical-900 border border-tactical-700 px-3 py-1.5 rounded-lg">
+              {calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </div>
+            <button
+              onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+              className="p-2 rounded-lg bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-gray-300 hover:text-white transition-colors cursor-pointer"
+              title="Next Month"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {(calendarMonth.getMonth() !== new Date().getMonth() || calendarMonth.getFullYear() !== new Date().getFullYear()) && (
+              <button
+                onClick={() => {
+                  const now = new Date();
+                  setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+                  setSelectedCalendarDate(todayYMD);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-neon-blue/15 border border-neon-blue/40 text-neon-blue text-xs font-rajdhani font-bold uppercase tracking-wider hover:bg-neon-blue/25 transition-colors cursor-pointer"
+              >
+                Today
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Summary KPI Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-tactical-900/90 border border-tactical-700 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-neon-gold/10 border border-neon-gold/30 flex items-center justify-center shrink-0">
+              <Flame className="w-5 h-5 text-neon-gold" />
+            </div>
+            <div>
+              <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400 block">Current Streak</span>
+              <span className="text-xl font-rajdhani font-bold text-white">{currentStreak} <span className="text-xs text-gray-400 font-normal">Days</span></span>
+            </div>
+          </div>
+
+          <div className="bg-tactical-900/90 border border-tactical-700 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-neon-blue/10 border border-neon-blue/30 flex items-center justify-center shrink-0">
+              <Dumbbell className="w-5 h-5 text-neon-blue" />
+            </div>
+            <div>
+              <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400 block">Month Sessions</span>
+              <span className="text-xl font-rajdhani font-bold text-white">{calendarData.monthWorkoutsCount} <span className="text-xs text-gray-400 font-normal">Logged</span></span>
+            </div>
+          </div>
+
+          <div className="bg-tactical-900/90 border border-tactical-700 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-neon-green/10 border border-neon-green/30 flex items-center justify-center shrink-0">
+              <Target className="w-5 h-5 text-neon-green" />
+            </div>
+            <div>
+              <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400 block">Schedule Hit Rate</span>
+              <span className="text-xl font-rajdhani font-bold text-neon-green">{calendarData.consistencyPercent}%</span>
+            </div>
+          </div>
+
+          <div className="bg-tactical-900/90 border border-tactical-700 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-neon-purple/10 border border-neon-purple/30 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5 text-neon-purple" />
+            </div>
+            <div>
+              <span className="text-[10px] font-rajdhani uppercase tracking-widest text-gray-400 block">S / S+ Sessions</span>
+              <span className="text-xl font-rajdhani font-bold text-white">{calendarData.sTierCount} <span className="text-xs text-gray-400 font-normal">Elite</span></span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 font-inter mt-2 text-right">
-          Last 90 Days
-        </p>
+
+        {/* 7-Column Weekday Headers */}
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(dayLabel => (
+            <div key={dayLabel} className="text-center text-[11px] font-rajdhani font-bold uppercase tracking-widest text-gray-400 py-1">
+              {dayLabel}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          {calendarData.cells.map((cell) => {
+            const hasWorkout = cell.workouts.length > 0;
+            const isElite = cell.bestGrade === 'S+' || cell.bestGrade === 'S';
+            const isSelected = (selectedCalendarDate || todayYMD) === cell.ymd;
+            const isMissedScheduled = cell.isCurrentMonth && !cell.isFuture && !cell.isToday && cell.isScheduled && !hasWorkout;
+
+            return (
+              <button
+                key={cell.ymd}
+                type="button"
+                onClick={() => setSelectedCalendarDate(cell.ymd)}
+                className={clsx(
+                  "relative aspect-square sm:aspect-auto sm:h-16 rounded-lg border p-1 sm:p-2 flex flex-col justify-between items-center sm:items-stretch transition-all cursor-pointer",
+                  !cell.isCurrentMonth && "opacity-30 bg-tactical-950/40 border-tactical-800/60",
+                  cell.isCurrentMonth && hasWorkout && isElite && "bg-neon-gold/15 border-neon-gold shadow-[0_0_12px_rgba(255,215,0,0.2)]",
+                  cell.isCurrentMonth && hasWorkout && !isElite && "bg-neon-blue/15 border-neon-blue shadow-[0_0_10px_rgba(0,240,255,0.2)]",
+                  cell.isCurrentMonth && !hasWorkout && isMissedScheduled && "bg-neon-red/5 border-neon-red/30",
+                  cell.isCurrentMonth && !hasWorkout && !isMissedScheduled && "bg-tactical-900/80 border-tactical-700/80 hover:border-tactical-600",
+                  cell.isToday && "ring-2 ring-neon-green",
+                  isSelected && "ring-2 ring-white scale-[1.02] z-10"
+                )}
+              >
+                <div className="w-full flex items-center justify-between">
+                  <span className={clsx(
+                    "text-xs font-rajdhani font-bold leading-none",
+                    cell.isToday ? "text-neon-green" : hasWorkout ? "text-white" : "text-gray-400"
+                  )}>
+                    {cell.dayNumber}
+                  </span>
+                  {cell.hasPr && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-neon-gold shadow-[0_0_6px_#ffd700]" title="PR Broken" />
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center sm:justify-end w-full mt-auto">
+                  {hasWorkout ? (
+                    <span className={clsx(
+                      "text-[10px] sm:text-xs font-rajdhani font-extrabold px-1.5 py-0.5 rounded leading-none",
+                      isElite
+                        ? "bg-neon-gold/25 text-neon-gold border border-neon-gold/50"
+                        : "bg-neon-blue/25 text-neon-blue border border-neon-blue/50"
+                    )}>
+                      {cell.bestGrade}
+                    </span>
+                  ) : cell.isCurrentMonth && cell.isScheduled && !cell.isFuture ? (
+                    <span className="text-[9px] font-rajdhani uppercase tracking-wider text-neon-red/70 hidden sm:inline">
+                      {cell.isToday ? 'Due' : 'Missed'}
+                    </span>
+                  ) : cell.isCurrentMonth && !cell.isScheduled ? (
+                    <span className="text-[9px] font-rajdhani uppercase tracking-wider text-gray-600 hidden sm:inline">
+                      Rest
+                    </span>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Selected Day Details Bar & Legend */}
+        <div className="mt-4 pt-4 border-t border-tactical-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {selectedDayInfo ? (
+            <div className="flex-1 bg-tactical-900 border border-tactical-700 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-rajdhani font-bold uppercase tracking-wider text-gray-400">
+                  {new Date(selectedDayInfo.ymd + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                </span>
+                {selectedDayInfo.isToday && (
+                  <span className="text-[10px] font-rajdhani font-bold uppercase px-2 py-0.5 rounded bg-neon-green/15 text-neon-green border border-neon-green/30">
+                    Today
+                  </span>
+                )}
+              </div>
+              {selectedDayInfo.workouts.length > 0 ? (
+                <div className="space-y-1.5">
+                  {selectedDayInfo.workouts.map(w => (
+                    <div key={w.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className={clsx(
+                          "text-xs font-rajdhani font-extrabold px-1.5 py-0.5 rounded border",
+                          (w.grade === 'S+' || w.grade === 'S')
+                            ? "bg-neon-gold/20 text-neon-gold border-neon-gold/50"
+                            : "bg-neon-blue/20 text-neon-blue border-neon-blue/50"
+                        )}>
+                          {w.grade || 'A'}
+                        </span>
+                        <span className="font-bold text-white">{w.name}</span>
+                        {w.isPr && (
+                          <span className="text-[10px] font-rajdhani font-bold uppercase px-1.5 py-0.5 rounded bg-neon-gold/20 text-neon-gold">
+                            PR
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400 font-mono">
+                        {w.durationMinutes}m • {(w.volume || 0).toLocaleString()} lbs
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 font-inter">
+                  {selectedDayInfo.isScheduled
+                    ? `Scheduled: ${workoutSplit?.[new Date(selectedDayInfo.ymd + 'T12:00:00').getDay()] || 'Workout'} (${selectedDayInfo.isFuture || selectedDayInfo.isToday ? 'Upcoming' : 'No session logged'})`
+                    : 'Scheduled Rest Day — No workout logged.'}
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-3 text-xs font-rajdhani uppercase tracking-wider text-gray-400 shrink-0">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-neon-gold/30 border border-neon-gold inline-block" /> S / S+ Rank
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-neon-blue/30 border border-neon-blue inline-block" /> Completed
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-tactical-900 border border-tactical-700 inline-block" /> Rest
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
