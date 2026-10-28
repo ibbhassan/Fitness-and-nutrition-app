@@ -1,12 +1,11 @@
 import { getLocalDateString } from '../utils/dateUtils';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users, Trophy, Compass } from 'lucide-react';
+import { Activity, LayoutDashboard, History, Dumbbell, Utensils, HeartPulse, User, LogOut, TrendingUp, Award, ChevronRight, Plus, X, Scale, Footprints, Play, Pause, Users, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { clsx } from 'clsx';
 import { useUser } from '../context/UserContext';
 import { LiveWorkoutTimer } from './LiveWorkoutTimer';
-import { AppTourModal } from './AppTourModal';
 import type { FoodItem } from '../types';
 
 interface LayoutProps {
@@ -16,7 +15,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) => {
-  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout, pendingLeaderboardReward, claimLeaderboardReward, isAppTourOpen, startAppTour, completeAppTour } = useUser();
+  const { profile, logout, addSteps, logWeight, customPresets, startWorkout, foodLogs, addFoodLog, activeWorkout, togglePauseWorkout, pendingLeaderboardReward, claimLeaderboardReward } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [prevLevel, setPrevLevel] = useState(profile.level);
   const [prevRank, setPrevRank] = useState(profile.rank);
@@ -219,14 +218,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           </span>
         </div>
         <div id="global-header-actions" className="flex items-center gap-2">
-          <button
-            onClick={startAppTour}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-tactical-900 hover:bg-tactical-700 border border-tactical-600 hover:border-neon-blue/60 text-gray-300 hover:text-neon-blue text-xs font-rajdhani font-bold uppercase tracking-wider transition-all cursor-pointer"
-            title="Interactive App Tour & Video Guide"
-          >
-            <Compass className="w-3.5 h-3.5 text-neon-blue" />
-            <span>Tour</span>
-          </button>
           <button
             onClick={() => setShowLogoutConfirm(true)}
             className="text-gray-400 hover:text-neon-red transition-colors p-2 rounded-full hover:bg-tactical-700"
@@ -1018,14 +1009,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Interactive App Tour & In-Depth Video Guide */}
-      <AppTourModal
-        isOpen={isAppTourOpen}
-        onClose={completeAppTour}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
     </div>
   );
 };

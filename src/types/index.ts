@@ -46,7 +46,6 @@ export interface UserProfile {
   weeklyEpByWeek?: Record<string, number>;
   lastClaimedLeaderboardWeek?: string;
   claimedLeaderboardWeeks?: Record<string, boolean>;
-  hasCompletedAppTour?: boolean;
   equippedCosmetics?: EquippedCosmetics;
   unlockedCosmetics?: string[];
 }
