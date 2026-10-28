@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2, Sparkles, Utensils } from 'lucide-react';
+import { Settings, Medal, Star, Target, Flame, Activity, X, Edit2, Sparkles, Utensils, Compass } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
 import { AvatarCustomizer } from '../components/AvatarCustomizer';
@@ -13,7 +13,7 @@ import clsx from 'clsx';
 import { getRankInfo, getRequiredEpForLevel } from '../utils/rankUtils';
 
 export const Profile: React.FC = () => {
-  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync, updateUsername } = useUser();
+  const { user, profile, biometrics, targetWorkoutsPerWeek, scheduledWorkoutDays, workoutSplit, nutrition, completeOnboarding, updateNutrition, resetOnboarding, logWeight, healthSyncEnabled, toggleHealthSync, updateUsername, startAppTour } = useUser();
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showMacroModal, setShowMacroModal] = useState(false);
@@ -179,6 +179,10 @@ export const Profile: React.FC = () => {
                   <span className="text-tactical-700">•</span>
                   <button onClick={() => setShowCosmeticsModal(true)} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-neon-purple hover:text-white transition-colors focus:outline-none font-bold">
                     <Sparkles className="w-3.5 h-3.5" /> Locker & Cosmetics
+                  </button>
+                  <span className="text-tactical-700">•</span>
+                  <button onClick={startAppTour} className="flex items-center gap-1 text-xs font-rajdhani uppercase tracking-widest text-neon-blue hover:text-white transition-colors focus:outline-none font-bold">
+                    <Compass className="w-3.5 h-3.5" /> App Tour & Video Guide
                   </button>
                 </div>
 

@@ -90,6 +90,9 @@ interface UserContextType {
   saveCustomMealCategories: (categories: CustomMealCategory[]) => void;
   pendingLeaderboardReward: LeaderboardRewardData | null;
   claimLeaderboardReward: () => void;
+  isAppTourOpen: boolean;
+  startAppTour: () => void;
+  completeAppTour: () => void;
   currentDate: string;
   devAdvanceDay?: () => void;
   getMacrosForDate: (dateStr: string) => DailyNutrition;
@@ -191,6 +194,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [customMealCategories, setCustomMealCategories] = useState<CustomMealCategory[]>(initialState.customMealCategories && initialState.customMealCategories.length > 0 ? initialState.customMealCategories : DEFAULT_MEAL_CATEGORIES);
   const [editingWorkout, setEditingWorkout] = useState<WorkoutLog | null>(null);
   const [pendingLeaderboardReward, setPendingLeaderboardReward] = useState<LeaderboardRewardData | null>(null);
+  const [isAppTourOpen, setIsAppTourOpen] = useState<boolean>(false);
   const [isFirestoreSynced, setIsFirestoreSynced] = useState<boolean>(false);
 
   // Reference holding the absolute latest state synchronously for safe persistence
@@ -757,13 +761,32 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const completeOnboarding = (goal: string, workoutsPerWeek: number, scheduledDays: number[], split: Record<number, string>, macros: DailyNutrition, bio: Biometrics) => {
-    setProfile((prev: UserProfile) => ({ ...prev, currentMode: goal as 'Cut' | 'Bulk' | 'Maintenance' }));
+    setProfile((prev: UserProfile) => {
+      if (!prev.hasCompletedAppTour) {
+        setIsAppTourOpen(true);
+      }
+      return { ...prev, currentMode: goal as 'Cut' | 'Bulk' | 'Maintenance' };
+    });
     setTargetWorkoutsPerWeek(workoutsPerWeek);
     setScheduledWorkoutDays(scheduledDays);
     setWorkoutSplit(split);
     setNutrition(macros);
     setBiometrics(bio);
     setHasCompletedOnboarding(true);
+  };
+
+  const startAppTour = () => {
+    setIsAppTourOpen(true);
+  };
+
+  const completeAppTour = () => {
+    setIsAppTourOpen(false);
+    setProfile(prev => {
+      const updated = { ...prev, hasCompletedAppTour: true };
+      stateRef.current = { ...stateRef.current, profile: updated };
+      persistState({ profile: updated }, true);
+      return updated;
+    });
   };
 
   const resetOnboarding = () => {
@@ -1526,6 +1549,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveCustomMealCategories: (categories: CustomMealCategory[]) => setCustomMealCategories(categories),
       pendingLeaderboardReward,
       claimLeaderboardReward,
+      isAppTourOpen,
+      startAppTour,
+      completeAppTour,
       currentDate,
       devAdvanceDay: () => setCurrentDate('2099-01-01'),
       getMacrosForDate
