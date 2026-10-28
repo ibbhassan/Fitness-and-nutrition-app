@@ -90,6 +90,7 @@ interface UserContextType {
   saveCustomMealCategories: (categories: CustomMealCategory[]) => void;
   pendingLeaderboardReward: LeaderboardRewardData | null;
   claimLeaderboardReward: () => void;
+  currentDate: string;
   devAdvanceDay?: () => void;
   getMacrosForDate: (dateStr: string) => DailyNutrition;
 }
@@ -101,12 +102,22 @@ const LOCAL_STORAGE_KEY = 'evoke_user_data_v2';
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Load initial state from local storage or fallback to defaults
   const loadState = () => {
+    const today = getLocalDateString();
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        const stepsByDate: Record<string, number> = parsed.stepsByDate || {};
+        const waterByDate: Record<string, number> = parsed.waterByDate || {};
+        const todaySteps = stepsByDate[today] ?? 0;
+        const todayWater = waterByDate[today] ?? 0;
         return {
           ...parsed,
+          stepsByDate,
+          waterByDate,
+          dailySteps: todaySteps,
+          dailyWaterIntake: todayWater,
+          lastStepDate: today,
           lastUpdated: parsed.lastUpdated || Date.now()
         };
       } catch (e) {
@@ -133,7 +144,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       foodLogs: [] as FoodLogEntry[],
       savedMeals: [] as Meal[],
       customMealCategories: DEFAULT_MEAL_CATEGORIES,
-      lastStepDate: getLocalDateString(),
+      stepsByDate: {} as Record<string, number>,
+      waterByDate: {} as Record<string, number>,
+      lastStepDate: today,
+      dailySteps: 0,
       dailyStepsTarget: 10000,
       dailyWaterTarget: '1 Gallon',
       dailyWaterIntake: 0,
@@ -158,10 +172,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutLog[]>(initialState.workoutHistory || []);
   const [manualQuestCompletions, setManualQuestCompletions] = useState<Record<string, boolean>>(initialState.manualQuestCompletions || {});
   const [healthSyncEnabled, setHealthSyncEnabled] = useState(initialState.healthSyncEnabled || false);
-  const [dailySteps, setDailySteps] = useState(initialState.dailySteps === 4230 ? 0 : (initialState.dailySteps || 0));
+  const [stepsByDate, setStepsByDate] = useState<Record<string, number>>(initialState.stepsByDate || {});
+  const [waterByDate, setWaterByDate] = useState<Record<string, number>>(initialState.waterByDate || {});
+  const [dailySteps, setDailyStepsState] = useState(initialState.dailySteps || 0);
   const [dailyStepsTarget, setDailyStepsTarget] = useState<number>(initialState.dailyStepsTarget || 10000);
   const [dailyWaterTarget, setDailyWaterTarget] = useState<string>(initialState.dailyWaterTarget || '1 Gallon');
-  const [dailyWaterIntake, setDailyWaterIntake] = useState<number>(initialState.dailyWaterIntake || 0);
+  const [dailyWaterIntake, setDailyWaterIntakeState] = useState<number>(initialState.dailyWaterIntake || 0);
   const [dailyWorkoutDurationTarget, setDailyWorkoutDurationTarget] = useState<number>(initialState.dailyWorkoutDurationTarget || 30);
   const [lastStepDate, setLastStepDate] = useState<string>(initialState.lastStepDate || getLocalDateString());
   const [currentDate, setCurrentDate] = useState<string>(getLocalDateString());
@@ -194,6 +210,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     manualQuestCompletions,
     customExercises,
     healthSyncEnabled,
+    stepsByDate,
+    waterByDate,
     dailySteps,
     lastStepDate,
     activeWorkout,
@@ -226,6 +244,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     manualQuestCompletions,
     customExercises,
     healthSyncEnabled,
+    stepsByDate,
+    waterByDate,
     dailySteps,
     lastStepDate,
     activeWorkout,
@@ -339,12 +359,69 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check for daily reset on mount and date change
   useEffect(() => {
+    const todaySteps = stepsByDate[currentDate] ?? 0;
+    const todayWater = waterByDate[currentDate] ?? 0;
     if (lastStepDate !== currentDate) {
-      setDailySteps(0);
-      setDailyWaterIntake(0);
+      setDailyStepsState(todaySteps);
+      setDailyWaterIntakeState(todayWater);
       setLastStepDate(currentDate);
+    } else if (dailySteps !== todaySteps) {
+      setDailyStepsState(todaySteps);
     }
-  }, [currentDate, lastStepDate]);
+  }, [currentDate, lastStepDate, stepsByDate, waterByDate, dailySteps]);
+
+  const setDailySteps = useCallback((steps: number) => {
+    const today = getLocalDateString();
+    const nextStepsByDate = {
+      ...(stateRef.current.stepsByDate || {}),
+      [today]: steps
+    };
+    stateRef.current = {
+      ...stateRef.current,
+      dailySteps: steps,
+      stepsByDate: nextStepsByDate,
+      lastStepDate: today
+    };
+    setDailyStepsState(steps);
+    setStepsByDate(nextStepsByDate);
+    setLastStepDate(today);
+    persistState({
+      dailySteps: steps,
+      stepsByDate: nextStepsByDate,
+      lastStepDate: today
+    }, true);
+  }, [persistState]);
+
+  const addSteps = useCallback((amount: number) => {
+    const today = getLocalDateString();
+    const current = stateRef.current.stepsByDate?.[today] ?? 0;
+    const next = Math.max(0, current + amount);
+    setDailySteps(next);
+  }, [setDailySteps]);
+
+  const addWaterIntake = useCallback((ozAmount: number) => {
+    const today = getLocalDateString();
+    const current = stateRef.current.waterByDate?.[today] ?? 0;
+    const next = Math.max(0, current + ozAmount);
+    const nextWaterByDate = {
+      ...(stateRef.current.waterByDate || {}),
+      [today]: next
+    };
+    stateRef.current = {
+      ...stateRef.current,
+      dailyWaterIntake: next,
+      waterByDate: nextWaterByDate,
+      lastStepDate: today
+    };
+    setDailyWaterIntakeState(next);
+    setWaterByDate(nextWaterByDate);
+    setLastStepDate(today);
+    persistState({
+      dailyWaterIntake: next,
+      waterByDate: nextWaterByDate,
+      lastStepDate: today
+    }, true);
+  }, [persistState]);
 
   // Sync to local storage & Firestore whenever state changes
   useEffect(() => {
@@ -365,6 +442,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     manualQuestCompletions,
     customExercises,
     healthSyncEnabled,
+    stepsByDate,
+    waterByDate,
     dailySteps,
     dailyStepsTarget,
     dailyWaterTarget,
@@ -380,6 +459,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     customMealCategories,
     persistState
   ]);
+
+  // Fallback timer so slow network doesn't block initial sync flags if local user is already loaded
+  useEffect(() => {
+    if (user && !isFirestoreSynced) {
+      const t = setTimeout(() => setIsFirestoreSynced(true), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [user, isFirestoreSynced]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -512,6 +599,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             // 7. RECONCILE PROFILE & LEVEL/STATS
+            let reconciledProfile: UserProfile | undefined;
             if (data.profile) {
               const localProf = localData?.profile || profile;
               const bestLevel = Math.max(localProf.level || 1, data.profile.level || 1);
@@ -534,12 +622,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .filter(Boolean)
                 .sort()
                 .pop();
+              const mergedClaimedWeeks = {
+                ...(data.profile.claimedLeaderboardWeeks || {}),
+                ...(localProf.claimedLeaderboardWeeks || {})
+              };
               const mergedWeeklyEpByWeek = {
                 ...(data.profile.weeklyEpByWeek || {}),
                 ...(localProf.weeklyEpByWeek || {})
               };
 
-              setProfile({
+              const nextProfile: UserProfile = {
                 ...data.profile,
                 ...localProf,
                 level: bestLevel,
@@ -547,10 +639,30 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 rank: tier,
                 stats: mergedStats,
                 lastClaimedLeaderboardWeek: mergedClaimedWeek,
+                claimedLeaderboardWeeks: mergedClaimedWeeks,
                 weeklyEpByWeek: mergedWeeklyEpByWeek,
                 unlockedCosmetics: Array.from(new Set([...(localProf.unlockedCosmetics || []), ...(data.profile.unlockedCosmetics || [])]))
-              });
+              };
+              reconciledProfile = nextProfile;
+              setProfile(nextProfile);
             }
+
+            const todayStr = getLocalDateString();
+            const mergedStepsByDate: Record<string, number> = {
+              ...(data.stepsByDate || {}),
+              ...(localData?.stepsByDate || {})
+            };
+            const mergedWaterByDate: Record<string, number> = {
+              ...(data.waterByDate || {}),
+              ...(localData?.waterByDate || {})
+            };
+            const reconciledTodaySteps = mergedStepsByDate[todayStr] ?? 0;
+            const reconciledTodayWater = mergedWaterByDate[todayStr] ?? 0;
+            setStepsByDate(mergedStepsByDate);
+            setWaterByDate(mergedWaterByDate);
+            setDailyStepsState(reconciledTodaySteps);
+            setDailyWaterIntakeState(reconciledTodayWater);
+            setLastStepDate(todayStr);
 
             const preferRemote = remoteLastUpdated >= localLastUpdated;
             if (data.hasCompletedOnboarding !== undefined && (preferRemote || localData?.hasCompletedOnboarding === undefined)) setHasCompletedOnboarding(data.hasCompletedOnboarding);
@@ -559,14 +671,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.workoutSplit !== undefined && (preferRemote || !localData?.workoutSplit)) setWorkoutSplit(data.workoutSplit);
             if (data.nutrition !== undefined && (preferRemote || !localData?.nutrition)) setNutrition(data.nutrition);
             if (data.biometrics !== undefined && (preferRemote || !localData?.biometrics)) setBiometrics(data.biometrics);
-            if (data.manualQuestCompletions !== undefined) setManualQuestCompletions({ ...(data.manualQuestCompletions || {}), ...(localData?.manualQuestCompletions || {}) });
+            if (data.manualQuestCompletions !== undefined) {
+              const mergedQuests = { ...(data.manualQuestCompletions || {}), ...(localData?.manualQuestCompletions || {}) };
+              if (reconciledTodaySteps < (data.dailyStepsTarget || localData?.dailyStepsTarget || 10000)) {
+                delete mergedQuests[`daily-steps-${todayStr}`];
+              }
+              setManualQuestCompletions(mergedQuests);
+            }
             if (data.healthSyncEnabled !== undefined) setHealthSyncEnabled(preferRemote ? data.healthSyncEnabled : (localData?.healthSyncEnabled ?? data.healthSyncEnabled));
-            if (data.dailySteps !== undefined && preferRemote) setDailySteps(data.dailySteps);
             if (data.dailyStepsTarget !== undefined) setDailyStepsTarget(data.dailyStepsTarget);
             if (data.dailyWaterTarget !== undefined) setDailyWaterTarget(data.dailyWaterTarget);
-            if (data.dailyWaterIntake !== undefined && preferRemote) setDailyWaterIntake(data.dailyWaterIntake);
             if (data.dailyWorkoutDurationTarget !== undefined) setDailyWorkoutDurationTarget(data.dailyWorkoutDurationTarget);
-            if (data.lastStepDate !== undefined && preferRemote) setLastStepDate(data.lastStepDate);
             if (data.recentFoods !== undefined && Array.isArray(data.recentFoods)) {
               const recMap = new Map();
               data.recentFoods.forEach((f: FoodItem) => recMap.set(f.name, f));
@@ -577,6 +692,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Persist the reconciled state back to Firestore & LocalStorage immediately
             persistState({
+              ...(reconciledProfile ? { profile: reconciledProfile } : {}),
+              stepsByDate: mergedStepsByDate,
+              waterByDate: mergedWaterByDate,
+              dailySteps: reconciledTodaySteps,
+              dailyWaterIntake: reconciledTodayWater,
+              lastStepDate: todayStr,
               workoutHistory: mergedWorkouts,
               activeWorkout: activeToSet,
               activeExercises: activeExToSet,
@@ -929,7 +1050,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!isFirestoreSynced || !user) return;
     const prevWeek = getPreviousWeekString(currentDate);
 
-    if (profile.lastClaimedLeaderboardWeek === prevWeek) return;
+    if (profile.claimedLeaderboardWeeks?.[prevWeek]) return;
     if (pendingLeaderboardReward?.weekStr === prevWeek) return;
     if (checkingLeaderboardWeekRef.current === prevWeek) return;
 
@@ -941,32 +1062,44 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? await getFriendsProfiles(profile.friends)
           : [];
 
+        const currentWeek = getWeekString(currentDate);
         const myPrevWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, prevWeek, profile);
-        const myCurrentWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, getWeekString(currentDate), profile);
-        const myRawFallbackEp = !profile.lastClaimedLeaderboardWeek
-          ? Math.max(myPrevWeekEp, profile.weeklyEp || 0, myCurrentWeekEp)
-          : myPrevWeekEp;
+        const myCurrentWeekEp = calculateWeeklyEpForWeek(workoutHistory, manualQuestCompletions, currentWeek, profile);
+        const myTotalWorkoutEp = workoutHistory.reduce((sum, w) => sum + Math.max(0, w.epChange || 0), 0);
+        const myOverallEp = Math.max(profile.weeklyEp || 0, myTotalWorkoutEp, (profile.level - 1) * 100 + (profile.lp || 0));
 
-        const useFallback = !profile.lastClaimedLeaderboardWeek && myPrevWeekEp === 0 && myRawFallbackEp > 0;
-        const myEffectiveEp = useFallback ? myRawFallbackEp : myPrevWeekEp;
-
+        const hasNeverClaimed = !profile.claimedLeaderboardWeeks || Object.keys(profile.claimedLeaderboardWeeks).length === 0;
         const uid = user.uid || user.username || 'me';
-        const participants = [
-          { uid, ep: myEffectiveEp },
-          ...friendsList.map((f: any) => ({
-            uid: f.uid,
-            ep: useFallback
-              ? Math.max(f.prevWeeklyEp || 0, f.rawWeeklyEp || 0, f.profile?.weeklyEp || 0)
-              : (f.prevWeeklyEp || 0)
-          }))
-        ];
 
-        const uniqueMap = new Map<string, { uid: string; ep: number }>();
-        participants.forEach(p => uniqueMap.set(p.uid, p));
-        const sorted = Array.from(uniqueMap.values()).sort((a, b) => b.ep - a.ep);
+        const rankParticipants = (myEp: number, getFriendEp: (f: any) => number) => {
+          const list = [
+            { uid, ep: myEp },
+            ...friendsList.map((f: any) => ({ uid: f.uid, ep: getFriendEp(f) }))
+          ];
+          const uniqueMap = new Map<string, { uid: string; ep: number }>();
+          list.forEach(p => uniqueMap.set(p.uid, p));
+          const sorted = Array.from(uniqueMap.values()).sort((a, b) => b.ep - a.ep);
+          const idx = sorted.findIndex(p => p.uid === uid);
+          return { place: idx + 1, ep: myEp };
+        };
 
-        const myIndex = sorted.findIndex(p => p.uid === uid);
-        const myPlace = myIndex + 1;
+        let result = rankParticipants(myPrevWeekEp, (f: any) => f.prevWeeklyEp || 0);
+
+        if (hasNeverClaimed && (result.ep === 0 || result.place > 3)) {
+          const candidates = [
+            result,
+            rankParticipants(myCurrentWeekEp, (f: any) => f.profile?.weeklyEp || 0),
+            rankParticipants(myOverallEp, (f: any) => Math.max(f.rawWeeklyEp || 0, f.totalWorkoutEp || 0, ((f.profile?.level || 1) - 1) * 100 + (f.profile?.lp || 0)))
+          ].filter(c => c.ep > 0 && c.place >= 1 && c.place <= 3);
+
+          if (candidates.length > 0) {
+            candidates.sort((a, b) => a.place - b.place || b.ep - a.ep);
+            result = candidates[0];
+          }
+        }
+
+        const myPlace = result.place;
+        const myEffectiveEp = result.ep;
 
         if (myEffectiveEp > 0 && (myPlace === 1 || myPlace === 2 || myPlace === 3)) {
           const bonusEp = myPlace === 1 ? 500 : myPlace === 2 ? 300 : 150;
@@ -978,9 +1111,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             bonusEp,
             weeklyEpEarned: myEffectiveEp
           });
-        } else {
+        } else if (!hasNeverClaimed) {
           setProfile(prev => {
-            const updated = { ...prev, lastClaimedLeaderboardWeek: prevWeek };
+            const updated: UserProfile = {
+              ...prev,
+              lastClaimedLeaderboardWeek: prevWeek,
+              claimedLeaderboardWeeks: {
+                ...(prev.claimedLeaderboardWeeks || {}),
+                [prevWeek]: true
+              }
+            };
             stateRef.current = { ...stateRef.current, profile: updated };
             persistState({ profile: updated }, true);
             return updated;
@@ -993,7 +1133,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     evaluateWeeklyLeaderboard();
-  }, [isFirestoreSynced, user, currentDate, profile.lastClaimedLeaderboardWeek, profile.friends, pendingLeaderboardReward, workoutHistory, manualQuestCompletions, persistState]);
+  }, [isFirestoreSynced, user, currentDate, profile.claimedLeaderboardWeeks, profile.friends, pendingLeaderboardReward, workoutHistory, manualQuestCompletions, persistState]);
 
   const claimLeaderboardReward = () => {
     if (!pendingLeaderboardReward) return;
@@ -1015,7 +1155,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lp: newLp,
         level: newLevel,
         rank: tier,
-        lastClaimedLeaderboardWeek: weekStr
+        lastClaimedLeaderboardWeek: weekStr,
+        claimedLeaderboardWeeks: {
+          ...(prev.claimedLeaderboardWeeks || {}),
+          [weekStr]: true
+        }
       };
 
       stateRef.current = { ...stateRef.current, profile: updatedProfile };
@@ -1342,11 +1486,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toggleHealthSync: () => setHealthSyncEnabled((p: boolean) => !p),
       dailySteps,
       setDailySteps,
-      addSteps: (amount: number) => setDailySteps((prev: number) => prev + amount),
+      addSteps,
       dailyStepsTarget,
       dailyWaterTarget,
       dailyWaterIntake,
-      addWaterIntake: (ozAmount: number) => setDailyWaterIntake(prev => prev + ozAmount),
+      addWaterIntake,
       dailyWorkoutDurationTarget,
       updateChallengeTargets: (stepsTarget: number, durationTarget: number | string) => {
         setDailyStepsTarget(stepsTarget);
@@ -1382,6 +1526,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveCustomMealCategories: (categories: CustomMealCategory[]) => setCustomMealCategories(categories),
       pendingLeaderboardReward,
       claimLeaderboardReward,
+      currentDate,
       devAdvanceDay: () => setCurrentDate('2099-01-01'),
       getMacrosForDate
     }}>

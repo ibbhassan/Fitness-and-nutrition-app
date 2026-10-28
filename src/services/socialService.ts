@@ -95,6 +95,9 @@ export const getFriendsProfiles = async (friendUids: string[]) => {
       if (data.profile && data.user) {
         const currentWeekEp = calculateWeeklyEpForWeek(data.workoutHistory, data.manualQuestCompletions, currentWeek, data.profile);
         const prevWeekEp = calculateWeeklyEpForWeek(data.workoutHistory, data.manualQuestCompletions, prevWeek, data.profile);
+        const totalWorkoutEp = Array.isArray(data.workoutHistory)
+          ? data.workoutHistory.reduce((sum: number, w: any) => sum + Math.max(0, w?.epChange || 0), 0)
+          : 0;
         profiles.push({
           uid,
           username: data.user.username,
@@ -104,6 +107,7 @@ export const getFriendsProfiles = async (friendUids: string[]) => {
           },
           prevWeeklyEp: prevWeekEp,
           rawWeeklyEp: data.profile.weeklyEp || 0,
+          totalWorkoutEp,
           recentWorkout: data.workoutHistory?.length > 0 ? data.workoutHistory[data.workoutHistory.length - 1] : null
         });
       }

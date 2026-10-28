@@ -45,6 +45,7 @@ export interface UserProfile {
   weeklyEpWeek?: string;
   weeklyEpByWeek?: Record<string, number>;
   lastClaimedLeaderboardWeek?: string;
+  claimedLeaderboardWeeks?: Record<string, boolean>;
   equippedCosmetics?: EquippedCosmetics;
   unlockedCosmetics?: string[];
 }

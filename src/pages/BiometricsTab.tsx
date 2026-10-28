@@ -27,6 +27,10 @@ export const BiometricsTab: React.FC = () => {
     setTodaysBfInput(bfForViewDate ? bfForViewDate.bodyFatPercent.toString() : '');
   }, [viewDate, weightHistory, bodyFatHistory]);
 
+  React.useEffect(() => {
+    setStepsInput(dailySteps ? dailySteps.toString() : '');
+  }, [dailySteps]);
+
   const handleLogWeight = () => {
     if (todaysWeightInput) {
       logWeight(Number(todaysWeightInput), viewDate);

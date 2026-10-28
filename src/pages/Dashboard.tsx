@@ -22,17 +22,19 @@ export const Dashboard: React.FC = () => {
     dailyStepsTarget,
     dailyWorkoutDurationTarget,
     foodLogs,
+    currentDate,
     updateChallengeTargets
   } = useUser();
   const { calories, protein, carbs, fat } = nutrition;
 
   const formatLocalDate = (d: Date | string) => {
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
     const date = new Date(d);
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   };
 
-  const todayStr = formatLocalDate(new Date());
-  const weekStr = getWeekString(new Date());
+  const todayStr = currentDate || formatLocalDate(new Date());
+  const weekStr = getWeekString(todayStr);
   const weekStartDate = new Date(weekStr + 'T00:00:00');
 
   const getWeightTrackingWeekStart = () => {
@@ -137,12 +139,12 @@ export const Dashboard: React.FC = () => {
       .reduce((sum, w) => sum + (w.durationMinutes || 0), 0);
   }, [workoutHistory, todayStr]);
 
-  const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek || !!manualQuestCompletions[weeklyWorkoutsKey];
-  const isDailyStepsComplete = dailySteps >= targetSteps || !!manualQuestCompletions[dailyStepsKey];
-  const isDailyDurationComplete = todayWorkoutMinutes >= targetDuration || !!manualQuestCompletions[dailyDurationKey];
+  const isWeeklyQuestComplete = workoutsThisWeek >= targetWorkoutsPerWeek;
+  const isDailyStepsComplete = dailySteps >= targetSteps;
+  const isDailyDurationComplete = todayWorkoutMinutes >= targetDuration;
   
   const prsThisWeek = workoutHistory.some(w => w.isPr && new Date(w.date) >= weekStartDate);
-  const isWeeklyPrComplete = prsThisWeek || !!manualQuestCompletions[weeklyPrKey];
+  const isWeeklyPrComplete = prsThisWeek;
 
   const nutritionDaysLoggedThisWeek = React.useMemo(() => {
     const datesThisWeek = new Set(
@@ -153,7 +155,7 @@ export const Dashboard: React.FC = () => {
     return datesThisWeek.size;
   }, [foodLogs, weekStr]);
 
-  const isWeeklyNutritionComplete = nutritionDaysLoggedThisWeek >= 7 || !!manualQuestCompletions[weeklyNutritionKey];
+  const isWeeklyNutritionComplete = nutritionDaysLoggedThisWeek >= 7;
 
   React.useEffect(() => {
     if (workoutsThisWeek >= targetWorkoutsPerWeek && !manualQuestCompletions[weeklyWorkoutsKey]) {
